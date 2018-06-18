@@ -1,36 +1,51 @@
 import os
-import datetime
 import libhoney
+import datetime
 from django.db import connection
+import uuid
 
 
-def db_wrapper(execute, sql, params, many, context):
-    start = datetime.datetime.now()
+class DBWrapper(object):
+    def __init__(self, trace_id):
+        self.trace_id = trace_id
+        self.parent_id = trace_id
+        self.span_id = uuid.uuid4()
 
-    event = libhoney.Event(data={
-        "db.query": sql,
-        "db.query_args": params,
-    })
+    def __call__(self, execute, sql, params, many, context):
+        span_start = datetime.datetime.now()
 
-    try:
-        result = execute(sql, params, many, context)
-    except Exception as e:
-        event.add_field("db.error", e)
-        raise
-    else:
-        return result
-    finally:
-        diff = datetime.datetime.now() - start
-        vendor = context['connection'].vendor
+        event = libhoney.Event(data={
+            "trace.parent_id": str(self.parent_id),
+            "trace.trace_id": str(self.trace_id),
+            "trace.span_id": str(self.span_id),
+            "db.query": sql,
+            "db.query_args": params,
+        })
 
-        if vendor == "postgresql" or vendor == "mysql":
-            event.add_field("db.last_insert_id",
-                            context['cursor'].cursor.lastrowid)
-            event.add_field("db.rows_affected",
-                            context['cursor'].cursor.rowcount)
+        self.span_id = uuid.uuid4()
 
-        event.add_field("db.duration", diff.total_seconds() * 1000)
-        event.send()
+        try:
+            db_call_start = datetime.datetime.now()
+            result = execute(sql, params, many, context)
+            db_call_diff = datetime.datetime.now() - db_call_start
+            event.add_field("db.duration", db_call_diff.total_seconds() * 1000)
+        except Exception as e:
+            event.add_field("db.error", e)
+            raise
+        else:
+            return result
+        finally:
+            vendor = context['connection'].vendor
+
+            if vendor == "postgresql" or vendor == "mysql":
+                event.add_field("db.last_insert_id",
+                                context['cursor'].cursor.lastrowid)
+                event.add_field("db.rows_affected",
+                                context['cursor'].cursor.rowcount)
+
+            span_diff = datetime.datetime.now() - span_start
+            event.add_field("duration_ms", span_diff.total_seconds() * 1000)
+            event.send()
 
 
 class HoneyMiddleware:
@@ -44,9 +59,15 @@ class HoneyMiddleware:
         # Code to be executed for each request before
         # the view (and later middleware) are called.
 
+        trace_id = uuid.uuid4()
+
+        db_wrapper = DBWrapper(trace_id)
         with connection.execute_wrapper(db_wrapper):
             start = datetime.datetime.now()
             event = libhoney.Event(data={
+                "trace.parent_id": None,
+                "trace.trace_id": str(trace_id),
+                "trace.span_id": str(trace_id),
                 "request.host": request.get_host(),
                 "request.method": request.method,
                 "request.path": request.path,
