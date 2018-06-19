@@ -1,8 +1,8 @@
 import os
-import libhoney
 import datetime
-from django.db import connection
 import uuid
+import beeline
+from django.db import connection
 
 
 class DBWrapper(object):
@@ -14,7 +14,7 @@ class DBWrapper(object):
     def __call__(self, execute, sql, params, many, context):
         span_start = datetime.datetime.now()
 
-        event = libhoney.Event(data={
+        beeline._new_event(data={
             "trace.parent_id": str(self.parent_id),
             "trace.trace_id": str(self.trace_id),
             "trace.span_id": str(self.span_id),
@@ -28,9 +28,10 @@ class DBWrapper(object):
             db_call_start = datetime.datetime.now()
             result = execute(sql, params, many, context)
             db_call_diff = datetime.datetime.now() - db_call_start
-            event.add_field("db.duration", db_call_diff.total_seconds() * 1000)
+            beeline.add_field(
+                "db.duration", db_call_diff.total_seconds() * 1000)
         except Exception as e:
-            event.add_field("db.error", e)
+            beeline.add_field("db.error", e)
             raise
         else:
             return result
@@ -38,21 +39,21 @@ class DBWrapper(object):
             vendor = context['connection'].vendor
 
             if vendor == "postgresql" or vendor == "mysql":
-                event.add_field("db.last_insert_id",
-                                context['cursor'].cursor.lastrowid)
-                event.add_field("db.rows_affected",
-                                context['cursor'].cursor.rowcount)
+                beeline.add_field("db.last_insert_id",
+                                  context['cursor'].cursor.lastrowid)
+                beeline.add_field("db.rows_affected",
+                                  context['cursor'].cursor.rowcount)
 
             span_diff = datetime.datetime.now() - span_start
-            event.add_field("duration_ms", span_diff.total_seconds() * 1000)
-            event.send()
+            beeline.add_field("duration_ms", span_diff.total_seconds() * 1000)
+            beeline._send_event()
 
 
 class HoneyMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
-        libhoney.init(writekey=os.environ["HONEYCOMB_WRITE_KEY"],
-                      dataset=os.environ["HONEYCOMB_DATASET_NAME"])
+        beeline.init(writekey=os.environ["HONEYCOMB_WRITE_KEY"],
+                     dataset=os.environ["HONEYCOMB_DATASET_NAME"])
 
     def __call__(self, request):
 
@@ -61,10 +62,10 @@ class HoneyMiddleware:
 
         trace_id = uuid.uuid4()
 
-        db_wrapper = DBWrapper(trace_id)
+        db_wrapper = DBWrapper(trace_id=trace_id)
         with connection.execute_wrapper(db_wrapper):
             start = datetime.datetime.now()
-            event = libhoney.Event(data={
+            beeline._new_event(data={
                 "trace.parent_id": None,
                 "trace.trace_id": str(trace_id),
                 "trace.span_id": str(trace_id),
@@ -86,9 +87,9 @@ class HoneyMiddleware:
             # Code to be executed for each request/response after
             # the view is called.
 
-            event.add_field("response.status_code", response.status_code)
+            beeline.add_field("response.status_code", response.status_code)
             diff = datetime.datetime.now() - start
-            event.add_field("duration_ms", diff.total_seconds() * 1000)
-            event.send()
+            beeline.add_field("duration_ms", diff.total_seconds() * 1000)
+            beeline._send_event()
 
             return response
