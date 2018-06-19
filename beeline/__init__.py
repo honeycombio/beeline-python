@@ -2,15 +2,17 @@
 import os
 
 from libhoney import Client
+from beeline.state import ThreadLocalState
 
 g_client = None
+g_state = None
 
-def init(writekey='', dataset='', service_name='', sample_rate=1.0,
+def init(writekey='', dataset='', service_name='', state_manager=None, sample_rate=1,
         api_host='https://api.honeycomb.io', max_concurrent_batches=10,
         max_batch_size=100, send_frequency=0.25,
         block_on_send=False, block_on_response=False, transmission_impl=None):
     ''' initialize the honeycomb beeline. This will initialize a libhoney
-    client local to this module.
+    client local to this module, and a state manager for tracking event context.
 
     Args:
     - `writekey`: the authorization key for your team on Honeycomb. Find your team
@@ -29,7 +31,7 @@ def init(writekey='', dataset='', service_name='', sample_rate=1.0,
 
     If in doubt, just set `writekey` and `dataset` and move on!
     '''
-    global g_client
+    global g_client, g_state
     if g_client:
         return
 
@@ -53,9 +55,53 @@ def init(writekey='', dataset='', service_name='', sample_rate=1.0,
 
     g_client.add_field('service_name', service_name)
 
-def send_now(data):
-    if g_client:
-        g_client.send_now(data)
+    if state_manager:
+        g_state = state_manager
+    else:
+        g_state = ThreadLocalState()
+
+def add_field(name, value):
+    ''' Add a field to the currently active event. For example, if you are
+    using django and wish to add additional context to the current request
+    before it is sent to Honeycomb:
+
+    `beeline.add_field("my field", "my value")`
+    '''
+    if not g_state:
+        return
+    # fetch the current event from our state provider
+    ev = g_state.get_current_event()
+    # if no event is in state, we're a noop
+    if ev is None:
+        return
+
+    ev.add_field(name, value)
+
+def _new_event(data=None):
+    ''' internal - create a new event, populating it with the given data if
+    supplied. The event is added to the given State manager. To send the
+    event, call _send_event()
+    '''
+    if not g_client or not g_state:
+        return
+
+    ev = g_client.new_event()
+    if data:
+        ev.add(data)
+    g_state.add_event(ev)
+
+def _send_event():
+    ''' internal - send the current event in the state manager, if one exists
+    '''
+    if not g_client or not g_state:
+        return
+
+    ev = g_state.pop_event()
+    if ev is None:
+        return
+
+    ev.send()
+
 
 def close():
     ''' close the beeline client, flushing any unsent events. '''
