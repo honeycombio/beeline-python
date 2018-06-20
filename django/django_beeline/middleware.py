@@ -59,7 +59,7 @@ class HoneyMiddleware:
                 "request.query": request.GET,
                 "request.xhr": request.is_ajax(),
                 "request.post": request.POST
-            }, trace_name="django_request", trace_start=True)
+            }, trace_name="django_request", top_level=True)
 
             response = self.get_response(request)
 
