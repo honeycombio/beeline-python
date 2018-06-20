@@ -6,47 +6,31 @@ from django.db import connection
 
 
 class DBWrapper(object):
-    def __init__(self, trace_id):
-        self.trace_id = trace_id
-        self.parent_id = trace_id
-        self.span_id = uuid.uuid4()
 
     def __call__(self, execute, sql, params, many, context):
-        span_start = datetime.datetime.now()
+        with beeline.tracer("django_db_query"):
+            beeline.add_field("db.query", sql)
+            beeline.add_field("db.query_args", params)
 
-        beeline._new_event(data={
-            "trace.parent_id": str(self.parent_id),
-            "trace.trace_id": str(self.trace_id),
-            "trace.span_id": str(self.span_id),
-            "db.query": sql,
-            "db.query_args": params,
-        })
+            try:
+                db_call_start = datetime.datetime.now()
+                result = execute(sql, params, many, context)
+                db_call_diff = datetime.datetime.now() - db_call_start
+                beeline.add_field(
+                    "db.duration", db_call_diff.total_seconds() * 1000)
+            except Exception as e:
+                beeline.add_field("db.error", e)
+                raise
+            else:
+                return result
+            finally:
+                vendor = context['connection'].vendor
 
-        self.span_id = uuid.uuid4()
-
-        try:
-            db_call_start = datetime.datetime.now()
-            result = execute(sql, params, many, context)
-            db_call_diff = datetime.datetime.now() - db_call_start
-            beeline.add_field(
-                "db.duration", db_call_diff.total_seconds() * 1000)
-        except Exception as e:
-            beeline.add_field("db.error", e)
-            raise
-        else:
-            return result
-        finally:
-            vendor = context['connection'].vendor
-
-            if vendor == "postgresql" or vendor == "mysql":
-                beeline.add_field("db.last_insert_id",
-                                  context['cursor'].cursor.lastrowid)
-                beeline.add_field("db.rows_affected",
-                                  context['cursor'].cursor.rowcount)
-
-            span_diff = datetime.datetime.now() - span_start
-            beeline.add_field("duration_ms", span_diff.total_seconds() * 1000)
-            beeline._send_event()
+                if vendor == "postgresql" or vendor == "mysql":
+                    beeline.add_field("db.last_insert_id",
+                                      context['cursor'].cursor.lastrowid)
+                    beeline.add_field("db.rows_affected",
+                                      context['cursor'].cursor.rowcount)
 
 
 class HoneyMiddleware:
@@ -60,15 +44,10 @@ class HoneyMiddleware:
         # Code to be executed for each request before
         # the view (and later middleware) are called.
 
-        trace_id = uuid.uuid4()
-
-        db_wrapper = DBWrapper(trace_id=trace_id)
+        db_wrapper = DBWrapper()
         with connection.execute_wrapper(db_wrapper):
             start = datetime.datetime.now()
             beeline._new_event(data={
-                "trace.parent_id": None,
-                "trace.trace_id": str(trace_id),
-                "trace.span_id": str(trace_id),
                 "request.host": request.get_host(),
                 "request.method": request.method,
                 "request.path": request.path,
@@ -80,7 +59,7 @@ class HoneyMiddleware:
                 "request.query": request.GET,
                 "request.xhr": request.is_ajax(),
                 "request.post": request.POST
-            })
+            }, trace_name="django_request", trace_start=True)
 
             response = self.get_response(request)
 
