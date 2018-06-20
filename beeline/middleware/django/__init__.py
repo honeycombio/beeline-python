@@ -1,6 +1,4 @@
-import os
 import datetime
-import uuid
 import beeline
 from django.db import connection
 

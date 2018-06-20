@@ -1,6 +1,4 @@
-import os
 import datetime
-import inspect
 import beeline
 from flask import current_app
 
@@ -41,9 +39,6 @@ class HoneyMiddleware(object):
         self.app = app
         if app is not None:
             self.init_app(app)
-
-        beeline.init(writekey=os.environ["HONEYCOMB_WRITE_KEY"],
-                     dataset=os.environ["HONEYCOMB_DATASET_NAME"])
 
     def init_app(self, app):
         app.wsgi_app = HoneyWSGIMiddleWare(app.wsgi_app)
