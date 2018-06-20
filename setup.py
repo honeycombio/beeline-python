@@ -12,6 +12,7 @@ setup(
       packages=['beeline'],
       install_requires=[
           'libhoney',
+          'wrapt',
       ],
       tests_require=[
         'mock',

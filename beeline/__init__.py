@@ -1,5 +1,4 @@
 ''' module beeline '''
-import datetime
 import os
 
 from libhoney import Client
