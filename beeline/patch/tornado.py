@@ -2,6 +2,7 @@
 
 import beeline
 import tornado
+assert tornado # for pyflakes
 from wrapt import wrap_function_wrapper
 
 def log_request(_log_request, instance, args, kwargs):
