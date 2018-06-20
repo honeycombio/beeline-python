@@ -85,7 +85,7 @@ def add_field(name, value):
 def tracer(name):
     return g_tracer(name)
 
-def _new_event(data=None, trace_name='', trace_start=False):
+def _new_event(data=None, trace_name='', top_level=False):
     ''' internal - create a new event, populating it with the given data if
     supplied. The event is added to the given State manager. To send the
     event, call _send_event()
@@ -94,27 +94,24 @@ def _new_event(data=None, trace_name='', trace_start=False):
     between when the event is created and when the event is sent as
     `duration_ms`
 
-    If trace_start is True, resets any previous trace data. Set this in
-    top-level events (example: start of a request)
+    If top_level is True, resets any previous event state. Set this in
+    top-level events (example: start of a request) to ensure that state
+    and trace data are cleaned up from a previous execution.
     '''
     if not g_client or not g_state:
         return
 
-    if trace_start:
+    if top_level:
         g_state.reset()
 
-    ev = g_client.new_event()
+    if trace_name:
+        ev = g_tracer.new_traced_event(trace_name)
+    else:
+        ev = g_client.new_event()
+
     if data:
         ev.add(data)
-    if trace_name:
-        trace_id, parent_id, span_id = g_state.start_trace()
-        ev.add({
-            'trace.trace_id': trace_id,
-            'trace.parent_id': parent_id,
-            'trace.span_id': span_id,
-            'name': trace_name,
-        })
-        ev.start_time = datetime.datetime.now()
+
     g_state.add_event(ev)
 
 def _send_event():
@@ -125,17 +122,14 @@ def _send_event():
 
     ev = g_state.pop_event()
 
-    # if start time is set, this was a traced event
-    if hasattr(ev, 'start_time'):
-        duration = datetime.datetime.now() - ev.start_time
-        duration_ms = duration.total_seconds() * 1000.0
-        ev.add_field('duration_ms', duration_ms)
-        g_state.end_trace()
-
     if ev is None:
         return
 
-    ev.send()
+    # if start time is set, this was a traced event
+    if hasattr(ev, 'traced_event'):
+        g_tracer.send_traced_event(ev)
+    else:
+        ev.send()
 
 
 def close():

@@ -16,5 +16,6 @@ setup(
       tests_require=[
         'mock',
       ],
+      test_suite='beeline',
       zip_safe=False
 )
