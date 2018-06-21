@@ -1,7 +1,8 @@
+from mock import Mock
 import unittest
 import uuid
 
-from beeline.trace import _should_sample
+from beeline.trace import _should_sample, SynchronousTracer
 
 class TestTraceSampling(unittest.TestCase):
     def test_deterministic(self):
@@ -34,3 +35,17 @@ class TestTraceSampling(unittest.TestCase):
 
             self.assertLessEqual(sampled, acceptable_upper_bound)
             self.assertGreaterEqual(sampled, acceptable_lower_bound)
+
+class TestSynchronousTracer(unittest.TestCase):
+    def test_trace_context_manager_exception(self):
+        ''' ensure that send_traced_event is called even if an exception is
+        raised inside the context manager '''
+        m_client, m_state = Mock(), Mock()
+        tracer = SynchronousTracer(m_client, m_state)
+        try:
+            with tracer('foo'):
+                raise Exception('boom!')
+        except Exception:
+            pass
+        
+        m_state.pop_event.assert_called_once_with()

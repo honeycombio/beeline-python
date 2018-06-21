@@ -16,11 +16,13 @@ class SynchronousTracer(Tracer):
 
     @contextmanager
     def __call__(self, name):
-        ev = self.new_traced_event(name)
-        self._state.add_event(ev)
-        yield
-        ev = self._state.pop_event()
-        self.send_traced_event(ev)
+        try:
+            ev = self.new_traced_event(name)
+            self._state.add_event(ev)
+            yield
+        finally:
+            ev = self._state.pop_event()
+            self.send_traced_event(ev)
 
     def new_traced_event(self, name):
         '''
