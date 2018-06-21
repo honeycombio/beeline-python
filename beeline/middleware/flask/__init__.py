@@ -9,8 +9,7 @@ class HoneyWSGIMiddleware(object):
         self.app = app
 
     def __call__(self, environ, start_response):
-
-        self.start = datetime.datetime.now()
+        trace_name = "flask_http_%s" % environ['REQUEST_METHOD'].lower()
         beeline._new_event(data={
             "type": "http_server",
             "request.host": environ['HTTP_HOST'],
@@ -21,14 +20,10 @@ class HoneyWSGIMiddleware(object):
             "request.user_agent": environ['HTTP_USER_AGENT'],
             "request.scheme": environ['wsgi.url_scheme'],
             "request.query": environ['QUERY_STRING']
-        }, trace_name="flask_request", top_level=True)
+        }, trace_name=trace_name, top_level=True)
 
         def _start_response(status, headers, *args):
-            diff = datetime.datetime.now() - self.start
-            beeline.add({
-                "response.status_code": status,
-                "duration_ms": diff.total_seconds() * 1000,
-            })
+            beeline.add_field("response.status_code", status)
             beeline._send_event()
 
             return start_response(status, headers, *args)

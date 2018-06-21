@@ -6,7 +6,10 @@ from django.db import connection
 class HoneyDBWrapper(object):
 
     def __call__(self, execute, sql, params, many, context):
-        with beeline.tracer("django_db_query"):
+        vendor = context['connection'].vendor
+        trace_name = "django_%s_query" % vendor
+
+        with beeline.tracer(trace_name):
             beeline.add({
                 "type": "db",
                 "db.query": sql,
@@ -25,11 +28,9 @@ class HoneyDBWrapper(object):
             else:
                 return result
             finally:
-                vendor = context['connection'].vendor
-
                 if vendor == "postgresql" or vendor == "mysql":
                     beeline.add({
-                        "db.last_insert_id": context['cursor'].cursor.lastrowid, 
+                        "db.last_insert_id": context['cursor'].cursor.lastrowid,
                         "db.rows_affected": context['cursor'].cursor.rowcount,
                     })
 
@@ -44,8 +45,8 @@ class HoneyMiddleware:
         # the view (and later middleware) are called.
 
         db_wrapper = HoneyDBWrapper()
+        trace_name = "django_http_%s" % request.method.lower()
         with connection.execute_wrapper(db_wrapper):
-            start = datetime.datetime.now()
             beeline._new_event(data={
                 "type": "http_server",
                 "request.host": request.get_host(),
@@ -59,18 +60,14 @@ class HoneyMiddleware:
                 "request.query": request.GET,
                 "request.xhr": request.is_ajax(),
                 "request.post": request.POST
-            }, trace_name="django_request", top_level=True)
+            }, trace_name=trace_name, top_level=True)
 
             response = self.get_response(request)
 
             # Code to be executed for each request/response after
             # the view is called.
-            
-            diff = datetime.datetime.now() - start
-            beeline.add({
-                "response.status_code": response.status_code,
-                "duration_ms": diff.total_seconds() * 1000,
-            })
+
+            beeline.add_field("response.status_code", response.status_code)
             beeline._send_event()
 
             return response
