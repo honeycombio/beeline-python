@@ -1,7 +1,6 @@
 # Honeycomb Beeline for Python
 
-The Honeycomb Beeline for Python is an easy way to instrument your Python web application for observability. It is compatible with the frameworks Django, Flask, and Tornado,
-automatically instrumenting them to send useful events to [Honeycomb](https://www.honeycomb.io).
+The Honeycomb Beeline for Python is an easy way to instrument your Python web application for observability. It is compatible with the frameworks Django, Flask, and Tornado, automatically instrumenting them to send useful events to [Honeycomb](https://www.honeycomb.io).
 
 Compatible with both Python 2.7 and Python 3. Sign up for a [Honeycomb trial](https://ui.honeycomb.io/signup) to obtain an API key before starting.
 
@@ -9,38 +8,9 @@ Compatible with both Python 2.7 and Python 3. Sign up for a [Honeycomb trial](ht
 
 Fill me in!
 
-## Instrumented Frameworks
-
-The Beeline will automatically send events if you are using one of the listed frameworks:
-
-### Django
-
-The beeline uses Django's request/response middleware and database query execution wrapper to automatically instrument your HTTP requests and database queries, and also supports tracing.
-
-To begin, add the following to the middleware section of your settings.py file:
-
-```python
-'beeline.middleware.django.HoneyMiddleware',
-```
-
-### Flask
-
-The beeline makes use of WSGI middleware to instrument HTTP requests and also supports tracing. If you are using Flask's SQLAlchemy extension, you will also get built-in database query instrumentation.
-
-To use it, add the following code where your Flask app is initialized:
-
-```python
-from beeline.middleware.flask import HoneyMiddleware
-
-app = Flask(__name__)
-HoneyMiddleware(app)
-```
-
-### Tornado
-
-Fill me in!
-
 ## Configuration
+
+The Beeline will automatically send events if you are using Django, Flask, or Tornado.
 
 You'll need to configure your Honeycomb API key so that your app can identify itself to Honeycomb. You can find your API key on [your Account page](https://ui.honeycomb.io/account).
 
@@ -57,6 +27,50 @@ beeline.init(
 ```
 
 Note that Honeycomb API keys have the ability to create and delete data, and should be managed in the same way as your other application secrets. For example you might prefer to configure production API keys via environment variables, rather than checking them into version control.
+
+### Django
+
+The beeline uses Django's request/response middleware and database query execution wrapper to automatically instrument your HTTP requests and database queries, and also supports tracing.
+
+To begin, add the following to the middleware section of your settings.py file:
+
+```python
+'beeline.middleware.django.HoneyMiddleware',
+```
+
+Then, initialize the beeline in your code:
+
+```python
+beeline.init(
+  writekey: '<MY HONEYCOMB API KEY>',
+  dataset: 'my-app',
+  service_name: 'my-app'
+)
+```
+
+### Flask
+
+The beeline makes use of WSGI middleware to instrument HTTP requests and also supports tracing. If you are using Flask's SQLAlchemy extension, you will also get built-in database query instrumentation.
+
+To use it, add the following code where your Flask app is initialized:
+
+```python
+import beeline
+from beeline.middleware.flask import HoneyMiddleware
+
+beeline.init(
+  writekey: '<MY HONEYCOMB API KEY>',
+  dataset: 'my-app',
+  service_name: 'my-app'
+)
+
+app = Flask(__name__)
+HoneyMiddleware(app)
+```
+
+### Tornado
+
+Fill me in!
 
 ## Example questions
 
@@ -115,13 +129,15 @@ Here is an example of a database query event emitted by the Beeline:
 }
 ```
 
-## Adding additional context
+## Adding additional context to events
 
 The Beeline will automatically instrument your incoming HTTP requests and database queries to send events to Honeycomb. However, it can be very helpful to extend these events with additional context specific to your app.  You can add your own fields by calling `beeline.add_field(name, value)`.
 
 ## Tracing
 
-The Beeline will automatically add tracing to your incoming HTTP requests and database queries before sending events to Honeycomb. However, it can be very helpful to extend add tracing to additional calls within your code.  You can add your own tracing spans by calling `beeline._new_event()` with the `trace_name` and `top_level` params, or by using the tracing context manager `with beeline.trace(trace_name):`
+The Beeline will automatically add tracing to your incoming HTTP requests and database queries before sending events to Honeycomb. However, it can be very helpful to add tracing in additional places within your code.  You can add your own tracing spans by calling `beeline._new_event()` with the `trace_name` and `top_level` params, or by using the tracing context manager `with beeline.trace(trace_name):`
+
+Fill in examples!
 
 ## Known limitations
 
