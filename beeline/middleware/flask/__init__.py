@@ -3,7 +3,7 @@ import beeline
 from flask import current_app
 
 
-class HoneyWSGIMiddleWare(object):
+class HoneyWSGIMiddleware(object):
 
     def __init__(self, app):
         self.app = app
@@ -12,6 +12,7 @@ class HoneyWSGIMiddleWare(object):
 
         self.start = datetime.datetime.now()
         beeline._new_event(data={
+            "type": "http_server",
             "request.host": environ['HTTP_HOST'],
             "request.method": environ['REQUEST_METHOD'],
             "request.path": environ['PATH_INFO'],
@@ -23,9 +24,11 @@ class HoneyWSGIMiddleWare(object):
         }, trace_name="flask_request", top_level=True)
 
         def _start_response(status, headers, *args):
-            beeline.add_field("response.status_code", status)
             diff = datetime.datetime.now() - self.start
-            beeline.add_field("duration_ms", diff.total_seconds() * 1000)
+            beeline.add({
+                "response.status_code": status,
+                "duration_ms": diff.total_seconds() * 1000,
+            })
             beeline._send_event()
 
             return start_response(status, headers, *args)
@@ -33,7 +36,7 @@ class HoneyWSGIMiddleWare(object):
         return self.app(environ, _start_response)
 
 
-class HoneyMiddleware(object):
+class HoneyDBMiddleware(object):
 
     def __init__(self, app=None):
         self.app = app
@@ -41,8 +44,6 @@ class HoneyMiddleware(object):
             self.init_app(app)
 
     def init_app(self, app):
-        app.wsgi_app = HoneyWSGIMiddleWare(app.wsgi_app)
-
         try:
             from sqlalchemy.engine import Engine
             from sqlalchemy.event import listen
@@ -57,6 +58,7 @@ class HoneyMiddleware(object):
             return
 
         beeline._new_event(data={
+            "type": "db",
             "db.query": statement,
             "db.query_args": parameters,
         }, trace_name="flask_db_query")
@@ -69,7 +71,9 @@ class HoneyMiddleware(object):
 
         query_duration = datetime.datetime.now() - self.query_start_time
 
-        beeline.add_field("db.duration", query_duration.total_seconds() * 1000)
-        beeline.add_field("db.last_insert_id", cursor.lastrowid)
-        beeline.add_field("db.rows_affected", cursor.rowcount)
+        beeline.add({
+            "db.duration": query_duration.total_seconds() * 1000,
+            "db.last_insert_id": cursor.lastrowid,
+            "db.rows_affected": cursor.rowcount,
+        })
         beeline._send_event()

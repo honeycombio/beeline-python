@@ -7,8 +7,11 @@ class HoneyDBWrapper(object):
 
     def __call__(self, execute, sql, params, many, context):
         with beeline.tracer("django_db_query"):
-            beeline.add_field("db.query", sql)
-            beeline.add_field("db.query_args", params)
+            beeline.add({
+                "type": "db",
+                "db.query": sql,
+                "db.query_args": params,
+            })
 
             try:
                 db_call_start = datetime.datetime.now()
@@ -25,10 +28,10 @@ class HoneyDBWrapper(object):
                 vendor = context['connection'].vendor
 
                 if vendor == "postgresql" or vendor == "mysql":
-                    beeline.add_field("db.last_insert_id",
-                                      context['cursor'].cursor.lastrowid)
-                    beeline.add_field("db.rows_affected",
-                                      context['cursor'].cursor.rowcount)
+                    beeline.add({
+                        "db.last_insert_id": context['cursor'].cursor.lastrowid, 
+                        "db.rows_affected": context['cursor'].cursor.rowcount,
+                    })
 
 
 class HoneyMiddleware:
@@ -44,6 +47,7 @@ class HoneyMiddleware:
         with connection.execute_wrapper(db_wrapper):
             start = datetime.datetime.now()
             beeline._new_event(data={
+                "type": "http_server",
                 "request.host": request.get_host(),
                 "request.method": request.method,
                 "request.path": request.path,
@@ -61,10 +65,12 @@ class HoneyMiddleware:
 
             # Code to be executed for each request/response after
             # the view is called.
-
-            beeline.add_field("response.status_code", response.status_code)
+            
             diff = datetime.datetime.now() - start
-            beeline.add_field("duration_ms", diff.total_seconds() * 1000)
+            beeline.add({
+                "response.status_code": response.status_code,
+                "duration_ms": diff.total_seconds() * 1000,
+            })
             beeline._send_event()
 
             return response

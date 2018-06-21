@@ -9,10 +9,11 @@ g_client = None
 g_state = None
 g_tracer = None
 
+
 def init(writekey='', dataset='', service_name='', state_manager=None, tracer=None,
-        sample_rate=1, api_host='https://api.honeycomb.io', max_concurrent_batches=10,
-        max_batch_size=100, send_frequency=0.25,
-        block_on_send=False, block_on_response=False, transmission_impl=None):
+         sample_rate=1, api_host='https://api.honeycomb.io', max_concurrent_batches=10,
+         max_batch_size=100, send_frequency=0.25,
+         block_on_send=False, block_on_response=False, transmission_impl=None):
     ''' initialize the honeycomb beeline. This will initialize a libhoney
     client local to this module, and a state manager for tracking event context.
 
@@ -64,6 +65,7 @@ def init(writekey='', dataset='', service_name='', state_manager=None, tracer=No
 
     g_tracer = SynchronousTracer(g_client, g_state)
 
+
 def add_field(name, value):
     ''' Add a field to the currently active event. For example, if you are
     using django and wish to add additional context to the current request
@@ -81,8 +83,28 @@ def add_field(name, value):
 
     ev.add_field(name, value)
 
+
+def add(data):
+    '''Similar to add_field(), but allows you to add a number of name:value pairs 
+    to the currently active event at the same time.
+
+    `beeline.add({ "first_field": "a", "second_field": "b"})`
+    '''
+    if not g_state:
+        return
+    # fetch the current event from our state provider
+    ev = g_state.get_current_event()
+    # if no event is in state, we're a noop
+    if ev is None:
+        return
+
+    for name, value in data.items():
+        ev.add_field(name, value)
+
+
 def tracer(name):
     return g_tracer(name)
+
 
 def _new_event(data=None, trace_name='', top_level=False):
     ''' internal - create a new event, populating it with the given data if
@@ -112,6 +134,7 @@ def _new_event(data=None, trace_name='', top_level=False):
         ev.add(data)
 
     g_state.add_event(ev)
+
 
 def _send_event():
     ''' internal - send the current event in the state manager, if one exists
