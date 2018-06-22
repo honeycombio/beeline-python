@@ -98,8 +98,7 @@ def add(data):
     if ev is None:
         return
 
-    for name, value in data.items():
-        ev.add_field(name, value)
+    ev.add(data)
 
 
 def tracer(name):
