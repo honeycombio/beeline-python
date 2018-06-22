@@ -11,13 +11,13 @@ def log_request(_log_request, instance, args, kwargs):
         if len(args) == 1:
             handler = args[0]
             beeline.send_now({
-                "request_duration_ms": handler.request.request_time() * 1000.0,
-                "method": handler.request.method,
-                "uri": handler.request.uri,
-                "remote_ip": handler.request.remote_ip,
-                "path": handler.request.uri,
-                "query": handler.request.query,
-                "http_status": handler.get_status(),
+                "duration_ms": handler.request.request_time() * 1000.0,
+                "request.method": handler.request.method,
+                "request.remote_addr": handler.request.remote_ip,
+                "request.path": handler.request.uri,
+                "request.query": handler.request.query,
+                "request.host": handler.request.headers.get('Host'),
+                "response.status_code": handler.get_status(),
             })
     except Exception:
         pass
@@ -30,13 +30,13 @@ def log_exception(_log_exception, instance, args, kwargs):
         if len(args) == 3:
             value = args[2]
             beeline.send_now({
-                "method": instance.request.method,
-                "uri": instance.request.uri,
-                "remote_ip": instance.request.remote_ip,
-                "path": instance.request.uri,
-                "query": instance.request.query,
-                "exception_type": type(value).__name__,
-                "exception_message": str(value),
+                "request.method": instance.request.method,
+                "request.path": instance.request.uri,
+                "request.remote_addr": instance.request.remote_ip,
+                "request.query": instance.request.query,
+                "request.host": instance.request.get('Host'),
+                "request.error": type(value).__name__,
+                "request.error_detail": str(value),
             })
     except Exception:
         pass
