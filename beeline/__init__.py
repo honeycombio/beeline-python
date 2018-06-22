@@ -1,9 +1,11 @@
 ''' module beeline '''
 import os
+import socket
 
 from libhoney import Client
 from beeline.state import ThreadLocalState
 from beeline.trace import SynchronousTracer
+from beeline.version import VERSION
 
 g_client = None
 g_state = None
@@ -57,6 +59,8 @@ def init(writekey='', dataset='', service_name='', state_manager=None, tracer=No
     )
 
     g_client.add_field('service_name', service_name)
+    g_client.add_field('meta.beeline_version', VERSION)
+    g_client.add_field('meta.local_hostname', socket.gethostname())
 
     if state_manager:
         g_state = state_manager
@@ -64,6 +68,21 @@ def init(writekey='', dataset='', service_name='', state_manager=None, tracer=No
         g_state = ThreadLocalState()
 
     g_tracer = SynchronousTracer(g_client, g_state)
+
+
+def send_now(data):
+    ''' Create an event and enqueue it immediately. Does not work with
+    `beeline.add_field` - this is equivalent to calling `libhoney.send_now`
+    '''
+    # no-op if we're not initialized
+    if not g_client:
+        return
+    ev = g_client.new_event()
+
+    if data:
+        ev.add(data)
+
+    ev.send()
 
 
 def add_field(name, value):
