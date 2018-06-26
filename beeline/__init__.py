@@ -3,6 +3,7 @@ import os
 import socket
 
 from libhoney import Client
+from libhoney.errors import SendError
 from beeline.state import ThreadLocalState
 from beeline.trace import SynchronousTracer
 from beeline.version import VERSION
@@ -104,7 +105,7 @@ def add_field(name, value):
 
 
 def add(data):
-    '''Similar to add_field(), but allows you to add a number of name:value pairs 
+    '''Similar to add_field(), but allows you to add a number of name:value pairs
     to the currently active event at the same time.
 
     `beeline.add({ "first_field": "a", "second_field": "b"})`
@@ -171,6 +172,25 @@ def _send_event():
     else:
         ev.send()
 
+def _send_all():
+    ''' internal - send all events in the event stack, regardless of their
+    state
+    '''
+    if not g_client or not g_state:
+        return
+
+    ev = g_state.pop_event()
+    while ev:
+        try:
+            if hasattr(ev, 'traced_event'):
+                g_tracer.send_traced_event(ev)
+            else:
+                ev.send()
+        except SendError:
+            # disregard any errors due to uninitialized events
+            pass
+
+        ev = g_state.pop_event()
 
 def close():
     ''' close the beeline client, flushing any unsent events. '''
