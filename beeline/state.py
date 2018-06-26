@@ -14,7 +14,7 @@ class State(object):
 class ThreadLocalState(State):
     ''' Simple state manager that uses threadlocals to store state for pending
     Honeycomb events. Uses a stack to track nested events within the same
-    thread. This will not work in asynchronous runtimes like asyncio or tornado
+    thread. This will not work in asynchronous runtimes like asyncio or tornado.
     '''
     def __init__(self):
         self._state = threading.local()

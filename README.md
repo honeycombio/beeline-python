@@ -6,7 +6,7 @@ Compatible with both Python 2.7 and Python 3. Sign up for a [Honeycomb trial](ht
 
 ## Installation
 
-Fill me in!
+```pip install beeline```
 
 ## Configuration
 
@@ -84,7 +84,23 @@ HoneyDBMiddleware(app)          # to use our database middleware with Flask-SQLA
 
 ### Tornado
 
-Fill me in!
+In our initial release, we have limited instrumentation support for Tornado Web RequestHandlers. To instrument HTTP requests and exceptions, simply add a few lines of code to your app init:
+
+```python
+import beeline
+import libhoney
+from beeline.patch import tornado
+
+beeline.init(
+  writekey='<MY HONEYCOMB API KEY>',
+  dataset='my-app',
+  service_name='my-app',
+   # use a tornado coroutine rather than a threadpool to send events
+  transmission_impl=libhoney.transmission.TornadoTransmission(),
+)
+```
+
+Full tracing support is on our roadmap, as is support for other asynchronous frameworks.
 
 ## Example questions
 
@@ -164,9 +180,12 @@ The Beeline will automatically instrument your incoming HTTP requests and databa
 
 ## Tracing
 
-The Beeline will automatically add tracing to your incoming HTTP requests and database queries before sending events to Honeycomb. However, it can be very helpful to add tracing in additional places within your code. You can add your own tracing spans by calling `beeline._new_event()` with the `trace_name` and `top_level` params, or by using the tracing context manager `with beeline.trace(trace_name):`
+The Beeline will automatically add tracing to your incoming HTTP requests and database queries before sending events to Honeycomb. However, it can be very helpful to add tracing in additional places within your code. For example, if you have some code that does an expensive computation, you could simply wrap it in the tracer context manager like so:
 
-Fill in examples!
+```python
+with beeline.tracer("my expensive computation"):
+    recursive_fib(100)
+```
 
 ## Known limitations
 
