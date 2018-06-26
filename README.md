@@ -6,7 +6,7 @@ Compatible with both Python 2.7 and Python 3. Sign up for a [Honeycomb trial](ht
 
 ## Installation
 
-```pip install beeline```
+```pip install honeycomb-beeline```
 
 ## Configuration
 
