@@ -1,6 +1,6 @@
 # Honeycomb Beeline for Python
 
-The Honeycomb Beeline for Python is an easy way to instrument your Python web application for observability. It is compatible with the frameworks Django, Flask, and Tornado, automatically instrumenting them to send useful events to [Honeycomb](https://www.honeycomb.io).
+The Honeycomb Beeline for Python is an easy way to instrument your Python web application for observability. It is compatible with the frameworks Django, Flask, Bottle, and Tornado, automatically instrumenting them to send useful events to [Honeycomb](https://www.honeycomb.io).
 
 Compatible with both Python 2.7 and Python 3. Sign up for a [Honeycomb trial](https://ui.honeycomb.io/signup) to obtain an API key before starting.
 
@@ -10,7 +10,7 @@ Compatible with both Python 2.7 and Python 3. Sign up for a [Honeycomb trial](ht
 
 ## Configuration
 
-The Beeline will automatically send events if you are using Django, Flask, or Tornado.
+The Beeline will automatically send events if you are using Django, Flask, Bottle, or Tornado.
 
 You'll need to configure your Honeycomb API key so that your app can identify itself to Honeycomb. You can find your API key on [your Account page](https://ui.honeycomb.io/account).
 
@@ -80,6 +80,27 @@ beeline.init(
 app = Flask(__name__)
 app.wsgi_app = HoneyWSGIMiddleware(app.wsgi_app)
 HoneyDBMiddleware(app)          # to use our database middleware with Flask-SQLAlchemy
+```
+
+### Bottle
+
+The beeline makes use of WSGI middleware to instrument HTTP requests and also supports tracing. 
+
+To use it, add the following code where your Bottle app is initialized:
+
+```python
+import beeline
+from beeline.middleware.bottle import HoneyWSGIMiddleware
+
+beeline.init(
+  writekey='<MY HONEYCOMB API KEY>',
+  dataset='my-app',
+  service_name='my-app'
+)
+
+app = bottle.app()
+myapp = HoneyWSGIMiddleware(app)
+bottle.run(app=myapp)
 ```
 
 ### Tornado
