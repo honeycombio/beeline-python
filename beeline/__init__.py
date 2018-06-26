@@ -8,6 +8,8 @@ from beeline.state import ThreadLocalState
 from beeline.trace import SynchronousTracer
 from beeline.version import VERSION
 
+USER_AGENT_ADDITION = "beeline-python/%s" % VERSION
+
 g_client = None
 g_state = None
 g_tracer = None
@@ -57,6 +59,7 @@ def init(writekey='', dataset='', service_name='', state_manager=None, tracer=No
         max_batch_size=max_batch_size, send_frequency=send_frequency,
         block_on_send=block_on_send, block_on_response=block_on_response,
         transmission_impl=transmission_impl,
+        user_agent_addition=USER_AGENT_ADDITION,
     )
 
     g_client.add_field('service_name', service_name)
