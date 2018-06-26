@@ -8,6 +8,8 @@ Compatible with both Python 2.7 and Python 3. Sign up for a [Honeycomb trial](ht
 
 ```pip install honeycomb-beeline```
 
+Note: Make sure your version of `setuptools` is up to date (`pip install -U setuptools`).
+
 ## Configuration
 
 The Beeline will automatically send events if you are using Django, Flask, Bottle, or Tornado.
