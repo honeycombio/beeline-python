@@ -92,6 +92,10 @@ def add_field(name, value):
     before it is sent to Honeycomb:
 
     `beeline.add_field("my field", "my value")`
+
+    The "active event" is determined by the state manager. If a field is being
+    attributed to the wrong event, make sure that `_new_event` and `_close_event`
+    calls are matched.
     '''
     if not g_state:
         return
@@ -128,11 +132,13 @@ def tracer(name):
 def _new_event(data=None, trace_name='', top_level=False):
     ''' internal - create a new event, populating it with the given data if
     supplied. The event is added to the given State manager. To send the
-    event, call _send_event()
+    event, call _send_event(). There should be a _send_event() for each
+    call to _new_event(), or tracing and `add` and `add_field` will not
+    work correctly.
 
     If `trace_name` is set, generate trace metadata and measure the time
     between when the event is created and when the event is sent as
-    `duration_ms`
+    `duration_ms`.
 
     If top_level is True, resets any previous event state. Set this in
     top-level events (example: start of a request) to ensure that state
@@ -156,7 +162,7 @@ def _new_event(data=None, trace_name='', top_level=False):
 
 
 def _send_event():
-    ''' internal - send the current event in the state manager, if one exists
+    ''' internal - send the current event in the state manager, if one exists.
     '''
     if not g_client or not g_state:
         return
