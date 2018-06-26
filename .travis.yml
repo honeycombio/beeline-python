@@ -5,5 +5,11 @@ python:
 - '3.6'
 install: pip install pyflakes==1.5.0
 script: pyflakes beeline && python setup.py test
-#after_deploy:
-#- ./push_docs.sh
+deploy:
+  provider: pypi
+  user: honeycomb
+  on:
+    tags: true
+    repo: honeycombio/libhoney-py
+  password:
+    secure: dT3CNP2QTguS1s2l+2KzZO89iKa7wzQvyAJLqRJmWZu2tmQ0Xj8Ytdqo6dq++JAQFG/3CmaioLdW3Xls30xNbuQIO3rVTKZmNCHbw5DDs+OGmabIM2tsJdnv9H5bj7Mrng1kkFL1E6EaTZN2wXX3uLBJoKAfriv9htBwKgtbwO2SJE3io8pbLLm8GcjkWpr5lWGyw4TAPcYaW8lXWik0FBor6v9QDjckka2g72laJUYi2+zEJblCCQBGJS5+4LtXgH+Ln95vmJQ5UC/n9AkefMOf/3yW72aLMFz+8ywKFc2HhbpjQ+DOAy3q6XspLiGOIJRkYhTk/WrWHtWeAqL86UNVQIQcef+lkJZpS5KNxzYbd2I6P+MM7/QX9V/GLnqJ8HXQNBbRw1e16oEasmp1ume97RvJ0/VnY5G3fesO8u4r69k41poUVFivQs1b0LtSlWhbZw/jyXOrOkk0qj6bMS9Czh+lytfOQN1KAL/ciPrDz59IN1hhbnNIkxt79CuFQhCMAHHahFdK8qV0KP+B2OcAk5H6BIoD2RhOWlFgDf09PD8FR12F53I3LAwCbCegHIle+n74jrAjP+1HXnK1eNecepukJCLkH6RfDrlMiqMD6FjIm/i3AhZ8hxEaJ3yD5suuyMhAuvLa8MZ+tjP65FGZ1hAhf9Rjc6V44XCpNEE=

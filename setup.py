@@ -4,7 +4,7 @@ setup(
       python_requires='>=2.7',
       name='honeycomb-beeline',
       version='0.0.1',
-      description='Honeycomb library for rapid instrumentation',
+      description='Honeycomb library for easy instrumentation',
       url='https://github.com/honeycombio/beeline-python',
       author='Honeycomb.io',
       author_email='feedback@honeycomb.io',
