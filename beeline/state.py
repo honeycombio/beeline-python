@@ -20,8 +20,8 @@ class ThreadLocalState(State):
         self._state = threading.local()
 
     def reset(self):
-        self._event_stack().clear()
-        self._trace_stack().clear()
+        self._state.trace_stack = []
+        self._state.event_stack = []
 
     def _trace_stack(self):
         if not hasattr(self._state, 'trace_stack'):

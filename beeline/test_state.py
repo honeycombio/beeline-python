@@ -85,3 +85,12 @@ class TestThreadLocalState(unittest.TestCase):
         self.assertEqual(e, e2)
         e = state.pop_event()
         self.assertEqual(e, e1)
+
+    def test_event_state_reset(self):
+        e1 = Mock()
+        state = ThreadLocalState()
+
+        state.add_event(e1)
+        self.assertEqual(state.get_current_event(), e1)
+        state.reset()
+        self.assertEqual(state.get_current_event(), None)
