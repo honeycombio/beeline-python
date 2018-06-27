@@ -35,18 +35,17 @@ class HoneyDBWrapper(object):
                     })
 
 
-class HoneyMiddleware:
+class HoneyMiddleware(object):
     def __init__(self, get_response):
         self.get_response = get_response
 
     def __call__(self, request):
 
-        # Code to be executed for each request before
-        # the view (and later middleware) are called.
+        def create_http_event(request):
+            # Code to be executed for each request before
+            # the view (and later middleware) are called.
 
-        db_wrapper = HoneyDBWrapper()
-        trace_name = "django_http_%s" % request.method.lower()
-        with connection.execute_wrapper(db_wrapper):
+            trace_name = "django_http_%s" % request.method.lower()
             beeline._new_event(data={
                 "type": "http_server",
                 "request.host": request.get_host(),
@@ -71,3 +70,13 @@ class HoneyMiddleware:
             beeline._send_event()
 
             return response
+
+        try:
+            db_wrapper = HoneyDBWrapper()
+            # db instrumentation is only present in Django > 2.0
+            with connection.execute_wrapper(db_wrapper):
+                response = create_http_event(request)
+        except AttributeError:
+            response = create_http_event(request)
+
+        return response
