@@ -1,18 +1,18 @@
 # Honeycomb Beeline for Python
 
-The Honeycomb Beeline for Python is an easy way to instrument your Python web application for observability. It is compatible with the frameworks Django, Flask, Bottle, and Tornado, automatically instrumenting them to send useful events to [Honeycomb](https://www.honeycomb.io).
+The Honeycomb Beeline for Python is an easy way to instrument your Python web application for observability. It is compatible with the frameworks Django (>1.10), Flask, Bottle, and Tornado, automatically instrumenting them to send useful events to [Honeycomb](https://www.honeycomb.io).
 
 Compatible with both Python 2.7 and Python 3. Sign up for a [Honeycomb trial](https://ui.honeycomb.io/signup) to obtain an API key before starting.
 
 ## Installation
 
-```pip install honeycomb-beeline```
+`pip install honeycomb-beeline`
 
 Note: Make sure your version of `setuptools` is up to date (`pip install -U setuptools`).
 
 ## Configuration
 
-The Beeline will automatically send events if you are using Django, Flask, Bottle, or Tornado.
+The Beeline will automatically send events if you are using Django (>1.10), Flask, Bottle, or Tornado.
 
 You'll need to configure your Honeycomb API key so that your app can identify itself to Honeycomb. You can find your API key on [your Account page](https://ui.honeycomb.io/account).
 
@@ -32,7 +32,7 @@ Note that Honeycomb API keys have the ability to create and delete data, and sho
 
 ### Django
 
-The beeline uses Django's request/response middleware and database query execution wrapper to automatically instrument your HTTP requests and database queries, and also supports tracing.
+The beeline uses Django's request/response middleware (>1.10) and database query execution wrapper (>2.0) to automatically instrument your HTTP requests and database queries, and also supports tracing.
 
 To begin, add the following to the middleware section of your settings.py file:
 
@@ -86,7 +86,7 @@ HoneyDBMiddleware(app)          # to use our database middleware with Flask-SQLA
 
 ### Bottle
 
-The beeline makes use of WSGI middleware to instrument HTTP requests and also supports tracing. 
+The beeline makes use of WSGI middleware to instrument HTTP requests and also supports tracing.
 
 To use it, add the following code where your Bottle app is initialized:
 
