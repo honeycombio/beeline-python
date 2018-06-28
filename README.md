@@ -71,7 +71,7 @@ To use it, add the following code where your Flask app is initialized:
 
 ```python
 import beeline
-from beeline.middleware.flask import HoneyWSGIMiddleware, HoneyDBMiddleware
+from beeline.middleware.flask import HoneyMiddleware
 
 beeline.init(
   writekey='<MY HONEYCOMB API KEY>',
@@ -80,8 +80,8 @@ beeline.init(
 )
 
 app = Flask(__name__)
-app.wsgi_app = HoneyWSGIMiddleware(app.wsgi_app)
-HoneyDBMiddleware(app)          # to use our database middleware with Flask-SQLAlchemy
+# db_events defaults to True, set to False if not using our db middleware with Flask-SQLAlchemy
+app= HoneyMiddleware(app, db_events=False)
 ```
 
 ### Bottle
