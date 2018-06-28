@@ -2,6 +2,31 @@ import datetime
 import beeline
 from flask import current_app
 
+global signals
+
+try:
+    import blinker
+    signals = True
+    from flask import request_tearing_down
+except ImportError:
+    signals = False
+
+
+class HoneyMiddleware(object):
+
+    def __init__(self, app, db_events=True):
+        self.app = app
+        if signals:
+            self.app.teardown_request(self._teardown_request)
+        app.wsgi_app = HoneyWSGIMiddleware(app.wsgi_app)
+        if db_events:
+            app = HoneyDBMiddleware(app)
+
+    def _teardown_request(self, exception):
+        if exception:
+            beeline.add_field('request.error_detail', str(exception))
+            beeline._send_event()
+
 
 class HoneyWSGIMiddleware(object):
 
@@ -23,11 +48,15 @@ class HoneyWSGIMiddleware(object):
         }, trace_name=trace_name, top_level=True)
 
         def _start_response(status, headers, *args):
-            beeline.add_field("response.status_code", status)
-            beeline._send_event()
+            status_code = int(status[0:4])
+            beeline.add_field("response.status_code", status_code)
+            if status_code != 500:
+                beeline._send_event()
+            elif status_code == 500 and not signals:
+                beeline._send_event()
 
             return start_response(status, headers, *args)
-        
+
         return self.app(environ, _start_response)
 
 
