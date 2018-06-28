@@ -27,7 +27,7 @@ class HoneyWSGIMiddleware(object):
             beeline._send_event()
 
             return start_response(status, headers, *args)
-
+        
         return self.app(environ, _start_response)
 
 
@@ -45,6 +45,7 @@ class HoneyDBMiddleware(object):
 
             listen(Engine, 'before_cursor_execute', self.before_cursor_execute)
             listen(Engine, 'after_cursor_execute', self.after_cursor_execute)
+            listen(Engine, 'handle_error', self.handle_error)
         except ImportError:
             pass
 
@@ -52,10 +53,16 @@ class HoneyDBMiddleware(object):
         if not current_app:
             return
 
+        params = []
+        for param in parameters:
+            if type(param) == datetime.datetime:
+                param = param.isoformat()
+            params.append(param)
+
         beeline._new_event(data={
             "type": "db",
             "db.query": statement,
-            "db.query_args": parameters,
+            "db.query_args": params,
         }, trace_name="flask_db_query")
 
         self.query_start_time = datetime.datetime.now()
@@ -71,4 +78,8 @@ class HoneyDBMiddleware(object):
             "db.last_insert_id": cursor.lastrowid,
             "db.rows_affected": cursor.rowcount,
         })
+        beeline._send_event()
+
+    def handle_error(self, context):
+        beeline.add_field("db.error", str(context.original_exception))
         beeline._send_event()
