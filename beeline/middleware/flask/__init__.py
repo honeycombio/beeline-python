@@ -16,6 +16,7 @@ class HoneyMiddleware(object):
     def _teardown_request(self, exception):
         if exception:
             beeline.add_field('request.error_detail', str(exception))
+            beeline.add_field('request.error', str(type(exception)))
             beeline._send_event()
 
 
