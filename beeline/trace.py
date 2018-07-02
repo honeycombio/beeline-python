@@ -2,13 +2,10 @@ import datetime
 import hashlib
 import math
 import struct
-import logging
 
 from contextlib import contextmanager
 
 MAX_INT32 = math.pow(2, 32) - 1
-
-log = logging.getLogger(__name__)
 
 
 class Tracer(object):
@@ -16,10 +13,9 @@ class Tracer(object):
 
 
 class SynchronousTracer(Tracer):
-    def __init__(self, client, state, logging):
+    def __init__(self, client, state):
         self._client = client
         self._state = state
-        self._logging = logging
 
     @contextmanager
     def __call__(self, name):
@@ -29,10 +25,7 @@ class SynchronousTracer(Tracer):
             yield
         finally:
             ev = self._state.pop_event()
-            if not self._logging:
-                self.send_traced_event(ev)
-            else:
-                log.debug(ev)
+            self.send_traced_event(ev)
 
     def new_traced_event(self, name):
         '''
@@ -66,14 +59,11 @@ class SynchronousTracer(Tracer):
         ev.add_field('duration_ms', duration_ms)
 
         trace_id = ev.fields().get('trace.trace_id')
-        if not self._logging:
-            if trace_id:
-                if _should_sample(trace_id, ev.sample_rate):
-                    ev.send_presampled()
-            else:
-                ev.send()
+        if trace_id:
+            if _should_sample(trace_id, ev.sample_rate):
+                ev.send_presampled()
         else:
-            log.debug(ev)
+            ev.send()
         self._state.end_trace()
 
 
