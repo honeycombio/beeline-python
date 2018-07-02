@@ -23,7 +23,8 @@ class HoneyDBWrapper(object):
                 beeline.add_field(
                     "db.duration", db_call_diff.total_seconds() * 1000)
             except Exception as e:
-                beeline.add_field("db.error", str(type(e)) + ': ' + str(e))
+                beeline.add_field("db.error", str(type(e)))
+                beeline.add_field("db.error_detail", str(e))
                 raise
             else:
                 return result
@@ -35,7 +36,7 @@ class HoneyDBWrapper(object):
                     })
 
 
-class HoneyMiddleware(object):
+class HoneyMiddlewareBase(object):
     def __init__(self, get_response):
         self.get_response = get_response
 
@@ -77,11 +78,11 @@ class HoneyMiddleware(object):
         beeline.add_field("request.error_detail", str(exception))
 
 
-class HoneyMiddlewareHttpOnly(HoneyMiddleware):
+class HoneyMiddlewareHttp(HoneyMiddlewareBase):
     pass
 
 
-class HoneyMiddlewareHttpAndDb(HoneyMiddleware):
+class HoneyMiddleware(HoneyMiddlewareBase):
     def __call__(self, request):
         try:
             db_wrapper = HoneyDBWrapper()

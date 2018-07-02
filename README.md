@@ -34,11 +34,11 @@ Note that Honeycomb API keys have the ability to create and delete data, and sho
 
 The beeline uses Django's request/response middleware (>1.10) and database query execution wrapper (>2.0) to automatically instrument your HTTP requests and database queries, and also supports tracing.
 
-To begin, add the middleware to your settings.py file. Choose `HoneyMiddlewareHttpOnly` if you do not want db instrumentation, or `HoneyMiddlewareHttpAndDb` if you do want db instrumentation.
+To begin, add the middleware to your settings.py file. Choose `HoneyMiddlewareHttp` if you do not want db instrumentation, or `HoneyMiddleware` if you do want db instrumentation.
 
 ```python
 MIDDLEWARE = [
-  'beeline.middleware.django.HoneyMiddlewareHttpAndDb',
+  'beeline.middleware.django.HoneyMiddleware',
 ]
 ```
 
