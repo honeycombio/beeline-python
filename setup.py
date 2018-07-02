@@ -12,7 +12,7 @@ setup(
       license='Apache',
       packages=find_packages(),
       install_requires=[
-          'libhoney>=1.3.2',
+          'libhoney>=1.3.3',
           'wrapt',
       ],
       tests_require=[
