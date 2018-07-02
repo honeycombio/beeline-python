@@ -1,6 +1,7 @@
 ''' module beeline '''
 import os
 import socket
+import logging
 
 from libhoney import Client
 from libhoney.errors import SendError
@@ -14,11 +15,13 @@ g_client = None
 g_state = None
 g_tracer = None
 
+log = logging.getLogger(__name__)
+
 
 def init(writekey='', dataset='', service_name='', state_manager=None, tracer=None,
          sample_rate=1, api_host='https://api.honeycomb.io', max_concurrent_batches=10,
          max_batch_size=100, send_frequency=0.25,
-         block_on_send=False, block_on_response=False, transmission_impl=None):
+         block_on_send=False, block_on_response=False, transmission_impl=None, logging=False):
     ''' initialize the honeycomb beeline. This will initialize a libhoney
     client local to this module, and a state manager for tracking event context.
 
@@ -36,6 +39,7 @@ def init(writekey='', dataset='', service_name='', state_manager=None, tracer=No
             false, drop response objects.
     - `transmission_impl`: if set, override the default transmission implementation
             (for example, TornadoTransmission)
+    - `logger`: if set, we will log events rather than sending them to Honeycomb
 
     If in doubt, just set `writekey` and `dataset` and move on!
     '''
@@ -71,7 +75,7 @@ def init(writekey='', dataset='', service_name='', state_manager=None, tracer=No
     else:
         g_state = ThreadLocalState()
 
-    g_tracer = SynchronousTracer(g_client, g_state)
+    g_tracer = SynchronousTracer(g_client, g_state, logging)
 
 
 def send_now(data):
@@ -85,8 +89,10 @@ def send_now(data):
 
     if data:
         ev.add(data)
-
-    ev.send()
+    if not logging:
+        ev.send()
+    else:
+        log.debug(ev)
 
 
 def add_field(name, value):
@@ -176,10 +182,14 @@ def _send_event():
         return
 
     # if start time is set, this was a traced event
-    if hasattr(ev, 'traced_event'):
-        g_tracer.send_traced_event(ev)
+    if not logging:
+        if hasattr(ev, 'traced_event'):
+            g_tracer.send_traced_event(ev)
+        else:
+            ev.send()
     else:
-        ev.send()
+        log.debug(ev)
+
 
 def _send_all():
     ''' internal - send all events in the event stack, regardless of their
@@ -191,15 +201,19 @@ def _send_all():
     ev = g_state.pop_event()
     while ev:
         try:
-            if hasattr(ev, 'traced_event'):
-                g_tracer.send_traced_event(ev)
+            if not logging:
+                if hasattr(ev, 'traced_event'):
+                    g_tracer.send_traced_event(ev)
+                else:
+                    ev.send()
             else:
-                ev.send()
+                log.debug(ev)
         except SendError:
             # disregard any errors due to uninitialized events
             pass
 
         ev = g_state.pop_event()
+
 
 def close():
     ''' close the beeline client, flushing any unsent events. '''

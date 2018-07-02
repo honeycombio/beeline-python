@@ -223,13 +223,9 @@ If support for one of these scenarios is important to you, please [let us know](
 If you've setup the Beeline as above but you aren't seeing data for your app in
 Honeycomb, or you're seeing errors on startup, here are a few things to try:
 
-### Debug mode
+### Debugging
 
-Fill me in!
-
-### Logging
-
-Fill me in!
+If you pass `logging=True` into `beeline.init()`, we will log all events instead of sending them to Honeycomb. 
 
 ### Get in touch
 
