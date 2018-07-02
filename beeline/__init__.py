@@ -13,7 +13,6 @@ USER_AGENT_ADDITION = "beeline-python/%s" % VERSION
 g_client = None
 g_state = None
 g_tracer = None
-g_debug = False
 
 
 def init(writekey='', dataset='', service_name='', state_manager=None, tracer=None,
