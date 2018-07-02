@@ -1,11 +1,10 @@
 import sys
 from setuptools import setup, find_packages
-from beeline_version import VERSION
 
 setup(
       python_requires='>=2.7',
       name='honeycomb-beeline',
-      version=VERSION,
+      version='0.1.1',
       description='Honeycomb library for easy instrumentation',
       url='https://github.com/honeycombio/beeline-python',
       author='Honeycomb.io',
