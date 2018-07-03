@@ -83,7 +83,7 @@ beeline.init(
 
 app = Flask(__name__)
 # db_events defaults to True, set to False if not using our db middleware with Flask-SQLAlchemy
-app= HoneyMiddleware(app, db_events=False)
+HoneyMiddleware(app, db_events=True)
 ```
 
 ### Bottle
@@ -212,25 +212,6 @@ with beeline.tracer("my expensive computation"):
     recursive_fib(100)
 ```
 
-## Known limitations
+## Get in touch
 
-Fill me in!
-
-If support for one of these scenarios is important to you, please [let us know](#get-in-touch)!
-
-## Troubleshooting
-
-If you've setup the Beeline as above but you aren't seeing data for your app in
-Honeycomb, or you're seeing errors on startup, here are a few things to try:
-
-### Debug mode
-
-Fill me in!
-
-### Logging
-
-Fill me in!
-
-### Get in touch
-
-This beeline is still young, so please reach out to [support@honeycomb.io](mailto:support@honeycomb.io) or ping us with the chat bubble on [our website](https://www.honeycomb.io) for assistance. We also welcome [bug reports](https://github.com/honeycombio/beeline-ruby/issues) and [contributions](https://github.com/honeycombio/beeline-ruby/blob/master/CONTRIBUTING.md).
+This beeline is still young, so please reach out to [support@honeycomb.io](mailto:support@honeycomb.io) or ping us with the chat bubble on [our website](https://www.honeycomb.io) for assistance. We also welcome [bug reports](https://github.com/honeycombio/beeline-python/issues) and [contributions](https://github.com/honeycombio/beeline-python/blob/master/CONTRIBUTING.md). Also check out our [official docs](https://docs.honeycomb.io/getting-data-in/beelines/beeline-python/).
