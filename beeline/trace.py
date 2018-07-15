@@ -18,16 +18,16 @@ class SynchronousTracer(Tracer):
         self._state = state
 
     @contextmanager
-    def __call__(self, name):
+    def __call__(self, name, trace_id=None, parent_id=None):
         try:
-            ev = self.new_traced_event(name)
+            ev = self.new_traced_event(name, trace_id, parent_id)
             self._state.add_event(ev)
             yield
         finally:
             ev = self._state.pop_event()
             self.send_traced_event(ev)
 
-    def new_traced_event(self, name):
+    def new_traced_event(self, name, trace_id, parent_id):
         '''
         Create an event decorated with trace IDs. Initiates a new trace if none
         is in progress, or appends the event to the trace stack.
@@ -36,7 +36,7 @@ class SynchronousTracer(Tracer):
         the trace will not work correctly
         '''
         ev = self._client.new_event()
-        trace_id, parent_id, span_id = self._state.start_trace()
+        trace_id, parent_id, span_id = self._state.start_trace(trace_id, parent_id)
         ev.add({
             'trace.trace_id': trace_id,
             'trace.parent_id': parent_id,

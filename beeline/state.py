@@ -36,14 +36,17 @@ class ThreadLocalState(State):
 
     def _trace_id(self):
         if not hasattr(self._state, 'trace_id'):
-            self._state.trace_id = None
+            self._state.trace_id = ''
         return self._state.trace_id
 
-    def start_trace(self):
+    def start_trace(self, trace_id=None, parent_id=None):
+        if trace_id:
+            self._state.trace_id = trace_id
         if not self._trace_id():
             self._state.trace_id = str(uuid.uuid4())
         trace_stack = self._trace_stack()
-        parent_id = trace_stack[-1] if trace_stack else None
+        if not parent_id:
+            parent_id = trace_stack[-1] if trace_stack else None
         span_id = str(uuid.uuid4())
         self._trace_stack().append(span_id)
 

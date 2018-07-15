@@ -128,7 +128,22 @@ def add(data):
 
 
 def tracer(name):
-    return g_tracer(name)
+    '''
+    When used in a context manager, creates a trace event for the contained
+    code. If existing trace context data is available, will mark the event as a
+    child of the most recent trace span.
+
+    Example use:
+
+    ```
+    with tracer(name="call to db"):
+        issue_db_query()
+    ```
+
+    Args:
+    - `name`: a descriptive name for the this trace span, i.e. "database query for user"
+    '''
+    return g_tracer(name=name)
 
 
 def _new_event(data=None, trace_name='', top_level=False):
