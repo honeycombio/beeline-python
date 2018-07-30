@@ -19,7 +19,7 @@ def _get_trace_payload(trace_string):
     # payload is malformed and we do nothing.
     if len(kv_pairs) == 3:
         for pair in kv_pairs:
-            k, v = pair.split('=')
+            k, v = pair.split('=', 1)
             if k == 'trace_id':
                 trace_id = v
             elif k == 'parent_id':
