@@ -18,29 +18,47 @@ def _get_trace_ids(event):
 
     return trace_id, parent_id
 
-def wrap(handler, event, context):
-    # don't blow up the world if the beeline has not been initialized
-    if not beeline.g_client or not beeline.g_tracer:
-        return handler(event, context)
+def beeline_wrapper(handler):
+    ''' Honeycomb Beeline decorator for Lambda functions. Expects a handler
+    function with the signature:
 
-    try:
-        # if we've passed a trace id from a previous lambda, it will
-        # be here
-        trace_id, parent_id = _get_trace_ids(event)
-        with beeline.g_tracer(name=handler.__name__,
-                trace_id=trace_id, parent_id=parent_id):
-            beeline.add({
-                "app.function_name": context.function_name,
-                "app.function_version": context.function_version,
-                "app.request_id": context.aws_request_id,
-                "app.event": event,
-            })
-            resp = handler(event, context)
+    `def handler(event, context)`
 
-            if resp is not None:
-                beeline.add_field('app.response', resp)
+    Example use:
 
-            return resp
-    finally:
-        # we have to flush events before the lambda returns
-        beeline.g_client.flush()
+    ```
+    @beeline_wrapper
+    def my_handler(event, context):
+        # ...
+    ```
+
+    '''
+
+    def _beeline_wrapper(event, context):
+        # don't blow up the world if the beeline has not been initialized
+        if not beeline.g_client or not beeline.g_tracer:
+            return handler(event, context)
+
+        try:
+            # if we've passed a trace id from a previous lambda, it will
+            # be here
+            trace_id, parent_id = _get_trace_ids(event)
+            with beeline.g_tracer(name=handler.__name__,
+                    trace_id=trace_id, parent_id=parent_id):
+                beeline.add({
+                    "app.function_name": context.function_name,
+                    "app.function_version": context.function_version,
+                    "app.request_id": context.aws_request_id,
+                    "app.event": event,
+                })
+                resp = handler(event, context)
+
+                if resp is not None:
+                    beeline.add_field('app.response', resp)
+
+                return resp
+        finally:
+            # we have to flush events before the lambda returns
+            beeline.g_client.flush()
+
+    return _beeline_wrapper

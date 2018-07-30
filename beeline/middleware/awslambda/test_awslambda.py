@@ -1,4 +1,5 @@
 import unittest
+from mock import Mock, patch
 
 from beeline.middleware import awslambda
 
@@ -26,3 +27,35 @@ class TestGetTraceIds(unittest.TestCase):
         trace_id, parent_id = awslambda._get_trace_ids(event)
         self.assertIsNone(trace_id)
         self.assertIsNone(parent_id)
+
+class TestLambdaWrapper(unittest.TestCase):
+    def test_wrapper_works_no_init(self):
+        ''' ensure that the wrapper doesn't break anything if used before
+        beeline.init is called
+        '''
+        @awslambda.beeline_wrapper
+        def foo(event, context):
+            return 1
+
+        self.assertEqual(foo(None, None), 1)
+
+    def test_basic_instrumentation(self):
+        ''' ensure basic event fields get instrumented '''
+        with patch('beeline.middleware.awslambda.beeline.add') as m_add,\
+                patch('beeline.middleware.awslambda.beeline.g_client'),\
+                patch('beeline.middleware.awslambda.beeline.g_tracer'):
+            m_event = Mock()
+            m_context = Mock(function_name='fn', function_version="1.1.1",
+                             aws_request_id='12345')
+
+            @awslambda.beeline_wrapper
+            def handler(event, context):
+                return 1
+
+            self.assertEqual(handler(m_event, m_context), 1)
+            m_add.assert_called_once_with({
+                "app.function_name": m_context.function_name,
+                "app.function_version": m_context.function_version,
+                "app.request_id": m_context.aws_request_id,
+                "app.event": m_event,
+            })
