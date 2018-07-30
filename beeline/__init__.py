@@ -136,8 +136,8 @@ def tracer(name):
     Example use:
 
     ```
-    with tracer(name="call to db"):
-        issue_db_query()
+    with tracer(name="my expensive computation"):
+        recursive_fib(100)
     ```
 
     Args:

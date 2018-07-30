@@ -1,8 +1,32 @@
 import beeline
 
-def _get_trace_ids(event):
-    ''' Extract trace/parent ids that are threaded through in various ways '''
-    trace_id, parent_id = None, None
+def _get_trace_payload(trace_string):
+    # the first value is the trace payload version
+    # at this time there is only one version, so there's no need to do anything
+    # based on this
+    _, data = trace_string.split(';', 1)
+
+    kv_pairs = data.split(',')
+
+    trace_id, parent_id, context = None, None, None
+    # For version 1, we expect three kv pairs. If there's anything else, the
+    # payload is malformed and we do nothing.
+    if len(kv_pairs) == 3:
+        for pair in kv_pairs:
+            k, v = pair.split('=')
+            if k == 'trace_id':
+                trace_id = v
+            elif k == 'parent_id':
+                parent_id = v
+            elif k == 'context':
+                context = v
+
+    return trace_id, parent_id, context
+
+def _get_trace_data(event):
+    ''' Extract trace/parent ids and context object that are threaded through
+    in various ways from other beelines'''
+    trace_id, parent_id, context = None, None, None
 
     # If API gateway is triggering the Lambda, the event will have headers
     # and we can look for our trace headers
@@ -11,12 +35,12 @@ def _get_trace_ids(event):
             if isinstance(event['headers'], dict):
                 # deal with possible case issues
                 keymap = {k.lower(): k  for k in event['headers'].keys()}
-                if 'x-honeycomb-trace-id' in keymap:
-                    trace_id = event['headers'][keymap['x-honeycomb-trace-id']]
-                if 'x-honeycomb-parent-id' in keymap:
-                    parent_id = event['headers'][keymap['x-honeycomb-parent-id']]
+                if 'x-honeycomb-trace' in keymap:
+                    trace_id, parent_id, context = _get_trace_payload(
+                        event['headers'][keymap['x-honeycomb-trace']]
+                    )
 
-    return trace_id, parent_id
+    return trace_id, parent_id, context
 
 def beeline_wrapper(handler):
     ''' Honeycomb Beeline decorator for Lambda functions. Expects a handler
@@ -41,8 +65,8 @@ def beeline_wrapper(handler):
 
         try:
             # if we've passed a trace id from a previous lambda, it will
-            # be here
-            trace_id, parent_id = _get_trace_ids(event)
+            # be here. We ignore context for now.
+            trace_id, parent_id, _ = _get_trace_data(event)
             with beeline.g_tracer(name=handler.__name__,
                     trace_id=trace_id, parent_id=parent_id):
                 beeline.add({

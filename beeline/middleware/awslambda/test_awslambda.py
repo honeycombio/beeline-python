@@ -9,14 +9,14 @@ class TestGetTraceIds(unittest.TestCase):
         event = {
             'headers': {
                 # case shouldn't matter
-                'X-HoNEyComb-TrACE-id': 'bloop',
-                'x-HoNEyComb-PARENT-ID': 'scoop',
+                'X-HoNEyComb-TrACE': '1;trace_id=bloop,parent_id=scoop,context=dGhhbmtzZm9yZGVjb2RpbmdtZSEK',
             },
         }
 
-        trace_id, parent_id = awslambda._get_trace_ids(event)
+        trace_id, parent_id, context = awslambda._get_trace_data(event)
         self.assertEqual(trace_id, 'bloop')
         self.assertEqual(parent_id, 'scoop')
+        self.assertEqual(context, 'dGhhbmtzZm9yZGVjb2RpbmdtZSEK')
 
     def test_get_trace_ids_no_header(self):
         ''' ensure that we handle events with no header key '''
@@ -24,9 +24,10 @@ class TestGetTraceIds(unittest.TestCase):
             'foo': 1,
         }
 
-        trace_id, parent_id = awslambda._get_trace_ids(event)
+        trace_id, parent_id, context = awslambda._get_trace_data(event)
         self.assertIsNone(trace_id)
         self.assertIsNone(parent_id)
+        self.assertIsNone(context)
 
 class TestLambdaWrapper(unittest.TestCase):
     def test_wrapper_works_no_init(self):
