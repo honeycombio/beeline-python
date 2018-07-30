@@ -44,7 +44,8 @@ class TestLambdaWrapper(unittest.TestCase):
         ''' ensure basic event fields get instrumented '''
         with patch('beeline.middleware.awslambda.beeline.add') as m_add,\
                 patch('beeline.middleware.awslambda.beeline.g_client'),\
-                patch('beeline.middleware.awslambda.beeline.g_tracer'):
+                patch('beeline.middleware.awslambda.beeline.g_tracer'),\
+                patch('beeline.middleware.awslambda.COLD_START') as m_cold_start:
             m_event = Mock()
             m_context = Mock(function_name='fn', function_version="1.1.1",
                              aws_request_id='12345')
@@ -59,4 +60,5 @@ class TestLambdaWrapper(unittest.TestCase):
                 "app.function_version": m_context.function_version,
                 "app.request_id": m_context.aws_request_id,
                 "app.event": m_event,
+                "meta.cold_start": m_cold_start,
             })

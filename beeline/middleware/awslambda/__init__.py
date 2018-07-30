@@ -1,5 +1,11 @@
 import beeline
 
+# In Lambda, a cold start is when Lambda has to spin up a new instance of a
+# function to satisfy a request, rather than re-use an existing instance.
+# This usually has a non-trivial effect on latency for the request and is
+# worth instrumenting.
+COLD_START = True
+
 def _get_trace_payload(trace_string):
     # the first value is the trace payload version
     # at this time there is only one version, so there's no need to do anything
@@ -59,6 +65,8 @@ def beeline_wrapper(handler):
     '''
 
     def _beeline_wrapper(event, context):
+        global COLD_START
+
         # don't blow up the world if the beeline has not been initialized
         if not beeline.g_client or not beeline.g_tracer:
             return handler(event, context)
@@ -74,6 +82,7 @@ def beeline_wrapper(handler):
                     "app.function_version": context.function_version,
                     "app.request_id": context.aws_request_id,
                     "app.event": event,
+                    "meta.cold_start": COLD_START,
                 })
                 resp = handler(event, context)
 
@@ -82,6 +91,8 @@ def beeline_wrapper(handler):
 
                 return resp
         finally:
+            # This remains false for the lifetime of the module
+            COLD_START = False
             # we have to flush events before the lambda returns
             beeline.g_client.flush()
 
