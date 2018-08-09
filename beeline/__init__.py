@@ -13,12 +13,14 @@ USER_AGENT_ADDITION = "beeline-python/%s" % VERSION
 g_client = None
 g_state = None
 g_tracer = None
-
+g_sampler_hook = None
+g_presend_hook = None
 
 def init(writekey='', dataset='', service_name='', state_manager=None, tracer=None,
          sample_rate=1, api_host='https://api.honeycomb.io', max_concurrent_batches=10,
          max_batch_size=100, send_frequency=0.25,
-         block_on_send=False, block_on_response=False, transmission_impl=None):
+         block_on_send=False, block_on_response=False, transmission_impl=None,
+         sampler_hook=None, presend_hook=None):
     ''' initialize the honeycomb beeline. This will initialize a libhoney
     client local to this module, and a state manager for tracking event context.
 
@@ -36,10 +38,18 @@ def init(writekey='', dataset='', service_name='', state_manager=None, tracer=No
             false, drop response objects.
     - `transmission_impl`: if set, override the default transmission implementation
             (for example, TornadoTransmission)
+    - `sampler_hook`: accepts a function to be called just before each event is sent.
+            The function should accept a dictionary of event fields, and return a tuple
+            of type (bool, int). The first item indicates whether or not the event
+            should be sent, and the second indicates the updated sample rate to use.
+    - `presend_hook`: accepts a function to be called just before each event is sent.
+            The functon should accept a dictionary of event fields, and can be used
+            to add new fields, modify/scrub existing fields, or drop fields. Thiss
+            function is called after sampler_hook, if sampler_hook is set.
 
     If in doubt, just set `writekey` and `dataset` and move on!
     '''
-    global g_client, g_state, g_tracer
+    global g_client, g_state, g_tracer, g_presend_hook, g_sampler_hook
     if g_client:
         return
 
@@ -72,6 +82,8 @@ def init(writekey='', dataset='', service_name='', state_manager=None, tracer=No
         g_state = ThreadLocalState()
 
     g_tracer = SynchronousTracer(g_client, g_state)
+    g_sampler_hook = sampler_hook
+    g_presend_hook = presend_hook
 
 
 def send_now(data):
@@ -85,7 +97,7 @@ def send_now(data):
 
     if data:
         ev.add(data)
-    ev.send()
+    _run_hooks_and_send(ev)
 
 
 def add_field(name, value):
@@ -174,12 +186,7 @@ def _send_event():
     if ev is None:
         return
 
-    # if start time is set, this was a traced event
-    if hasattr(ev, 'traced_event'):
-        g_tracer.send_traced_event(ev)
-    else:
-        ev.send()
-
+    _run_hooks_and_send(ev)
 
 def _send_all():
     ''' internal - send all events in the event stack, regardless of their
@@ -191,16 +198,32 @@ def _send_all():
     ev = g_state.pop_event()
     while ev:
         try:
-            if hasattr(ev, 'traced_event'):
-                g_tracer.send_traced_event(ev)
-            else:
-                ev.send()
+            _run_hooks_and_send(ev)
         except SendError:
             # disregard any errors due to uninitialized events
             pass
 
         ev = g_state.pop_event()
 
+def _run_hooks_and_send(ev):
+    ''' internal - run any defined hooks on the event and send '''
+    presampled = False
+    if g_sampler_hook:
+        keep, new_rate = g_sampler_hook(ev.fields())
+        if not keep:
+            return
+        ev.sample_rate = new_rate
+        presampled = True
+    
+    if g_presend_hook:
+        g_presend_hook(ev.fields())
+    
+    if hasattr(ev, 'traced_event'):
+        g_tracer.send_traced_event(ev, presampled=presampled)
+    elif presampled:
+        ev.send_presampled()
+    else:
+        ev.send()
 
 def close():
     ''' close the beeline client, flushing any unsent events. '''

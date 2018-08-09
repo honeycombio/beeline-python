@@ -54,3 +54,89 @@ class TestBeelineSendEvent(unittest.TestCase):
         ev1.send.assert_called_once_with()
         ev2.send.assert_called_once_with()
         ev3.send.assert_called_once_with()
+
+    def test_run_hooks_and_send_no_hooks(self):
+        ''' ensure send works when no hooks defined '''
+        ev = Mock()
+        delattr(ev, 'traced_event')
+        beeline._run_hooks_and_send(ev)
+
+        # no hooks, not a traced event - call send
+        ev.send.assert_called_once_with()
+        ev.send_presampled.assert_not_called()
+        self.m_tracer.send_traced_event.assert_not_called()
+
+        # traced_event is an implicit attribute on Mock, so send_traced_event
+        # should be called
+        traced_ev = Mock()
+        beeline._run_hooks_and_send(traced_ev)
+        self.m_tracer.send_traced_event.assert_called_once_with(traced_ev, presampled=False)
+
+    def test_run_hooks_and_send_sampler(self):
+        ''' ensure send works with a sampler hook defined '''
+        with patch('beeline.g_sampler_hook') as m_sampler:
+            def _sampler_drop_all(fields):
+                return False, 0
+            m_sampler.side_effect = _sampler_drop_all
+            ev = Mock()
+            # non-traced event
+            delattr(ev, 'traced_event')
+
+            beeline._run_hooks_and_send(ev)
+            m_sampler.assert_called_once_with(ev.fields())
+            ev.send_presampled.assert_not_called()
+            ev.send.assert_not_called()
+
+            def _sampler_drop_none(fields):
+                return True, 100
+
+            ev = Mock()
+            # non-traced event
+            delattr(ev, 'traced_event')
+            m_sampler.reset_mock()
+
+            m_sampler.side_effect = _sampler_drop_none
+
+            beeline._run_hooks_and_send(ev)
+            m_sampler.assert_called_once_with(ev.fields())
+            self.assertEqual(ev.sample_rate, 100)
+            ev.send_presampled.assert_called_once_with()
+            ev.send.assert_not_called()
+
+            # traced event
+            ev = Mock()
+            m_sampler.reset_mock()
+
+            beeline._run_hooks_and_send(ev)
+            m_sampler.assert_called_once_with(ev.fields())
+            self.assertEqual(ev.sample_rate, 100)
+            self.m_tracer.send_traced_event.assert_called_once_with(ev, presampled=True)
+            ev.send_presampled.assert_not_called()
+            ev.send.assert_not_called()
+
+    def test_run_hooks_and_send_presend_hook(self):
+        ''' ensure send works when presend hook is defined '''
+        with patch('beeline.g_presend_hook') as m_presend:
+            def _presend_hook(fields):
+                fields["thing i want"] = "put it there"
+                del fields["thing i don't want"]
+            m_presend.side_effect = _presend_hook
+
+            ev = Mock()
+            delattr(ev, 'traced_event')
+            ev.fields.return_value = {
+                "thing i don't want": "get it out of here",
+                "happy data": "so happy",
+            }
+
+            beeline._run_hooks_and_send(ev)
+            self.m_tracer.send_traced_event.assert_not_called()
+            ev.send_presampled.assert_not_called()
+            ev.send.assert_called_once_with()
+            self.assertDictEqual(
+                ev.fields(),
+                {
+                    "thing i want": "put it there",
+                    "happy data": "so happy",
+                },
+            )

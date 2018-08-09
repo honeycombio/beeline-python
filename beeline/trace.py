@@ -47,7 +47,7 @@ class SynchronousTracer(Tracer):
         ev.traced_event = True
         return ev
 
-    def send_traced_event(self, ev):
+    def send_traced_event(self, ev, presampled=False):
         ''' Applies deterministic sampling to the event before sending. This allows
         us to sample entire traces '''
         # we shouldn't get called for non-trace events, so do nothing.
@@ -59,11 +59,14 @@ class SynchronousTracer(Tracer):
         ev.add_field('duration_ms', duration_ms)
 
         trace_id = ev.fields().get('trace.trace_id')
-        if trace_id:
-            if _should_sample(trace_id, ev.sample_rate):
-                ev.send_presampled()
+
+        if presampled:
+            ev.send_presampled()
+        elif trace_id and _should_sample(trace_id, ev.sample_rate):
+            ev.send_presampled()
         else:
             ev.send()
+        
         self._state.end_trace()
 
 
