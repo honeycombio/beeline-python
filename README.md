@@ -218,7 +218,9 @@ Hooks give you more power over how events are sampled, and which fields are sent
 
 ### Using a Sampler Hook
 
-Sampler hooks allow you to define custom sampling behavior. For example, let's say you were instrumenting an HTTP app and wanted to record events data for each error, but heavily sample healthy requests. Also, you don't really care about 302 redirects in your app, and you want to drop those. You could define a sampler function like so:
+Sampler hooks allow you to completely redefine sampling behavior. This replaces built-in sampling logic and replaces it with your own. It also overrides the global sampling rate.
+
+Here is an example: assume you have instrumented an HTTP app and want a default sampling rate of 1 in 10 events. However, you'd like to keep all error events, and heavily sample healthy traffic (200 response codes). Also, you don't really care about 302 redirects in your app, and you want to drop those. You could define a sampler function like so:
 
 ```python
 def sampler(fields):
@@ -244,12 +246,14 @@ def sampler(fields):
   return False, 0
 ```
 
-All we have to do is pass this sampler to the beeline on `init`:
+To apply this new logic, all you have to do is pass this sampler to the beeline on `init`:
 
 ```python
 import beeline
 beeline.init(writekey='mywritekey', dataset='myapp', sampler_hook=sampler)
 ```
+
+**Note**: If you intend to use tracing, defining your own sampler can lead to inconsistent trace results.
 
 ### Using a Pre-send Hook
 

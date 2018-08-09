@@ -44,7 +44,7 @@ def init(writekey='', dataset='', service_name='', state_manager=None, tracer=No
             should be sent, and the second indicates the updated sample rate to use.
     - `presend_hook`: accepts a function to be called just before each event is sent.
             The functon should accept a dictionary of event fields, and can be used
-            to add new fields, modify/scrub existing fields, or drop fields. Thiss
+            to add new fields, modify/scrub existing fields, or drop fields. This
             function is called after sampler_hook, if sampler_hook is set.
 
     If in doubt, just set `writekey` and `dataset` and move on!
