@@ -212,6 +212,74 @@ with beeline.tracer("my expensive computation"):
     recursive_fib(100)
 ```
 
+## Using Sampler and Presend Hooks
+
+Hooks give you more power over how events are sampled, and which fields are sent to Honeycomb.
+
+### Using a Sampler Hook
+
+Sampler hooks allow you to completely redefine sampling behavior. This replaces built-in sampling logic and replaces it with your own. It also overrides the global sampling rate.
+
+Here is an example: assume you have instrumented an HTTP app and want a default sampling rate of 1 in 10 events. However, you'd like to keep all error events, and heavily sample healthy traffic (200 response codes). Also, you don't really care about 302 redirects in your app, and you want to drop those. You could define a sampler function like so:
+
+```python
+def sampler(fields):
+  # our default sample rate, sample one in every 10 events
+  sample_rate = 10
+
+  response_code = fields.get('response.status_code')
+  # False indicates that we should not keep this event
+  if response_code == 302:
+    return False, 0
+  elif response_code == 200:
+    # heavily sample healthy requests
+    sample_rate = 100
+  elif response_code >= 500:
+    # sample every error request
+    sample_rate = 1
+
+  # True means we keep the event. The sample rate tells Honeycomb what
+  # rate the event was sampled at (important for calculations)
+  if random.randint(1, sample_rate) == 1:
+    return True, sample_rate
+
+  return False, 0
+```
+
+To apply this new logic, all you have to do is pass this sampler to the beeline on `init`:
+
+```python
+import beeline
+beeline.init(writekey='mywritekey', dataset='myapp', sampler_hook=sampler)
+```
+
+**Note**: If you intend to use tracing, defining your own sampler can lead to inconsistent trace results.
+
+### Using a Pre-send Hook
+
+Presend hooks enable you to modify data right before it is sent to Honeycomb. For example, maybe you have a field that sometimes contains PII or other sensitive data. You might want to scrub the field, or drop it all together. You can do that with a pre-send hook:
+
+```python
+def presend(fields):
+  # We don't want to log customer IPs that get captured in the beeline
+  if 'request.remote_addr' in 'fields':
+    del fields['request.remote_addr']
+
+  # this field is useful, but sometimes contains sensitive data. 
+  # Run a scrubber method against it before sending
+  if 'transaction_log_msg' in 'fields':
+    fields['transaction_log_msg'] = scrub_msg(fields['transaction_log_msg'])
+```
+
+After defining your presend hook function, pass it to the beeline's `init` method:
+
+```python
+import beeline
+beeline.init(writekey='mywritekey', dataset='myapp', presend_hook=presend)
+```
+
+**Note**: Sampler hooks are executed *before* presend hooks.
+
 ## Get in touch
 
 This beeline is still young, so please reach out to [support@honeycomb.io](mailto:support@honeycomb.io) or ping us with the chat bubble on [our website](https://www.honeycomb.io) for assistance. We also welcome [bug reports](https://github.com/honeycombio/beeline-python/issues) and [contributions](https://github.com/honeycombio/beeline-python/blob/master/CONTRIBUTING.md). Also check out our [official docs](https://docs.honeycomb.io/getting-data-in/beelines/beeline-python/).
