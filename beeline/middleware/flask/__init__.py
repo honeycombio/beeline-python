@@ -26,17 +26,19 @@ class HoneyWSGIMiddleware(object):
         self.app = app
 
     def __call__(self, environ, start_response):
-        trace_name = "flask_http_%s" % environ['REQUEST_METHOD'].lower()
+        trace_name = "flask_http_%s" % environ.get('REQUEST_METHOD', None)
+        if trace_name is not None:
+            trace_name = trace_name.lower()
         beeline._new_event(data={
             "type": "http_server",
-            "request.host": environ['HTTP_HOST'],
-            "request.method": environ['REQUEST_METHOD'],
-            "request.path": environ['PATH_INFO'],
-            "request.remote_addr": environ['REMOTE_ADDR'],
+            "request.host": environ.get('HTTP_HOST', None),
+            "request.method": environ.get('REQUEST_METHOD', None),
+            "request.path": environ.get('PATH_INFO', None),
+            "request.remote_addr": environ.get('REMOTE_ADDR', None),
             "request.content_length": environ.get('CONTENT_LENGTH', 0),
-            "request.user_agent": environ['HTTP_USER_AGENT'],
-            "request.scheme": environ['wsgi.url_scheme'],
-            "request.query": environ['QUERY_STRING']
+            "request.user_agent": environ.get('HTTP_USER_AGENT', None),
+            "request.scheme": environ.get('wsgi.url_scheme', None),
+            "request.query": environ.get('QUERY_STRING', None)
         }, trace_name=trace_name, top_level=True)
 
         def _start_response(status, headers, *args):
