@@ -22,13 +22,18 @@ class Beeline(object):
             tracer=None, sample_rate=1, api_host='https://api.honeycomb.io',
             max_concurrent_batches=10, max_batch_size=100, send_frequency=0.25,
             block_on_send=False, block_on_response=False,
-            transmission_impl=None, sampler_hook=None, presend_hook=None):
+            transmission_impl=None, sampler_hook=None, presend_hook=None,
+            verbose_mode=False):
 
         self.client = None
         self.state = None
         self.tracer_impl = None
         self.presend_hook = None
         self.sampler_hook = None
+
+        self.verbose_mode = verbose_mode
+        if verbose_mode:
+            self._init_logger()
 
         # allow setting some values from the environment
         if not writekey:
@@ -48,6 +53,13 @@ class Beeline(object):
             transmission_impl=transmission_impl,
             user_agent_addition=USER_AGENT_ADDITION,
         )
+
+        self.log('initialized honeycomb client: writekey=%s dataset=%s service_name=%s',
+                   writekey, dataset, service_name)
+        if not writekey:
+            self.log('writekey not set! set the writekey if you want to send data to honeycomb')
+        if not dataset:
+            self.log('dataset not set! set a value for dataset if you want to send data to honeycomb')
 
         self.client.add_field('service_name', service_name)
         self.client.add_field('meta.beeline_version', VERSION)
@@ -164,21 +176,41 @@ class Beeline(object):
         ''' internal - run any defined hooks on the event and send '''
         presampled = False
         if self.sampler_hook:
+            self.log("executing sampler hook on event ev = %s", ev.fields())
             keep, new_rate = self.sampler_hook(ev.fields())
             if not keep:
+                self.log("skipping event due to sampler hook sampling ev = %s", ev.fields())
                 return
             ev.sample_rate = new_rate
             presampled = True
 
         if self.presend_hook:
+            self.log("executing presend hook on event ev = %s", ev.fields())
             self.presend_hook(ev.fields())
 
         if hasattr(ev, 'traced_event'):
+            self.log("enqueing traced event ev = %s", ev.fields())
             self.tracer_impl.send_traced_event(ev, presampled=presampled)
         elif presampled:
+            self.log("enqueing presampled event ev = %s", ev.fields())
             ev.send_presampled()
         else:
+            self.log("enqueing event ev = %s", ev.fields())
             ev.send()
+
+    def _init_logger(self):
+        import logging
+        self._logger = logging.getLogger('honeycomb-beeline')
+        self._logger.setLevel(logging.DEBUG)
+        ch = logging.StreamHandler()
+        ch.setLevel(logging.DEBUG)
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        ch.setFormatter(formatter)
+        self._logger.addHandler(ch)
+
+    def log(self, msg, *args, **kwargs):
+        if self.verbose_mode:
+            self._logger.debug(msg, *args, **kwargs)
 
     def get_responses_queue(self):
         return self.client.responses()
@@ -189,7 +221,7 @@ class Beeline(object):
 
 def init(writekey='', dataset='', service_name='', state_manager=None, tracer=None,
          sample_rate=1, api_host='https://api.honeycomb.io', transmission_impl=None,
-         sampler_hook=None, presend_hook=None, *args, **kwargs):
+         sampler_hook=None, presend_hook=None, verbose_mode=False, *args, **kwargs):
     ''' initialize the honeycomb beeline. This will initialize a libhoney
     client local to this module, and a state manager for tracking event context.
 
@@ -218,6 +250,7 @@ def init(writekey='', dataset='', service_name='', state_manager=None, tracer=No
     _GBL = Beeline(
         writekey=writekey, dataset=dataset, sample_rate=sample_rate,
         api_host=api_host, transmission_impl=transmission_impl,
+        verbose_mode=verbose_mode,
         # since we've simplified the init function signature a bit,
         # pass on other args for backwards compatibility
         *args, **kwargs
