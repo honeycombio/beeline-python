@@ -68,14 +68,14 @@ def beeline_wrapper(handler):
         global COLD_START
 
         # don't blow up the world if the beeline has not been initialized
-        if not beeline.g_client or not beeline.g_tracer:
+        if not beeline.get_beeline():
             return handler(event, context)
 
         try:
             # if we've passed a trace id from a previous lambda, it will
             # be here. We ignore context for now.
             trace_id, parent_id, _ = _get_trace_data(event)
-            with beeline.g_tracer(name=handler.__name__,
+            with beeline.tracer(name=handler.__name__,
                     trace_id=trace_id, parent_id=parent_id):
                 beeline.add({
                     "app.function_name": context.function_name,
@@ -94,6 +94,6 @@ def beeline_wrapper(handler):
             # This remains false for the lifetime of the module
             COLD_START = False
             # we have to flush events before the lambda returns
-            beeline.g_client.flush()
+            beeline.get_beeline().client.flush()
 
     return _beeline_wrapper

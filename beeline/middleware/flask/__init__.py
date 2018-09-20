@@ -17,7 +17,7 @@ class HoneyMiddleware(object):
         if exception:
             beeline.add_field('request.error_detail', str(exception))
             beeline.add_field('request.error', str(type(exception)))
-            beeline._send_event()
+            beeline.internal.send_event()
 
 
 class HoneyWSGIMiddleware(object):
@@ -29,7 +29,7 @@ class HoneyWSGIMiddleware(object):
         trace_name = "flask_http_%s" % environ.get('REQUEST_METHOD', None)
         if trace_name is not None:
             trace_name = trace_name.lower()
-        beeline._new_event(data={
+        beeline.internal.new_event(data={
             "type": "http_server",
             "request.host": environ.get('HTTP_HOST', None),
             "request.method": environ.get('REQUEST_METHOD', None),
@@ -45,9 +45,9 @@ class HoneyWSGIMiddleware(object):
             status_code = int(status[0:4])
             beeline.add_field("response.status_code", status_code)
             if status_code != 500:
-                beeline._send_event()
+                beeline.internal.send_event()
             elif status_code == 500 and not signals.signals_available:
-                beeline._send_event()
+                beeline.internal.send_event()
 
             return start_response(status, headers, *args)
 
@@ -82,7 +82,7 @@ class HoneyDBMiddleware(object):
                 param = param.isoformat()
             params.append(param)
 
-        beeline._new_event(data={
+        beeline.internal.new_event(data={
             "type": "db",
             "db.query": statement,
             "db.query_args": params,
@@ -101,8 +101,8 @@ class HoneyDBMiddleware(object):
             "db.last_insert_id": cursor.lastrowid,
             "db.rows_affected": cursor.rowcount,
         })
-        beeline._send_event()
+        beeline.internal.send_event()
 
     def handle_error(self, context):
         beeline.add_field("db.error", str(context.original_exception))
-        beeline._send_event()
+        beeline.internal.send_event()

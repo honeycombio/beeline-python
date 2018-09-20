@@ -43,8 +43,7 @@ class TestLambdaWrapper(unittest.TestCase):
     def test_basic_instrumentation(self):
         ''' ensure basic event fields get instrumented '''
         with patch('beeline.middleware.awslambda.beeline.add') as m_add,\
-                patch('beeline.middleware.awslambda.beeline.g_client'),\
-                patch('beeline.middleware.awslambda.beeline.g_tracer'),\
+                patch('beeline.middleware.awslambda.beeline._GBL'),\
                 patch('beeline.middleware.awslambda.COLD_START') as m_cold_start:
             m_event = Mock()
             m_context = Mock(function_name='fn', function_version="1.1.1",
