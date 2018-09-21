@@ -5,6 +5,8 @@ import struct
 
 from contextlib import contextmanager
 
+from beeline.internal import log
+
 MAX_INT32 = math.pow(2, 32) - 1
 
 
@@ -25,6 +27,7 @@ class SynchronousTracer(Tracer):
             yield
         finally:
             ev = self._state.pop_event()
+            log("enqueuing traced event ev = %s", ev.fields())
             self.send_traced_event(ev)
 
     def new_traced_event(self, name, trace_id=None, parent_id=None):
@@ -44,6 +47,7 @@ class SynchronousTracer(Tracer):
             'trace.span_id': span_id,
             'name': name,
         })
+        log("started new traced event ev = %s", ev.fields())
         ev.start_time = datetime.datetime.now()
         ev.traced_event = True
         return ev
