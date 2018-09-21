@@ -25,7 +25,7 @@ beeline.init(
   writekey='<MY HONEYCOMB API KEY>',
   dataset='my-app',
   service_name='my-app',
-  verbose_mode=True,
+  debug=True,
 )
 ```
 
@@ -57,7 +57,7 @@ class MyAppConfig(AppConfig):
             writekey='<MY HONEYCOMB API KEY>',
             dataset='my-app',
             service_name='my-app',
-            verbose_mode=True,
+            debug=True,
         )
 ```
 
@@ -81,7 +81,7 @@ beeline.init(
   writekey='<MY HONEYCOMB API KEY>',
   dataset='my-app',
   service_name='my-app',
-  verbose_mode=True,
+  debug=True,
 )
 
 app = Flask(__name__)
@@ -103,7 +103,7 @@ beeline.init(
   writekey='<MY HONEYCOMB API KEY>',
   dataset='my-app',
   service_name='my-app',
-  verbose_mode=True,
+  debug=True,
 )
 
 app = bottle.app()
@@ -126,7 +126,7 @@ beeline.init(
   service_name='my-app',
    # use a tornado coroutine rather than a threadpool to send events
   transmission_impl=libhoney.transmission.TornadoTransmission(),
-  verbose_mode=True,
+  debug=True,
 )
 ```
 
@@ -255,7 +255,7 @@ To apply this new logic, all you have to do is pass this sampler to the beeline 
 
 ```python
 import beeline
-beeline.init(writekey='mywritekey', dataset='myapp', sampler_hook=sampler, verbose_mode=True)
+beeline.init(writekey='mywritekey', dataset='myapp', sampler_hook=sampler, debug=True)
 ```
 
 **Note**: If you intend to use tracing, defining your own sampler can lead to inconsistent trace results.
@@ -280,18 +280,18 @@ After defining your presend hook function, pass it to the beeline's `init` metho
 
 ```python
 import beeline
-beeline.init(writekey='mywritekey', dataset='myapp', presend_hook=presend, verbose_mode=True)
+beeline.init(writekey='mywritekey', dataset='myapp', presend_hook=presend, debug=True)
 ```
 
 **Note**: Sampler hooks are executed *before* presend hooks.
 
 ## Troubleshooting
 
-### Verbose Mode
+### Debug Mode
 
-The Python Beeline supports an optional **verbose mode**. When enabled, additional logging will indicate when an event is enqueued, when a trace starts and ends, and whether or not the beeline initialized correctly. To enable verbose mode, set `verbose_mode=True` in the call to `init`:
+The Python Beeline supports an optional **debug mode**. When enabled, additional logging to stderr will indicate when an event is enqueued, when a trace starts and ends, and whether or not the beeline initialized correctly. To enable verbose mode, set `debug=True` in the call to `init`:
 
-`beeline.init(writekey='...', dataset='...', verbose_mode=True)`
+`beeline.init(writekey='...', dataset='...', debug=True)`
 
 ## Get in touch
 

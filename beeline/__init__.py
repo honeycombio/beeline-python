@@ -23,7 +23,7 @@ class Beeline(object):
             max_concurrent_batches=10, max_batch_size=100, send_frequency=0.25,
             block_on_send=False, block_on_response=False,
             transmission_impl=None, sampler_hook=None, presend_hook=None,
-            verbose_mode=False):
+            debug=False):
 
         self.client = None
         self.state = None
@@ -31,8 +31,8 @@ class Beeline(object):
         self.presend_hook = None
         self.sampler_hook = None
 
-        self.verbose_mode = verbose_mode
-        if verbose_mode:
+        self.debug = debug
+        if debug:
             self._init_logger()
 
         # allow setting some values from the environment
@@ -52,6 +52,7 @@ class Beeline(object):
             block_on_send=block_on_send, block_on_response=block_on_response,
             transmission_impl=transmission_impl,
             user_agent_addition=USER_AGENT_ADDITION,
+            debug=debug,
         )
 
         self.log('initialized honeycomb client: writekey=%s dataset=%s service_name=%s',
@@ -189,13 +190,13 @@ class Beeline(object):
             self.presend_hook(ev.fields())
 
         if hasattr(ev, 'traced_event'):
-            self.log("enqueing traced event ev = %s", ev.fields())
+            self.log("enqueuing traced event ev = %s", ev.fields())
             self.tracer_impl.send_traced_event(ev, presampled=presampled)
         elif presampled:
-            self.log("enqueing presampled event ev = %s", ev.fields())
+            self.log("enqueuing presampled event ev = %s", ev.fields())
             ev.send_presampled()
         else:
-            self.log("enqueing event ev = %s", ev.fields())
+            self.log("enqueuing event ev = %s", ev.fields())
             ev.send()
 
     def _init_logger(self):
@@ -209,7 +210,7 @@ class Beeline(object):
         self._logger.addHandler(ch)
 
     def log(self, msg, *args, **kwargs):
-        if self.verbose_mode:
+        if self.debug:
             self._logger.debug(msg, *args, **kwargs)
 
     def get_responses_queue(self):
@@ -221,7 +222,7 @@ class Beeline(object):
 
 def init(writekey='', dataset='', service_name='', state_manager=None, tracer=None,
          sample_rate=1, api_host='https://api.honeycomb.io', transmission_impl=None,
-         sampler_hook=None, presend_hook=None, verbose_mode=False, *args, **kwargs):
+         sampler_hook=None, presend_hook=None, debug=False, *args, **kwargs):
     ''' initialize the honeycomb beeline. This will initialize a libhoney
     client local to this module, and a state manager for tracking event context.
 
@@ -250,7 +251,7 @@ def init(writekey='', dataset='', service_name='', state_manager=None, tracer=No
     _GBL = Beeline(
         writekey=writekey, dataset=dataset, sample_rate=sample_rate,
         api_host=api_host, transmission_impl=transmission_impl,
-        verbose_mode=verbose_mode,
+        debug=debug,
         # since we've simplified the init function signature a bit,
         # pass on other args for backwards compatibility
         *args, **kwargs

@@ -27,7 +27,7 @@ class SynchronousTracer(Tracer):
             yield
         finally:
             ev = self._state.pop_event()
-            log("enqueing traced event ev = %s", ev.fields())
+            log("enqueuing traced event ev = %s", ev.fields())
             self.send_traced_event(ev)
 
     def new_traced_event(self, name, trace_id=None, parent_id=None):
