@@ -1,6 +1,9 @@
 # Honeycomb Beeline for Python
 
-The Honeycomb Beeline for Python is an easy way to instrument your Python web application for observability. It is compatible with the frameworks Django (>1.10), Flask, Bottle, and Tornado, automatically instrumenting them to send useful events to [Honeycomb](https://www.honeycomb.io).
+This package makes it easy to instrument your Python web application to send useful events to [Honeycomb](https://honeycomb.io), a service for debugging your software in production.
+- [Usage and Examples](https://docs.honeycomb.io/getting-data-in/beelines/beeline-python/)
+
+Currently supports Django (>1.10), Flask, Bottle, and Tornado.
 
 Compatible with both Python 2.7 and Python 3. Sign up for a [Honeycomb trial](https://ui.honeycomb.io/signup) to obtain an API key before starting.
 
