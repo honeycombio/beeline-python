@@ -1,6 +1,5 @@
 import beeline
 
-
 class HoneyWSGIMiddleware(object):
 
     def __init__(self, app):
@@ -8,7 +7,7 @@ class HoneyWSGIMiddleware(object):
 
     def __call__(self, environ, start_response):
         trace_name = "bottle_http_%s" % environ['REQUEST_METHOD'].lower()
-        beeline._new_event(data={
+        beeline.internal.new_event(data={
             "type": "http_server",
             "request.host": environ['HTTP_HOST'],
             "request.method": environ['REQUEST_METHOD'],
@@ -22,7 +21,7 @@ class HoneyWSGIMiddleware(object):
 
         def _start_response(status, headers, *args):
             beeline.add_field("response.status_code", status)
-            beeline._send_event()
+            beeline.internal.send_event()
 
             return start_response(status, headers, *args)
 

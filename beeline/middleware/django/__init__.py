@@ -49,7 +49,7 @@ class HoneyMiddlewareBase(object):
         # the view (and later middleware) are called.
 
         trace_name = "django_http_%s" % request.method.lower()
-        beeline._new_event(data={
+        beeline.internal.new_event(data={
             "type": "http_server",
             "request.host": request.get_host(),
             "request.method": request.method,
@@ -70,7 +70,7 @@ class HoneyMiddlewareBase(object):
         # the view is called.
 
         beeline.add_field("response.status_code", response.status_code)
-        beeline._send_event()
+        beeline.internal.send_event()
 
         return response
 
