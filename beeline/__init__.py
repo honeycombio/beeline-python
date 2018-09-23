@@ -3,7 +3,6 @@ import os
 import socket
 
 from libhoney import Client
-from libhoney.errors import SendError
 from beeline.state import ThreadLocalState
 from beeline.trace import SynchronousTracer
 from beeline.version import VERSION
@@ -72,11 +71,14 @@ class Beeline(object):
             self.state = ThreadLocalState()
 
         self.tracer_impl = SynchronousTracer(self.client, self.state)
+        self.tracer_impl.register_hooks(presend=presend_hook, sampler=sampler_hook)
         self.sampler_hook = sampler_hook
         self.presend_hook = presend_hook
 
     def send_now(self, data):
-        ''' Create an event and enqueue it immediately. Does not work with
+        ''' DEPRECATED - to be removed in a future release
+        
+        Create an event and enqueue it immediately. Does not work with
         `beeline.add_field` - this is equivalent to calling `libhoney.send_now`
         '''
         ev = self.client.new_event()
@@ -86,7 +88,7 @@ class Beeline(object):
         self._run_hooks_and_send(ev)
 
     def add_field(self, name, value):
-        ''' Add a field to the currently active event. For example, if you are
+        ''' Add a field to the currently active span. For example, if you are
         using django and wish to add additional context to the current request
         before it is sent to Honeycomb:
 
@@ -96,13 +98,12 @@ class Beeline(object):
         attributed to the wrong event, make sure that `new_event` and `close_event`
         calls are matched.
         '''
-        # fetch the current event from our state provider
-        ev = self.state.get_current_event()
-        # if no event is in state, we're a noop
-        if ev is None:
+        # fetch the current event from our tracer
+        span = self.tracer_impl.get_active_span()
+        # if there are no spans, this is a noop
+        if span is None:
             return
-
-        ev.add_field(name, value)
+        span.add_context_field(name, value)
 
     def add(self, data):
         '''Similar to add_field(), but allows you to add a number of name:value pairs
@@ -111,67 +112,55 @@ class Beeline(object):
         `beeline.add({ "first_field": "a", "second_field": "b"})`
         '''
         # fetch the current event from our state provider
-        ev = self.state.get_current_event()
-        # if no event is in state, we're a noop
-        if ev is None:
+        span = self.tracer_impl.get_active_span()
+        # if there are no spans, this is a noop
+        if span is None:
             return
 
-        ev.add(data)
+        span.add_context(data)
 
     def tracer(self, name, trace_id=None, parent_id=None):
         return self.tracer_impl(name=name, trace_id=trace_id, parent_id=parent_id)
 
     def new_event(self, data=None, trace_name='', top_level=False):
         ''' create a new event, populating it with the given data if
-        supplied. The event is added to the given State manager. To send the
-        event, call send_event(). There should be a send_event() for each
-        call to new_event(), or tracing and `add` and `add_field` will not
-        work correctly.
+        supplied. If no trace is running, a new trace will be started,
+        otherwise the event will be added as a span of the existing trace.
 
-        If `trace_name` is set, generate trace metadata and measure the time
-        between when the event is created and when the event is sent as
-        `duration_ms`.
+        To send the event, call send_event(). There should be a
+        send_event() for each call to new_event(), or tracing and
+        `add` and `add_field` will not work correctly.
 
-        If top_level is True, resets any previous event state. Set this in
-        top-level events (example: start of a request) to ensure that state
-        and trace data are cleaned up from a previous execution.
+        If trace_name is specified, will set the "name" field of the current span,
+        which is used in the trace visualizer.
+
+        top_level is no longer used and is maintained for compatibility.
         '''
-        if top_level:
-            self.state.reset()
-
-        if trace_name:
-            ev = self.tracer_impl.new_traced_event(trace_name)
+        if self.tracer_impl.get_active_trace_id():
+            self.tracer_impl.start_span(context=data)
         else:
-            ev = self.client.new_event()
-
-        if data:
-            ev.add(data)
-
-        self.state.add_event(ev)
+            self.tracer_impl.start_trace(context=data)
 
     def send_event(self):
-        ''' send the current event in the state manager, if one exists.
+        ''' Sends the currently active event (current span), if it exists.
         '''
-        ev = self.state.pop_event()
 
-        if ev is None:
-            return
-
-        self._run_hooks_and_send(ev)
+        span = self.tracer_impl.get_active_span()
+        if span:
+            self.tracer_impl.finish_span(span)
 
     def send_all(self):
-        ''' send all events in the event stack, regardless of their
+        ''' send all spans in the trace stack, regardless of their
         state
         '''
-        ev = self.state.pop_event()
-        while ev:
-            try:
-                self._run_hooks_and_send(ev)
-            except SendError:
-                # disregard any errors due to uninitialized events
-                pass
 
-            ev = self.state.pop_event()
+        span = self.tracer_impl.get_active_span()
+        while span:
+            if span.is_root():
+                self.tracer_impl.finish_trace(span)
+                return
+            self.tracer_impl.finish_span(span)
+            span = self.tracer_impl.get_active_span()
 
     def _run_hooks_and_send(self, ev):
         ''' internal - run any defined hooks on the event and send '''
@@ -251,7 +240,7 @@ def init(writekey='', dataset='', service_name='', state_manager=None, tracer=No
     _GBL = Beeline(
         writekey=writekey, dataset=dataset, sample_rate=sample_rate,
         api_host=api_host, transmission_impl=transmission_impl,
-        debug=debug,
+        debug=debug, presend_hook=presend_hook, sampler_hook=sampler_hook,
         # since we've simplified the init function signature a bit,
         # pass on other args for backwards compatibility
         *args, **kwargs
@@ -289,9 +278,9 @@ def add(data):
 
 def tracer(name, trace_id=None, parent_id=None):
     '''
-    When used in a context manager, creates a trace event for the contained
-    code. If existing trace context data is available, will mark the event as a
-    child of the most recent trace span.
+    When used in a context manager, creates a span for the contained
+    code. If a trace is ongoing, will add a new child span under the currently
+    running span. If no trace is ongoing, will start a new trace.
 
     Example use:
 
@@ -304,6 +293,109 @@ def tracer(name, trace_id=None, parent_id=None):
     - `name`: a descriptive name for the this trace span, i.e. "database query for user"
     '''
     return _GBL.tracer(name=name, trace_id=trace_id, parent_id=parent_id)
+
+def start_trace(context=None, trace_id=None, parent_span_id=None):
+    '''
+    Start a trace, returning the root span. To finish the trace, pass the span
+    to `finish_trace`. If you are using the beeline middleware plugins, such as for
+    django, flask, or AWS lambda, you will want to use `start_span` instead, as
+    `start_trace` is called at the start of the request.
+
+    Args:
+    - `context`: optional dictionary of event fields to populate the root span with
+    - `trace_id`: the trace_id to use. If None, will be automatically generated.
+        Use this if you want to explicitly resume trace in this application that was
+        initiated in another application, and you have the upstream trace_id.
+    - `parent_span_id`: If trace_id is set, will populate the root span's parent
+        with this id.
+    '''
+    if not _GBL:
+        return
+
+    return _GBL.tracer_impl.start_trace(context=context, trace_id=trace_id, parent_span_id=parent_span_id)
+
+def finish_trace(span):
+    ''' Explicitly finish a trace. If you started a trace with `start_trace`, you must call
+    this to close the trace and send the root span. If you are using the beeline middleware plugins,
+    such as django, flask, or AWS lambda, you can skip this step as the trace will be closed for
+    you.
+
+    Args:
+    - `span`: Span object that was returned by `start_trace`
+    '''
+    if not _GBL:
+        return
+
+    _GBL.tracer_impl.finish_trace(span=span)
+
+def start_span(context=None, parent_id=None):
+    '''
+    Start a new span and return the span object. Returns None if no trace is active.
+    For each `start_span`, there should be one call to `close_span`. Child spans should
+    also be closed before parent spans. Closing spans out of order will lead to strange
+    results and can break the bookkeeping needed to preserve trace structure. For example:
+
+    ```
+    parent_span = beeline.start_span()
+    # this span is a child of the last span created
+    child_span = beeline.start_span()
+    beeline.finish_span(child_span)
+    beeline.finish_span(parent_span)
+    ```
+
+    Args:
+    - `context`: optional dictionary of event fields to populate the span with
+    - `parent_id`: ID of parent span - use this only if you have a very good reason to
+        do so.
+    '''
+    if not _GBL:
+        return
+
+    return _GBL.tracer_impl.start_span(context=context, parent_id=parent_id)
+
+def finish_span(span):
+    '''
+    Finish the provided span, sending the associated event data to Honeycomb.
+
+    For each `start_span`, there should be one call to `close_span`.
+
+    Args:
+    - `span`: Span object that was returned by `start_trace`
+    '''
+    if not _GBL:
+        return
+
+    _GBL.tracer_impl.finish_span(span=span)
+
+def add_context(data):
+    if not _GBL:
+        return
+    
+    _GBL.tracer_impl.add_context(data=data)
+
+def add_context_field(name, value):
+    if not _GBL:
+        return
+    
+    _GBL.tracer_impl.add_context_field(name=name, value=value)
+
+def remove_context_field(name):
+    if not _GBL:
+        return
+    
+    _GBL.tracer_impl.remove_context_field(name=name)
+
+def add_custom_context(name, value):
+    if not _GBL:
+        return
+    
+    _GBL.tracer_impl.add_custom_context(name=name, value=value)
+
+def remove_custom_context(name):
+    if not _GBL:
+        return
+    
+    _GBL.tracer_impl.remove_custom_context(name=name)
 
 def get_beeline():
     return _GBL
@@ -327,8 +419,8 @@ def get_responses_queue():
 
 def close():
     ''' close the beeline and libhoney client, flushing any unsent events. '''
-    global GBL
-    if GBL:
-        GBL.close()
+    global _GBL
+    if _GBL:
+        _GBL.close()
 
-    GBL = None
+    _GBL = None

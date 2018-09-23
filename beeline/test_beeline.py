@@ -1,8 +1,9 @@
 import unittest
-from mock import Mock, patch
+from mock import Mock, patch, call
 
 import beeline
 import libhoney
+assert libhoney
 
 class TestBeelineSendEvent(unittest.TestCase):
     def setUp(self):
@@ -13,49 +14,41 @@ class TestBeelineSendEvent(unittest.TestCase):
 
     def test_send_event(self):
         ''' test correct behavior for send_event '''
-        ev = Mock()
-        delattr(ev, 'traced_event')
         _beeline = beeline.Beeline()
-        _beeline.state = Mock()
-        _beeline.state.pop_event.return_value = ev
+        _beeline.tracer_impl = Mock()
+        m_span = Mock()
+        _beeline.tracer_impl.get_active_span.return_value = m_span
         _beeline.send_event()
-        _beeline.state.pop_event.assert_called_once_with()
-        ev.send.assert_called_once_with()
+        _beeline.tracer_impl.get_active_span.assert_called_once_with()
+        _beeline.tracer_impl.finish_span.assert_called_once_with(m_span)
 
     def test_send_no_events(self):
         ''' ensure nothing crashes when we try to send with no events in the
         stack '''
         _beeline = beeline.Beeline()
-        _beeline.state = Mock()
-        _beeline.state.pop_event.return_value = None
+        _beeline.tracer_impl = Mock()
+        _beeline.tracer_impl.get_active_span.return_value = None
         _beeline.send_event()
-        _beeline.state.pop_event.assert_called_once_with()
-
-    def send_traced_event(self):
-        ''' test send_event behavior when event is traced '''
-        ev = Mock()
-        ev.traced_event = True
-        self.m_state.pop_event.return_value = ev
-        beeline._send_event()
-        self.m_state.pop_event.assert_called_once_with()
-        self.m_tracer.send_traced_event.assert_called_once_with(ev)
+        _beeline.tracer_impl.get_active_span.assert_called_once_with()
 
     def test_send_all(self):
-        ''' ensure events are flushed '''
-        ev1, ev2, ev3 = Mock(), Mock(), Mock()
-        ev3.send.side_effect = libhoney.SendError("bad thing!")
-        delattr(ev1, 'traced_event')
-        delattr(ev2, 'traced_event')
-        delattr(ev3, 'traced_event')
+        ''' ensure events are flushed, and that the root span is handled with
+        finish_trace '''
+        s1, s2, s3 = Mock(), Mock(), Mock()
+        s1.is_root.return_value = False
+        s2.is_root.return_value = False
+        s3.is_root.return_value = True
         _beeline = beeline.Beeline()
-        _beeline.state = Mock()
-        _beeline.state.pop_event.side_effect = [ev1, ev2, ev3, None]
+        _beeline.tracer_impl = Mock()
+        _beeline.tracer_impl.get_active_span.side_effect = [s1, s2, s3, None]
 
         _beeline.send_all()
 
-        ev1.send.assert_called_once_with()
-        ev2.send.assert_called_once_with()
-        ev3.send.assert_called_once_with()
+        _beeline.tracer_impl.finish_span.assert_has_calls([
+            call(s1),
+            call(s2),
+        ])
+        _beeline.tracer_impl.finish_trace.assert_called_once_with(s3)
 
     def test_run_hooks_and_send_no_hooks(self):
         ''' ensure send works when no hooks defined '''
