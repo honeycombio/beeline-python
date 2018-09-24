@@ -5,7 +5,7 @@ import beeline
 import libhoney
 assert libhoney
 
-class TestBeelineSendEvent(unittest.TestCase):
+class TestBeeline(unittest.TestCase):
     def setUp(self):
         self.m_gbl = patch('beeline._GBL').start()
 
@@ -20,7 +20,7 @@ class TestBeelineSendEvent(unittest.TestCase):
         _beeline.tracer_impl.get_active_span.return_value = m_span
         _beeline.send_event()
         _beeline.tracer_impl.get_active_span.assert_called_once_with()
-        _beeline.tracer_impl.finish_span.assert_called_once_with(m_span)
+        _beeline.tracer_impl.finish_trace.assert_called_once_with(m_span)
 
     def test_send_no_events(self):
         ''' ensure nothing crashes when we try to send with no events in the
@@ -141,3 +141,14 @@ class TestBeelineSendEvent(unittest.TestCase):
                 "happy data": "so happy",
             },
         )
+
+    def test_start_trace_returns_value(self):
+        ''' ensure the top-level start_span and start_trace APIs return the value
+        form their calls to the tracer '''
+        self.m_gbl.tracer_impl.start_span.return_value = 'wooimaspan'
+        val = beeline.start_span()
+        self.assertEqual(val, 'wooimaspan')
+
+        self.m_gbl.tracer_impl.start_trace.return_value = 'wooimatrace'
+        val = beeline.start_trace()
+        self.assertEqual(val, 'wooimatrace')

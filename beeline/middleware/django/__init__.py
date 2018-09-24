@@ -80,7 +80,7 @@ class HoneyMiddlewareBase(object):
 
         if isinstance(context, dict):
             for k, v in context.items():
-                beeline.add_custom_context(k, v)
+                beeline.add_trace_field(k, v)
 
         response = self.get_response(request)
 

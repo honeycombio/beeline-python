@@ -3,7 +3,6 @@ import os
 import socket
 
 from libhoney import Client
-from beeline.state import ThreadLocalState
 from beeline.trace import SynchronousTracer
 from beeline.version import VERSION
 from beeline import internal
@@ -17,7 +16,7 @@ _GBL = None
 
 class Beeline(object):
     def __init__(self,
-            writekey='', dataset='', service_name='', state_manager=None,
+            writekey='', dataset='', service_name='',
             tracer=None, sample_rate=1, api_host='https://api.honeycomb.io',
             max_concurrent_batches=10, max_batch_size=100, send_frequency=0.25,
             block_on_send=False, block_on_response=False,
@@ -25,7 +24,6 @@ class Beeline(object):
             debug=False):
 
         self.client = None
-        self.state = None
         self.tracer_impl = None
         self.presend_hook = None
         self.sampler_hook = None
@@ -65,12 +63,7 @@ class Beeline(object):
         self.client.add_field('meta.beeline_version', VERSION)
         self.client.add_field('meta.local_hostname', socket.gethostname())
 
-        if state_manager:
-            self.state = state_manager
-        else:
-            self.state = ThreadLocalState()
-
-        self.tracer_impl = SynchronousTracer(self.client, self.state)
+        self.tracer_impl = SynchronousTracer(self.client)
         self.tracer_impl.register_hooks(presend=presend_hook, sampler=sampler_hook)
         self.sampler_hook = sampler_hook
         self.presend_hook = presend_hook
@@ -88,15 +81,12 @@ class Beeline(object):
         self._run_hooks_and_send(ev)
 
     def add_field(self, name, value):
-        ''' Add a field to the currently active span. For example, if you are
-        using django and wish to add additional context to the current request
-        before it is sent to Honeycomb:
+        ''' Add a field to the currently active span.
 
         `beeline.add_field("my field", "my value")`
 
-        The "active event" is determined by the state manager. If a field is being
-        attributed to the wrong event, make sure that `new_event` and `close_event`
-        calls are matched.
+        If a field is being attributed to the wrong span/event, 
+        make sure that `new_event` and `close_event` calls are matched.
         '''
         # fetch the current event from our tracer
         span = self.tracer_impl.get_active_span()
@@ -111,7 +101,7 @@ class Beeline(object):
 
         `beeline.add({ "first_field": "a", "second_field": "b"})`
         '''
-        # fetch the current event from our state provider
+        # fetch the current event from the tracer
         span = self.tracer_impl.get_active_span()
         # if there are no spans, this is a noop
         if span is None:
@@ -122,31 +112,43 @@ class Beeline(object):
     def tracer(self, name, trace_id=None, parent_id=None):
         return self.tracer_impl(name=name, trace_id=trace_id, parent_id=parent_id)
 
-    def new_event(self, data=None, trace_name='', top_level=False):
-        ''' create a new event, populating it with the given data if
+    def new_event(self, data=None, trace_name=''):
+        ''' DEPRECATED: Helper method that wraps `start_trace` and 
+        `start_span`. It is better to use these methods as it provides
+        better control and context around how traces are implemented in your
+        app.
+
+        Creates a new span, populating it with the given data if
         supplied. If no trace is running, a new trace will be started,
         otherwise the event will be added as a span of the existing trace.
 
-        To send the event, call send_event(). There should be a
-        send_event() for each call to new_event(), or tracing and
+        To send the event, call `beeline.send_event()`. There should be a
+        `send_event()` for each call to `new_event()`, or tracing and
         `add` and `add_field` will not work correctly.
 
         If trace_name is specified, will set the "name" field of the current span,
         which is used in the trace visualizer.
-
-        top_level is no longer used and is maintained for compatibility.
         '''
+        if trace_name:
+            data['name'] = trace_name
+
         if self.tracer_impl.get_active_trace_id():
             self.tracer_impl.start_span(context=data)
         else:
             self.tracer_impl.start_trace(context=data)
 
     def send_event(self):
-        ''' Sends the currently active event (current span), if it exists.
+        ''' DEPRECATED: Sends the currently active event (current span),
+        if it exists.
+
+        There must be one call to `send_event` for each call to `new_event`.
         '''
 
         span = self.tracer_impl.get_active_span()
         if span:
+            if span.is_root():
+                self.tracer_impl.finish_trace(span)
+                return
             self.tracer_impl.finish_span(span)
 
     def send_all(self):
@@ -209,11 +211,11 @@ class Beeline(object):
         if self.client:
             self.client.close()
 
-def init(writekey='', dataset='', service_name='', state_manager=None, tracer=None,
+def init(writekey='', dataset='', service_name='', tracer=None,
          sample_rate=1, api_host='https://api.honeycomb.io', transmission_impl=None,
          sampler_hook=None, presend_hook=None, debug=False, *args, **kwargs):
     ''' initialize the honeycomb beeline. This will initialize a libhoney
-    client local to this module, and a state manager for tracking event context.
+    client local to this module, and a tracer to track traces and spans.
 
     Args:
     - `writekey`: the authorization key for your team on Honeycomb. Find your team
@@ -235,6 +237,7 @@ def init(writekey='', dataset='', service_name='', state_manager=None, tracer=No
     '''
     global _GBL
     if _GBL:
+        _GBL.log("beeline already initialized! skipping initialization")
         return
 
     _GBL = Beeline(
@@ -250,32 +253,96 @@ def init(writekey='', dataset='', service_name='', state_manager=None, tracer=No
 def send_now(data):
     ''' Create an event and enqueue it immediately. Does not work with
     `beeline.add_field` - this is equivalent to calling `libhoney.send_now`
+
+    Args:
+    - `data`: dictionary of field names (strings) to field values to include
+              in the event
     '''
     # no-op if we're not initialized
-    if not _GBL:
-        return
-    return _GBL.send_now(data)
+    if _GBL:
+        _GBL.send_now(data)
 
 def add_field(name, value):
-    ''' Add a field to the currently active event. For example, if you are
+    ''' DEPRECATED: use `add_context_field`
+
+    Args:
+    - `data`: dictionary of field names (strings) to field values to add
+    '''
+    if _GBL:
+        _GBL.add_field(name, value)
+
+def add(data):
+    '''DEPRECATED: use `add_context`
+
+    Args:
+    - `data`: dictionary of field names (strings) to field values to add
+    '''
+    if _GBL:
+        _GBL.add(data)
+
+def add_context(data):
+    '''Similar to add_context_field(), but allows you to add a number of name:value pairs
+    to the currently active event at the same time.
+
+    `beeline.add_context({ "first_field": "a", "second_field": "b"})`
+
+    Args:
+    - `data`: dictionary of field names (strings) to field values to add
+    '''
+    if _GBL:
+        _GBL.tracer_impl.add_context(data=data)
+
+def add_context_field(name, value):
+    ''' Add a field to the currently active span. For example, if you are
     using django and wish to add additional context to the current request
     before it is sent to Honeycomb:
 
-    `beeline.add_field("my field", "my value")`
-    '''
-    if not _GBL:
-        return
-    return _GBL.add_field(name, value)
+    `beeline.add_context_field("my field", "my value")`
 
-def add(data):
-    '''Similar to add_field(), but allows you to add a number of name:value pairs
-    to the currently active event at the same time.
-
-    `beeline.add({ "first_field": "a", "second_field": "b"})`
+    Args:
+    - `name`: Name of field to add
+    - `value`: Value of new field
     '''
-    if not _GBL:
-        return
-    return _GBL.add(data)
+    if _GBL:
+        _GBL.tracer_impl.add_context_field(name=name, value=value)
+
+def remove_context_field(name):
+    ''' Remove a single field from the current span.
+    
+    ```
+    beeline.add_context({ "first_field": "a", "second_field": "b"})
+    beeline.remove_context_field("second_field")
+
+    Args:
+    - `name`: Name of field to remove
+    ```
+     '''
+    if _GBL:
+        _GBL.tracer_impl.remove_context_field(name=name)
+
+def add_trace_field(name, value):
+    ''' Similar to `add_context_field` - adds a field to the current span, but
+    also to all other future spans in this trace. Trace context fields will be
+    propagated to downstream services if using instrumented libraries 
+    like `requests`.
+
+    Args:
+    - `name`: Name of field to add
+    - `value`: Value of new field
+    '''
+    if _GBL:
+        _GBL.tracer_impl.add_trace_field(name=name, value=value)
+
+def remove_trace_field(name):
+    ''' Removes a trace context field from the current span. This will not 
+    affect  other existing spans, but will prevent the field from being 
+    propagated to new spans.
+
+    Args:
+    - `name`: Name of field to remove
+    '''
+    if _GBL:
+        _GBL.tracer_impl.remove_trace_field(name=name)
 
 def tracer(name, trace_id=None, parent_id=None):
     '''
@@ -310,10 +377,8 @@ def start_trace(context=None, trace_id=None, parent_span_id=None):
     - `parent_span_id`: If trace_id is set, will populate the root span's parent
         with this id.
     '''
-    if not _GBL:
-        return
-
-    return _GBL.tracer_impl.start_trace(context=context, trace_id=trace_id, parent_span_id=parent_span_id)
+    if _GBL:
+        return _GBL.tracer_impl.start_trace(context=context, trace_id=trace_id, parent_span_id=parent_span_id)
 
 def finish_trace(span):
     ''' Explicitly finish a trace. If you started a trace with `start_trace`, you must call
@@ -324,10 +389,8 @@ def finish_trace(span):
     Args:
     - `span`: Span object that was returned by `start_trace`
     '''
-    if not _GBL:
-        return
-
-    _GBL.tracer_impl.finish_trace(span=span)
+    if _GBL:
+        _GBL.tracer_impl.finish_trace(span=span)
 
 def start_span(context=None, parent_id=None):
     '''
@@ -349,10 +412,8 @@ def start_span(context=None, parent_id=None):
     - `parent_id`: ID of parent span - use this only if you have a very good reason to
         do so.
     '''
-    if not _GBL:
-        return
-
-    return _GBL.tracer_impl.start_span(context=context, parent_id=parent_id)
+    if _GBL:
+        return _GBL.tracer_impl.start_span(context=context, parent_id=parent_id)
 
 def finish_span(span):
     '''
@@ -363,40 +424,46 @@ def finish_span(span):
     Args:
     - `span`: Span object that was returned by `start_trace`
     '''
-    if not _GBL:
-        return
+    if _GBL:
+        _GBL.tracer_impl.finish_span(span=span)
 
-    _GBL.tracer_impl.finish_span(span=span)
+def new_event(data=None, trace_name=''):
+    ''' DEPRECATED: Helper method that wraps `start_trace` and 
+    `start_span`. It is better to use these methods as it provides
+    better control and context around how traces are implemented in your
+    app.
 
-def add_context(data):
-    if not _GBL:
-        return
+    Creates a new span, populating it with the given data if
+    supplied. If no trace is running, a new trace will be started,
+    otherwise the event will be added as a span of the existing trace.
 
-    _GBL.tracer_impl.add_context(data=data)
+    To send the event, call `beeline.send_event()`. There should be a
+    `send_event()` for each call to `new_event()`, or tracing and
+    `add` and `add_field` will not work correctly.
 
-def add_context_field(name, value):
-    if not _GBL:
-        return
+    If trace_name is specified, will set the "name" field of the current span,
+    which is used in the trace visualizer.
+    '''
+    if _GBL:
+        _GBL.new_event(data=data, trace_name=trace_name)
+    
+def send_event():
+    ''' DEPRECATED: Sends the currently active event (current span),
+    if it exists.
 
-    _GBL.tracer_impl.add_context_field(name=name, value=value)
+    There must be one call to `send_event` for each call to `new_event`.
+    '''
+    if _GBL:
+        _GBL.send_event()
 
-def remove_context_field(name):
-    if not _GBL:
-        return
-
-    _GBL.tracer_impl.remove_context_field(name=name)
-
-def add_custom_context(name, value):
-    if not _GBL:
-        return
-
-    _GBL.tracer_impl.add_custom_context(name=name, value=value)
-
-def remove_custom_context(name):
-    if not _GBL:
-        return
-
-    _GBL.tracer_impl.remove_custom_context(name=name)
+def send_all():
+    ''' send all spans in the trace stack, regardless of their
+    state. You might use this in a catch-all error handler
+    along with `beeline.close()` to send all events before the program
+    terminates abruptly.
+    '''
+    if _GBL:
+        _GBL.send_all()
 
 def get_beeline():
     return _GBL
@@ -413,10 +480,8 @@ def get_responses_queue():
     When the Client's `close` method is called, a None will be inserted on
     the queue, indicating that no further responses will be written.
     '''
-    if not _GBL:
-        return
-
-    return _GBL.get_responses_queue()
+    if _GBL:
+        return _GBL.get_responses_queue()
 
 def close():
     ''' close the beeline and libhoney client, flushing any unsent events. '''

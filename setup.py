@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 setup(
     python_requires='>=2.7',
     name='honeycomb-beeline',
-    version='1.4.0',
+    version='2.0.0',
     description='Honeycomb library for easy instrumentation',
     url='https://github.com/honeycombio/beeline-python',
     author='Honeycomb.io',
@@ -18,6 +18,7 @@ setup(
     tests_require=[
         'mock',
         'flask',
+        'tornado',
         'django<2; python_version == "2.7"',
         'django>=2; python_version >= "3.0"',
     ],

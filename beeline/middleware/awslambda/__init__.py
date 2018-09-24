@@ -70,7 +70,7 @@ def beeline_wrapper(handler):
                 # if there is custom context attached from upstream, add that now
                 if isinstance(trace_context, dict):
                     for k, v in trace_context.items():
-                        beeline.add_custom_context(k, v)
+                        beeline.add_trace_field(k, v)
 
                 resp = handler(event, context)
 
