@@ -188,7 +188,7 @@ class SynchronousTracer(Tracer):
 
         return marshal_trace_context(
             self._state.trace_id,
-            self._state.stack[-1],
+            self._state.stack[-1].id,
             self._state.custom_context
         )
 
