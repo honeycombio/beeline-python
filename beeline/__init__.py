@@ -77,7 +77,7 @@ class Beeline(object):
 
     def send_now(self, data):
         ''' DEPRECATED - to be removed in a future release
-        
+
         Create an event and enqueue it immediately. Does not work with
         `beeline.add_field` - this is equivalent to calling `libhoney.send_now`
         '''
@@ -370,31 +370,31 @@ def finish_span(span):
 def add_context(data):
     if not _GBL:
         return
-    
+
     _GBL.tracer_impl.add_context(data=data)
 
 def add_context_field(name, value):
     if not _GBL:
         return
-    
+
     _GBL.tracer_impl.add_context_field(name=name, value=value)
 
 def remove_context_field(name):
     if not _GBL:
         return
-    
+
     _GBL.tracer_impl.remove_context_field(name=name)
 
 def add_custom_context(name, value):
     if not _GBL:
         return
-    
+
     _GBL.tracer_impl.add_custom_context(name=name, value=value)
 
 def remove_custom_context(name):
     if not _GBL:
         return
-    
+
     _GBL.tracer_impl.remove_custom_context(name=name)
 
 def get_beeline():

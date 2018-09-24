@@ -203,6 +203,7 @@ class TestSynchronousTracer(unittest.TestCase):
         ])
 
         m_client.new_event.reset_mock()
+        m_client.new_event.return_value.fields.return_value = {}
         # swap out some custom context fields
         tracer.add_custom_context('more', 'data!')
         tracer.remove_custom_context('another')

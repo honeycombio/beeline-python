@@ -9,14 +9,14 @@ class TestGetTraceIds(unittest.TestCase):
         event = {
             'headers': {
                 # case shouldn't matter
-                'X-HoNEyComb-TrACE': '1;trace_id=bloop,parent_id=scoop,context=aGk=',
+                'X-HoNEyComb-TrACE': '1;trace_id=bloop,parent_id=scoop,context=e30K',
             },
         }
 
         trace_id, parent_id, context = awslambda._get_trace_data(event)
         self.assertEqual(trace_id, 'bloop')
         self.assertEqual(parent_id, 'scoop')
-        self.assertEqual(context, 'aGk=')
+        self.assertEqual(context, {})
 
     def test_get_trace_ids_no_header(self):
         ''' ensure that we handle events with no header key '''
@@ -42,7 +42,7 @@ class TestLambdaWrapper(unittest.TestCase):
 
     def test_basic_instrumentation(self):
         ''' ensure basic event fields get instrumented '''
-        with patch('beeline.middleware.awslambda.beeline.add') as m_add,\
+        with patch('beeline.middleware.awslambda.beeline.add_context') as m_add,\
                 patch('beeline.middleware.awslambda.beeline._GBL'),\
                 patch('beeline.middleware.awslambda.COLD_START') as m_cold_start:
             m_event = Mock()

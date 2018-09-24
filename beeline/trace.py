@@ -33,9 +33,6 @@ class SynchronousTracer(Tracer):
     def __init__(self, client, state):
         self._client = client
         self._state = threading.local()
-        self._state.trace_id = None
-        self._state.stack = []
-        self._state.custom_context = {}
 
         self.presend_hook = None
         self.sampler_hook = None
@@ -181,6 +178,7 @@ class SynchronousTracer(Tracer):
         key = "app.%s" % name
         if key in self._state.custom_context:
             del self._state.custom_context[key]
+        self.remove_context_field(key)
 
     @init_state
     def marshal_trace_context(self):
