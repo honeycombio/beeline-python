@@ -241,6 +241,7 @@ def init(writekey='', dataset='', service_name='', state_manager=None, tracer=No
         writekey=writekey, dataset=dataset, sample_rate=sample_rate,
         api_host=api_host, transmission_impl=transmission_impl,
         debug=debug, presend_hook=presend_hook, sampler_hook=sampler_hook,
+        service_name=service_name,
         # since we've simplified the init function signature a bit,
         # pass on other args for backwards compatibility
         *args, **kwargs
