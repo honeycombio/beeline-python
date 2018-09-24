@@ -1,7 +1,18 @@
 import datetime
 import beeline
+from beeline.trace import unmarshal_trace_context
 from django.db import connection
 
+def _get_trace_context(request):
+    trace_context = request.META.get('HTTP_X_HONEYCOMB_TRACE')
+    beeline.internal.log("got trace context: %s", trace_context)
+    if trace_context:
+        try:
+            return unmarshal_trace_context(trace_context)
+        except Exception as e:
+            beeline.internal.log('error attempting to extract trace context: %s', str(e))
+
+    return None, None, None
 
 class HoneyDBWrapper(object):
 
@@ -10,7 +21,7 @@ class HoneyDBWrapper(object):
         trace_name = "django_%s_query" % vendor
 
         with beeline.tracer(trace_name):
-            beeline.add({
+            beeline.add_context({
                 "type": "db",
                 "db.query": sql,
                 "db.query_args": params,
@@ -20,17 +31,17 @@ class HoneyDBWrapper(object):
                 db_call_start = datetime.datetime.now()
                 result = execute(sql, params, many, context)
                 db_call_diff = datetime.datetime.now() - db_call_start
-                beeline.add_field(
+                beeline.add_context_field(
                     "db.duration", db_call_diff.total_seconds() * 1000)
             except Exception as e:
-                beeline.add_field("db.error", str(type(e)))
-                beeline.add_field("db.error_detail", str(e))
+                beeline.add_context_field("db.error", str(type(e)))
+                beeline.add_context_field("db.error_detail", str(e))
                 raise
             else:
                 return result
             finally:
                 if vendor == "postgresql" or vendor == "mysql":
-                    beeline.add({
+                    beeline.add_context({
                         "db.last_insert_id": context['cursor'].cursor.lastrowid,
                         "db.rows_affected": context['cursor'].cursor.rowcount,
                     })
@@ -48,8 +59,11 @@ class HoneyMiddlewareBase(object):
         # Code to be executed for each request before
         # the view (and later middleware) are called.
 
+        trace_id, parent_id, context = _get_trace_context(request)
+
         trace_name = "django_http_%s" % request.method.lower()
-        beeline.internal.new_event(data={
+        trace = beeline.start_trace(context={
+            "name": trace_name,
             "type": "http_server",
             "request.host": request.get_host(),
             "request.method": request.method,
@@ -62,20 +76,24 @@ class HoneyMiddlewareBase(object):
             "request.query": request.GET.dict(),
             "request.xhr": request.is_ajax(),
             "request.post": request.POST.dict()
-        }, trace_name=trace_name, top_level=True)
+        }, trace_id=trace_id, parent_span_id=parent_id)
+
+        if isinstance(context, dict):
+            for k, v in context.items():
+                beeline.add_custom_context(k, v)
 
         response = self.get_response(request)
 
         # Code to be executed for each request/response after
         # the view is called.
 
-        beeline.add_field("response.status_code", response.status_code)
-        beeline.internal.send_event()
+        beeline.add_context_field("response.status_code", response.status_code)
+        beeline.finish_trace(trace)
 
         return response
 
     def process_exception(self, request, exception):
-        beeline.add_field("request.error_detail", str(exception))
+        beeline.add_context_field("request.error_detail", str(exception))
 
 
 class HoneyMiddlewareHttp(HoneyMiddlewareBase):

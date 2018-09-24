@@ -7,7 +7,8 @@ class HoneyWSGIMiddleware(object):
 
     def __call__(self, environ, start_response):
         trace_name = "bottle_http_%s" % environ['REQUEST_METHOD'].lower()
-        beeline.internal.new_event(data={
+        trace = beeline.start_trace(context={
+            "name": trace_name,
             "type": "http_server",
             "request.host": environ['HTTP_HOST'],
             "request.method": environ['REQUEST_METHOD'],
@@ -17,11 +18,11 @@ class HoneyWSGIMiddleware(object):
             "request.user_agent": environ['HTTP_USER_AGENT'],
             "request.scheme": environ['wsgi.url_scheme'],
             "request.query": environ['QUERY_STRING']
-        }, trace_name=trace_name, top_level=True)
+        })
 
         def _start_response(status, headers, *args):
-            beeline.add_field("response.status_code", status)
-            beeline.internal.send_event()
+            beeline.add_context_field("response.status_code", status)
+            beeline.finish_trace(trace)
 
             return start_response(status, headers, *args)
 
