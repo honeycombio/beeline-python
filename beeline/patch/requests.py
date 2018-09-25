@@ -17,6 +17,6 @@ def request(_request, instance, args, kwargs):
     except Exception:
         pass
     finally:
-        _request(*args, **kwargs)
+        return _request(*args, **kwargs)
 
 wrap_function_wrapper('requests.sessions', 'Session.request', request)
