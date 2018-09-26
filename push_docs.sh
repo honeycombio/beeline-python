@@ -20,5 +20,5 @@ git clean -fd
 git commit -m "Travis build: $TRAVIS_BUILD_NUMBER"
 
 # Pushing via secure GH_TOKEN
-git remote add origin-pages https://${GH_TOKEN}@github.com/honeycombio/libhoney-py.git > /dev/null 2>&1
+git remote add origin-pages https://${GH_TOKEN}@github.com/honeycombio/beeline-python.git > /dev/null 2>&1
 git push --force --quiet --set-upstream origin-pages gh-pages
