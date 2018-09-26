@@ -152,3 +152,9 @@ class TestBeeline(unittest.TestCase):
         self.m_gbl.tracer_impl.start_trace.return_value = 'wooimatrace'
         val = beeline.start_trace()
         self.assertEqual(val, 'wooimatrace')
+
+    def test_marshal_trace_context_returns_value(self):
+        ''' ensure the top-level definition of marshal_trace_context returns a value '''
+        self.m_gbl.tracer_impl.marshal_trace_context.return_value = 'asdf'
+        val = beeline.marshal_trace_context()
+        self.assertEqual(val, 'asdf')

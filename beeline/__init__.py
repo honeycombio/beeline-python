@@ -427,6 +427,24 @@ def finish_span(span):
     if _GBL:
         _GBL.tracer_impl.finish_span(span=span)
 
+def marshal_trace_context():
+    '''
+    Returns a serialized form of the current trace context (including the trace
+    id and the current span), encoded as a string. You can use this to propagate
+    trace context to other services.
+
+    Example:
+
+    ```
+    trace_context = beeline.marshal_trace_context()
+    headers = {'X-Honeycomb-Trace': trace_context}
+    requests.get("http://...", headers=headers)
+    ```
+    '''
+    if _GBL:
+        return _GBL.tracer_impl.marshal_trace_context()
+
+
 def new_event(data=None, trace_name=''):
     ''' DEPRECATED: Helper method that wraps `start_trace` and 
     `start_span`. It is better to use these methods as it provides
