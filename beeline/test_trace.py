@@ -46,8 +46,8 @@ class TestSynchronousTracer(unittest.TestCase):
     def test_trace_context_manager_exception(self):
         ''' ensure that send_traced_event is called even if an exception is
         raised inside the context manager '''
-        m_client, m_state = Mock(), Mock()
-        tracer = SynchronousTracer(m_client, m_state)
+        m_client = Mock()
+        tracer = SynchronousTracer(m_client)
         tracer.start_trace = Mock()
         mock_span = Mock()
         tracer.start_trace.return_value = mock_span
@@ -60,8 +60,8 @@ class TestSynchronousTracer(unittest.TestCase):
         tracer.finish_trace.assert_called_once_with(mock_span)
 
     def test_trace_context_manager_starts_span_if_trace_active(self):
-        m_client, m_state = Mock(), Mock()
-        tracer = SynchronousTracer(m_client, m_state)
+        m_client = Mock()
+        tracer = SynchronousTracer(m_client)
         tracer.start_span = Mock()
         mock_span = Mock()
         tracer.start_span.return_value = mock_span
@@ -74,8 +74,8 @@ class TestSynchronousTracer(unittest.TestCase):
         tracer.finish_span.assert_called_once_with(mock_span)
 
     def test_start_trace(self):
-        m_client, m_state = Mock(), Mock()
-        tracer = SynchronousTracer(m_client, m_state)
+        m_client = Mock()
+        tracer = SynchronousTracer(m_client)
 
         span = tracer.start_trace(context={'big': 'important_stuff'})
         self.assertIsInstance(span.event.start_time, datetime.datetime)
@@ -93,8 +93,8 @@ class TestSynchronousTracer(unittest.TestCase):
         self.assertIsNotNone(tracer._state.trace_id)
 
     def test_start_span(self):
-        m_client, m_state = Mock(), Mock()
-        tracer = SynchronousTracer(m_client, m_state)
+        m_client = Mock()
+        tracer = SynchronousTracer(m_client)
 
         span = tracer.start_trace(context={'big': 'important_stuff'})
         # make sure this is the only event in the stack
@@ -121,8 +121,8 @@ class TestSynchronousTracer(unittest.TestCase):
         ])
 
     def test_start_span_returns_none_if_no_trace(self):
-        m_client, m_state = Mock(), Mock()
-        tracer = SynchronousTracer(m_client, m_state)
+        m_client = Mock()
+        tracer = SynchronousTracer(m_client)
 
         span = tracer.start_span(context={'more': 'important_stuff'})
         # should still have the root span as the first item in the stack
@@ -131,11 +131,11 @@ class TestSynchronousTracer(unittest.TestCase):
 
     def test_finish_trace(self):
         # implicitly tests finish_span
-        m_client, m_state = Mock(), Mock()
+        m_client = Mock()
         # these values are used before sending
         m_client.new_event.return_value.start_time = datetime.datetime.now()
         m_client.new_event.return_value.sample_rate = 1
-        tracer = SynchronousTracer(m_client, m_state)
+        tracer = SynchronousTracer(m_client)
 
         span = tracer.start_trace(context={'big': 'important_stuff'})
         self.assertEqual(tracer._state.stack[0], span)
@@ -149,8 +149,8 @@ class TestSynchronousTracer(unittest.TestCase):
         self.assertIsNone(tracer._state.trace_id)
 
     def test_start_trace_with_trace_id_set(self):
-        m_client, m_state = Mock(), Mock()
-        tracer = SynchronousTracer(m_client, m_state)
+        m_client = Mock()
+        tracer = SynchronousTracer(m_client)
 
         span = tracer.start_trace(trace_id='123456', parent_span_id='999999')
         self.assertEqual(span.trace_id, '123456')
@@ -165,9 +165,9 @@ class TestSynchronousTracer(unittest.TestCase):
             }),
         ])
 
-    def test_add_custom_context_propagates(self):
-        m_client, m_state = Mock(), Mock()
-        tracer = SynchronousTracer(m_client, m_state)
+    def test_add_trace_field_propagates(self):
+        m_client = Mock()
+        tracer = SynchronousTracer(m_client)
 
         span = tracer.start_trace(context={'big': 'important_stuff'})
         # make sure this is the only event in the stack
@@ -176,8 +176,8 @@ class TestSynchronousTracer(unittest.TestCase):
 
         m_client.new_event.reset_mock()
 
-        tracer.add_custom_context('another', 'important_thing')
-        tracer.add_custom_context('wide', 'events_are_great')
+        tracer.add_trace_field('another', 'important_thing')
+        tracer.add_trace_field('wide', 'events_are_great')
 
         span2 = tracer.start_span(context={'more': 'important_stuff'})
         # should still have the root span as the first item in the stack
@@ -204,9 +204,9 @@ class TestSynchronousTracer(unittest.TestCase):
 
         m_client.new_event.reset_mock()
         m_client.new_event.return_value.fields.return_value = {}
-        # swap out some custom context fields
-        tracer.add_custom_context('more', 'data!')
-        tracer.remove_custom_context('another')
+        # swap out some trace fields
+        tracer.add_trace_field('more', 'data!')
+        tracer.remove_trace_field('another')
 
         span3 = tracer.start_span(context={'more': 'important_stuff'})
         self.assertEqual(tracer._state.stack[0], span)
@@ -221,17 +221,16 @@ class TestSynchronousTracer(unittest.TestCase):
                 'app.more': 'data!',
         })
 
-        def test_get_active_span(self):
-            m_client, m_state = Mock(), Mock()
-            tracer = SynchronousTracer(m_client, m_state)
-            span = tracer.start_trace()
-            self.assertEquals(tracer.get_active_span(), span.id)
+    def test_get_active_span(self):
+        m_client = Mock()
+        tracer = SynchronousTracer(m_client)
+        span = tracer.start_trace()
+        self.assertEquals(tracer.get_active_span().id, span.id)
 
     def test_run_hooks_and_send_no_hooks(self):
         ''' ensure send works when no hooks defined '''
-        m_client, m_state = Mock(), Mock()
-        # these values are used before sending
-        tracer = SynchronousTracer(m_client, m_state)
+        m_client = Mock()
+        tracer = SynchronousTracer(m_client)
         m_span = Mock()
 
         with patch('beeline.trace._should_sample') as m_sample_fn:
@@ -247,9 +246,8 @@ class TestSynchronousTracer(unittest.TestCase):
 
     def test_run_hooks_and_send_sampler(self):
         ''' ensure send works with a sampler hook defined '''
-        m_client, m_state = Mock(), Mock()
-        # these values are used before sending
-        tracer = SynchronousTracer(m_client, m_state)
+        m_client = Mock()
+        tracer = SynchronousTracer(m_client)
         m_span = Mock()
 
         def _sampler_drop_all(fields):
@@ -284,9 +282,8 @@ class TestSynchronousTracer(unittest.TestCase):
 
     def test_run_hooks_and_send_presend_hook(self):
         ''' ensure send works when presend hook is defined '''
-        m_client, m_state = Mock(), Mock()
-        # these values are used before sending
-        tracer = SynchronousTracer(m_client, m_state)
+        m_client = Mock()
+        tracer = SynchronousTracer(m_client)
         m_span = Mock()
 
         def _presend_hook(fields):
@@ -319,14 +316,14 @@ class TestTraceContext(unittest.TestCase):
     def test_marshal_trace_context(self):
         trace_id = "123456"
         parent_id = "654321"
-        custom_context = {"i": "like", "to": "trace"}
+        trace_fields = {"i": "like", "to": "trace"}
 
-        trace_context = marshal_trace_context(trace_id, parent_id, custom_context)
+        trace_context = marshal_trace_context(trace_id, parent_id, trace_fields)
 
-        trace_id_u, parent_id_u, custom_context_u = unmarshal_trace_context(trace_context)
+        trace_id_u, parent_id_u, trace_fields_u = unmarshal_trace_context(trace_context)
         self.assertEqual(trace_id_u, trace_id, "unmarshaled trace id should match original")
         self.assertEqual(parent_id_u, parent_id, "unmarshaled parent id should match original")
-        self.assertDictEqual(custom_context_u, custom_context, "unmarshaled custom context should match original")
+        self.assertDictEqual(trace_fields_u, trace_fields, "unmarshaled trace fields should match original")
 
 
 class TestSpan(unittest.TestCase):

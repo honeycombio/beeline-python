@@ -69,7 +69,7 @@ class HoneyWSGIMiddleware(object):
         # populate any propagated custom context
         if isinstance(context, dict):
             for k, v in context.items():
-                beeline.add_custom_context(k, v)
+                beeline.add_trace_field(k, v)
 
         def _start_response(status, headers, *args):
             status_code = int(status[0:4])

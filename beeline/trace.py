@@ -21,7 +21,7 @@ def init_state(f):
         if not hasattr(self._state, 'trace_id'):
             self._state.trace_id = None
             self._state.stack = []
-            self._state.custom_context = {}
+            self._state.trace_fields = {}
 
         return f(self, *args, **kwargs)
     return d
@@ -30,32 +30,34 @@ class Tracer(object):
     pass
 
 class SynchronousTracer(Tracer):
-    def __init__(self, client, state):
+    def __init__(self, client):
         self._client = client
         self._state = threading.local()
 
         self.presend_hook = None
         self.sampler_hook = None
 
-        self._deprecated_state = state
-
     @contextmanager
     def __call__(self, name, trace_id=None, parent_id=None):
         try:
             span = None
-            is_trace = False
             if self.get_active_trace_id():
                 span = self.start_span(context={'name': name})
                 log('tracer context manager started new span, id = %s',
                     span.id)
             else:
-                is_trace = True
                 span = self.start_trace(context={'name': name})
                 log('tracer context manager started new trace, id = %s',
                     span.trace_id)
             yield
+        except Exception as e:
+            span.add_context({
+                "app.exception_type": str(type(e)),
+                "app.exception_string": str(e),
+            })
+            raise
         finally:
-            if is_trace:
+            if span.is_root():
                 log('tracer context manager ending trace, id = %s',
                     span.trace_id)
                 self.finish_trace(span)
@@ -76,7 +78,7 @@ class SynchronousTracer(Tracer):
 
         # reset our stack and context on new traces
         self._state.stack = []
-        self._state.custom_context = {}
+        self._state.trace_fields = {}
 
         # start the root span
         return self.start_span(context=context, parent_id=parent_span_id)
@@ -92,7 +94,7 @@ class SynchronousTracer(Tracer):
             parent_span_id = parent_id
         else:
             parent_span_id = self._state.stack[-1].id if self._state.stack else None
-        ev = self._client.new_event(data=self._state.custom_context)
+        ev = self._client.new_event(data=self._state.trace_fields)
         if context:
             ev.add(data=context)
 
@@ -166,18 +168,18 @@ class SynchronousTracer(Tracer):
             span.remove_context_field(name=name)
 
     @init_state
-    def add_custom_context(self, name, value):
+    def add_trace_field(self, name, value):
         # prefix with app to avoid key conflicts
         key = "app.%s" % name
-        self._state.custom_context[key] = value
+        self._state.trace_fields[key] = value
         # also add to current span
         self.add_context_field(key, value)
 
     @init_state
-    def remove_custom_context(self, name):
+    def remove_trace_field(self, name):
         key = "app.%s" % name
-        if key in self._state.custom_context:
-            del self._state.custom_context[key]
+        if key in self._state.trace_fields:
+            del self._state.trace_fields[key]
         self.remove_context_field(key)
 
     @init_state
@@ -189,57 +191,8 @@ class SynchronousTracer(Tracer):
         return marshal_trace_context(
             self._state.trace_id,
             self._state.stack[-1].id,
-            self._state.custom_context
+            self._state.trace_fields
         )
-
-    def new_traced_event(self, name, trace_id=None, parent_id=None):
-        '''
-        DEPRECATED - to be removed in a future release
-
-        Create an event decorated with trace IDs. Initiates a new trace if none
-        is in progress, or appends the event to the trace stack.
-
-        You must call `send_traced_event` to clean up the trace stack, or
-        the trace will not work correctly
-        '''
-        ev = self._client.new_event()
-        trace_id, parent_id, span_id = self.deprecated_state.start_trace(
-            trace_id, parent_id)
-        ev.add({
-            'trace.trace_id': trace_id,
-            'trace.parent_id': parent_id,
-            'trace.span_id': span_id,
-            'name': name,
-        })
-        log("started new traced event ev = %s", ev.fields())
-        ev.start_time = datetime.datetime.now()
-        ev.traced_event = True
-        return ev
-
-    def send_traced_event(self, ev, presampled=False):
-        '''
-        DEPRECATED - to be removed in a future release
-
-        Applies deterministic sampling to the event before sending. This allows
-        us to sample entire traces '''
-        # we shouldn't get called for non-trace events, so do nothing.
-        if not hasattr(ev, 'traced_event'):
-            return
-
-        duration = datetime.datetime.now() - ev.start_time
-        duration_ms = duration.total_seconds() * 1000.0
-        ev.add_field('duration_ms', duration_ms)
-
-        trace_id = ev.fields().get('trace.trace_id')
-
-        if presampled:
-            ev.send_presampled()
-        elif trace_id and _should_sample(trace_id, ev.sample_rate):
-            ev.send_presampled()
-        else:
-            ev.send()
-
-        self._deprecated_state.end_trace()
 
     def register_hooks(self, presend=None, sampler=None):
         self.presend_hook = presend
@@ -309,9 +262,9 @@ def _should_sample(trace_id, sample_rate):
 
 def marshal_trace_context(trace_id, parent_id, context):
     version = 1
-    custom_context = base64.b64encode(json.dumps(context).encode()).decode()
+    trace_fields = base64.b64encode(json.dumps(context).encode()).decode()
     trace_context = "{};trace_id={},parent_id={},context={}".format(
-        version, trace_id, parent_id, custom_context
+        version, trace_id, parent_id, trace_fields
     )
 
     return trace_context
