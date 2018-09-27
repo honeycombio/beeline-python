@@ -2,6 +2,7 @@
 
 This package makes it easy to instrument your Python web application to send useful events to [Honeycomb](https://honeycomb.io), a service for debugging your software in production.
 - [Usage and Examples](https://docs.honeycomb.io/getting-data-in/beelines/beeline-python/)
+- [API Reference](https://honeycombio.github.io/beeline-python/)
 
 Currently supports Django (>1.10), Flask, Bottle, and Tornado.
 
