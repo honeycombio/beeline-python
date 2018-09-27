@@ -12,8 +12,6 @@ def _get_trace_context(environ):
     # http://werkzeug.pocoo.org/docs/0.14/wrappers/#base-wrappers
     req = Request(environ, shallow=True)
 
-
-
     trace_context = req.headers.get('x-honeycomb-trace')
     beeline.internal.log("got trace context: %s", trace_context)
     if trace_context:
@@ -26,11 +24,11 @@ def _get_trace_context(environ):
 
 class HoneyMiddleware(object):
 
-    def __init__(self, app, db_events=True):
+    def __init__(self, app, db_events=True, init_fn=None):
         self.app = app
         if signals.signals_available:
             self.app.teardown_request(self._teardown_request)
-        app.wsgi_app = HoneyWSGIMiddleware(app.wsgi_app)
+        app.wsgi_app = HoneyWSGIMiddleware(app.wsgi_app, init_fn=init_fn)
         if db_events:
             app = HoneyDBMiddleware(app)
 
@@ -43,10 +41,15 @@ class HoneyMiddleware(object):
 
 class HoneyWSGIMiddleware(object):
 
-    def __init__(self, app):
+    def __init__(self, app, init_fn):
         self.app = app
+        self.init_called = False
+        self.init_fn = init_fn
 
     def __call__(self, environ, start_response):
+        if not self.init_called and self.init_fn:
+            self.init_fn()
+            self.init_called = True
         trace_name = "flask_http_%s" % environ.get('REQUEST_METHOD', None)
         if trace_name is not None:
             trace_name = trace_name.lower()
