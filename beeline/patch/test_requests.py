@@ -20,11 +20,11 @@ class TestRequestsPatch(unittest.TestCase):
 
             # this is our request call that's being wrapped
             m_request = Mock()
-            m_request.return_value = 'I was called!'
-            args = {}
-            kwargs = {}
+            m_request.return_value = Mock(headers={'content-type': 'application/json', 'content-length': 23}, status_code=500)
+            args = ['get']
+            kwargs = {'url': 'http://example.com'}
             ret = request(m_request, m_session, args, kwargs)
 
-            m_request.assert_called_once_with()
-            self.assertEqual(ret, 'I was called!')
+            m_request.assert_called_once_with(*args, **kwargs)
+            self.assertEqual(ret, m_request.return_value)
             self.assertEqual(m_session.headers['X-Honeycomb-Trace'], trace_context)
