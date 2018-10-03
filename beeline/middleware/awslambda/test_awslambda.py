@@ -34,11 +34,13 @@ class TestLambdaWrapper(unittest.TestCase):
         ''' ensure that the wrapper doesn't break anything if used before
         beeline.init is called
         '''
-        @awslambda.beeline_wrapper
-        def foo(event, context):
-            return 1
+        with patch('beeline.get_beeline') as p:
+            p.return_value = None
+            @awslambda.beeline_wrapper
+            def foo(event, context):
+                return 1
 
-        self.assertEqual(foo(None, None), 1)
+            self.assertEqual(foo(None, None), 1)
 
     def test_basic_instrumentation(self):
         ''' ensure basic event fields get instrumented '''
