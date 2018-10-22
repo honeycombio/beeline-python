@@ -115,6 +115,12 @@ class SynchronousTracer(Tracer):
         # send the span's event. Even if the stack is in an unhealthy state,
         # it's probably better to send event data than not
         if span.event:
+            # propagate trace fields that may have been added in later spans
+            for k, v in self._state.trace_fields.items():
+                # don't overwrite existing values because they may be different
+                if k not in span.event.fields():
+                    span.event.add_field(k, v)
+
             duration = datetime.datetime.now() - span.event.start_time
             duration_ms = duration.total_seconds() * 1000.0
             span.event.add_field('duration_ms', duration_ms)

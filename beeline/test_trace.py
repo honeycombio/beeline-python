@@ -311,6 +311,26 @@ class TestSynchronousTracer(unittest.TestCase):
             },
         )
 
+    def test_run_hooks_and_send_adds_trace_fields(self):
+        ''' ensure trace fields are propagated backwards '''
+        m_client = Mock()
+        tracer = SynchronousTracer(m_client)
+        m_span = Mock()
+        m_span.event = Event()
+        m_span.event.start_time = datetime.datetime.now()
+        # set an existing trace field
+        m_span.event.add_field('app.a', 1)
+
+        with patch('beeline.trace._should_sample') as m_sample_fn:
+            m_sample_fn.return_value = True
+            # add some trace fields
+            tracer.add_trace_field('a', 0)
+            tracer.add_trace_field('b', 2)
+            tracer.add_trace_field('c', 3)
+            tracer.finish_span(m_span)
+        
+        # ensure we only added fields b and c and did not try to overwrite a
+        self.assertDictContainsSubset({'app.a': 1, 'app.b': 2, 'app.c': 3}, m_span.event.fields())
 
 class TestTraceContext(unittest.TestCase):
     def test_marshal_trace_context(self):
