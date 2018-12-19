@@ -7,10 +7,8 @@ assert libhoney
 
 class TestBeeline(unittest.TestCase):
     def setUp(self):
+        self.addCleanup(patch.stopall)
         self.m_gbl = patch('beeline._GBL').start()
-
-    def tearDown(self):
-        self.m_gbl.stop()
 
     def test_send_event(self):
         ''' test correct behavior for send_event '''
@@ -178,11 +176,9 @@ class TestBeeline(unittest.TestCase):
 
 class TestBeelineNotInitialized(unittest.TestCase):
     def setUp(self):
+        self.addCleanup(patch.stopall)
         self.m_gbl = patch('beeline.get_beeline').start()
         self.m_gbl.return_value = None
-
-    def tearDown(self):
-        self.m_gbl.stop()
 
     def test_trace_wrapper(self):
         ''' ensure the trace wrapper doesn't break if the beeline is not initialized '''
