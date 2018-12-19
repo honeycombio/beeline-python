@@ -85,7 +85,7 @@ class Beeline(object):
 
         `beeline.add_field("my field", "my value")`
 
-        If a field is being attributed to the wrong span/event, 
+        If a field is being attributed to the wrong span/event,
         make sure that `new_event` and `close_event` calls are matched.
         '''
         # fetch the current event from our tracer
@@ -113,7 +113,7 @@ class Beeline(object):
         return self.tracer_impl(name=name, trace_id=trace_id, parent_id=parent_id)
 
     def new_event(self, data=None, trace_name=''):
-        ''' DEPRECATED: Helper method that wraps `start_trace` and 
+        ''' DEPRECATED: Helper method that wraps `start_trace` and
         `start_span`. It is better to use these methods as it provides
         better control and context around how traces are implemented in your
         app.
@@ -163,6 +163,15 @@ class Beeline(object):
                 return
             self.tracer_impl.finish_span(span)
             span = self.tracer_impl.get_active_span()
+
+    def wrap(self, name, trace_id=None, parent_id=None):
+        def wrapped(fn, *args, **kwargs):
+            def inner(*args, **kwargs):
+                with self.tracer(name=name, trace_id=trace_id, parent_id=parent_id):
+                    return fn(*args, **kwargs)
+            return inner
+
+        return wrapped
 
     def _run_hooks_and_send(self, ev):
         ''' internal - run any defined hooks on the event and send '''
@@ -308,7 +317,7 @@ def add_context_field(name, value):
 
 def remove_context_field(name):
     ''' Remove a single field from the current span.
-    
+
     ```
     beeline.add_context({ "first_field": "a", "second_field": "b"})
     beeline.remove_context_field("second_field")
@@ -323,7 +332,7 @@ def remove_context_field(name):
 def add_trace_field(name, value):
     ''' Similar to `add_context_field` - adds a field to the current span, but
     also to all other future spans in this trace. Trace context fields will be
-    propagated to downstream services if using instrumented libraries 
+    propagated to downstream services if using instrumented libraries
     like `requests`.
 
     Args:
@@ -334,8 +343,8 @@ def add_trace_field(name, value):
         _GBL.tracer_impl.add_trace_field(name=name, value=value)
 
 def remove_trace_field(name):
-    ''' Removes a trace context field from the current span. This will not 
-    affect  other existing spans, but will prevent the field from being 
+    ''' Removes a trace context field from the current span. This will not
+    affect  other existing spans, but will prevent the field from being
     propagated to new spans.
 
     Args:
@@ -446,7 +455,7 @@ def marshal_trace_context():
 
 
 def new_event(data=None, trace_name=''):
-    ''' DEPRECATED: Helper method that wraps `start_trace` and 
+    ''' DEPRECATED: Helper method that wraps `start_trace` and
     `start_span`. It is better to use these methods as it provides
     better control and context around how traces are implemented in your
     app.
@@ -464,7 +473,7 @@ def new_event(data=None, trace_name=''):
     '''
     if _GBL:
         _GBL.new_event(data=data, trace_name=trace_name)
-    
+
 def send_event():
     ''' DEPRECATED: Sends the currently active event (current span),
     if it exists.
@@ -508,3 +517,40 @@ def close():
         _GBL.close()
 
     _GBL = None
+
+def wrap(name, trace_id=None, parent_id=None):
+    '''
+    Function decorator to wrap an entire function in a span. If no trace
+    is active, starts a new trace, and the wrapping span will be a root
+    span.
+
+    Example use:
+
+    ```
+    @wrap(name="my_expensive_function")
+    def my_func(n):
+        recursive_fib(n)
+
+    my_func(100)
+    ```
+
+    Args:
+    - `name`: a descriptive name for the this trace span, i.e. "function_name"
+    - `trace_id`: the trace_id to use. If None, will be automatically generated.
+        Use this if you want to explicitly resume a trace in this application that was
+        initiated in another application, and you have the upstream trace_id.
+    - `parent_id`: If trace_id is set, will populate the root span's parent
+        with this id.
+    '''
+
+    _beeline = get_beeline()
+    if not _beeline:
+        # just pass through if not initialized
+        def wrapped(fn, *args, **kwargs):
+            def inner(*args, **kwargs):
+                return fn(*args, **kwargs)
+            return inner
+
+        return wrapped
+
+    return _beeline.wrap(name, trace_id, parent_id)

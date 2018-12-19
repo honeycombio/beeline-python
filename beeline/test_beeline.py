@@ -158,3 +158,39 @@ class TestBeeline(unittest.TestCase):
         self.m_gbl.tracer_impl.marshal_trace_context.return_value = 'asdf'
         val = beeline.marshal_trace_context()
         self.assertEqual(val, 'asdf')
+
+    def test_trace_wrapper(self):
+        ''' ensure that the trace wrapper decorarates a function and starts a trace '''
+        _beeline = beeline.Beeline()
+        with patch('beeline.get_beeline') as m_gbl:
+            m_gbl.return_value = _beeline
+            _beeline.tracer_impl._run_hooks_and_send = Mock()
+
+            @beeline.wrap(name="my_sum")
+            def my_sum(a, b):
+                return a + b
+
+            # this should accept the function's arguments normally and return the function's value
+            # if there is one
+            self.assertEqual(my_sum(1, 2), 3)
+            # check that an event was sent, from which we can infer that the function was wrapped
+            self.assertTrue(_beeline.tracer_impl._run_hooks_and_send.called)
+
+class TestBeelineNotInitialized(unittest.TestCase):
+    def setUp(self):
+        self.m_gbl = patch('beeline.get_beeline').start()
+        self.m_gbl.return_value = None
+
+    def tearDown(self):
+        self.m_gbl.stop()
+
+    def test_trace_wrapper(self):
+        ''' ensure the trace wrapper doesn't break if the beeline is not initialized '''
+        self.assertIsNone(beeline.get_beeline())
+        @beeline.wrap(name="my_sum")
+        def my_sum(a, b):
+            return a + b
+
+        # this should not crash if the beeline isn't initialized
+        # it should also accept arguments normally and return the function's value
+        self.assertEqual(my_sum(1, 2), 3)
