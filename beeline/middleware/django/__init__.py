@@ -61,7 +61,11 @@ class HoneyMiddlewareBase(object):
 
         trace_id, parent_id, context = _get_trace_context(request)
 
-        trace_name = "django_http_%s" % request.method.lower()
+        request_method = request.get('method')
+        if request_method:
+            trace_name = "django_http_%s" % request_method.lower()
+        else: 
+            trace_name = "django_http"
 
         meta = request.get('META')
         remote_addr = None
@@ -69,7 +73,7 @@ class HoneyMiddlewareBase(object):
         user_agent = None
         if meta:
             remote_addr = meta.get('REMOTE_ADDR')
-            content_length = meta.get('CONTENT_LENGTH')
+            content_length = meta.get('CONTENT_LENGTH', 0)
             user_agent = meta.get('HTTP_USER_AGENT')
 
         post = request.get('POST')
@@ -77,7 +81,7 @@ class HoneyMiddlewareBase(object):
         if post:
             post_request = post.dict()
 
-        get = requst.get('GET')
+        get = request.get('GET')
         get_request = None
         if get:
             get_request = get.dict()
@@ -86,7 +90,7 @@ class HoneyMiddlewareBase(object):
             "name": trace_name,
             "type": "http_server",
             "request.host": request.get_host(),
-            "request.method": request.get('method'),
+            "request.method": request_method,
             "request.path": request.get('path'),
             "request.remote_addr": remote_addr,
             "request.content_length": content_length,
