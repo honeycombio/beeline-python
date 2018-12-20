@@ -62,20 +62,40 @@ class HoneyMiddlewareBase(object):
         trace_id, parent_id, context = _get_trace_context(request)
 
         trace_name = "django_http_%s" % request.method.lower()
+
+        meta = request.get('META')
+        remote_addr = None
+        content_length = None
+        user_agent = None
+        if meta:
+            remote_addr = meta.get('REMOTE_ADDR')
+            content_length = meta.get('CONTENT_LENGTH')
+            user_agent = meta.get('HTTP_USER_AGENT')
+
+        post = request.get('POST')
+        post_request = None
+        if post:
+            post_request = post.dict()
+
+        get = requst.get('GET')
+        get_request = None
+        if get:
+            get_request = get.dict()
+
         trace = beeline.start_trace(context={
             "name": trace_name,
             "type": "http_server",
             "request.host": request.get_host(),
-            "request.method": request.method,
-            "request.path": request.path,
-            "request.remote_addr": request.META['REMOTE_ADDR'],
-            "request.content_length": request.META['CONTENT_LENGTH'],
-            "request.user_agent": request.META['HTTP_USER_AGENT'],
-            "request.scheme": request.scheme,
+            "request.method": request.get('method'),
+            "request.path": request.get('path'),
+            "request.remote_addr": remote_addr,
+            "request.content_length": content_length,
+            "request.user_agent": user_agent,
+            "request.scheme": request.get('scheme'),
             "request.secure": request.is_secure(),
-            "request.query": request.GET.dict(),
+            "request.query": get_request,
             "request.xhr": request.is_ajax(),
-            "request.post": request.POST.dict()
+            "request.post": post_request
         }, trace_id=trace_id, parent_span_id=parent_id)
 
         if isinstance(context, dict):
