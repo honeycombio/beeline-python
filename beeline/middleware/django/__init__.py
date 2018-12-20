@@ -60,17 +60,17 @@ class HoneyMiddlewareBase(object):
         # the view (and later middleware) are called.
 
         trace_id, parent_id, context = _get_trace_context(request)
-
         trace_name = "django_http_%s" % request.method.lower()
+
         trace = beeline.start_trace(context={
             "name": trace_name,
             "type": "http_server",
             "request.host": request.get_host(),
             "request.method": request.method,
             "request.path": request.path,
-            "request.remote_addr": request.META['REMOTE_ADDR'],
-            "request.content_length": request.META['CONTENT_LENGTH'],
-            "request.user_agent": request.META['HTTP_USER_AGENT'],
+            "request.remote_addr": request.META.get('REMOTE_ADDR'),
+            "request.content_length": request.META.get('CONTENT_LENGTH', 0),
+            "request.user_agent": request.META.get('HTTP_USER_AGENT'),
             "request.scheme": request.scheme,
             "request.secure": request.is_secure(),
             "request.query": request.GET.dict(),

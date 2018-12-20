@@ -47,23 +47,25 @@ class HoneyWSGIMiddleware(object):
         self.app = app
 
     def __call__(self, environ, start_response):
-        trace_name = "flask_http_%s" % environ.get('REQUEST_METHOD', None)
-        if trace_name is not None:
-            trace_name = trace_name.lower()
+        request_method = environ.get('REQUEST_METHOD')
+        if request_method:
+            trace_name = "flask_http_%s" % request_method.lower()
+        else:
+            trace_name = "flask_http"
 
         trace_id, parent_id, context = _get_trace_context(environ)
 
         root_span = beeline.start_trace(context={
             "type": "http_server",
             "name": trace_name,
-            "request.host": environ.get('HTTP_HOST', None),
-            "request.method": environ.get('REQUEST_METHOD', None),
-            "request.path": environ.get('PATH_INFO', None),
-            "request.remote_addr": environ.get('REMOTE_ADDR', None),
+            "request.host": environ.get('HTTP_HOST'),
+            "request.method": request_method,
+            "request.path": environ.get('PATH_INFO'),
+            "request.remote_addr": environ.get('REMOTE_ADDR'),
             "request.content_length": environ.get('CONTENT_LENGTH', 0),
-            "request.user_agent": environ.get('HTTP_USER_AGENT', None),
-            "request.scheme": environ.get('wsgi.url_scheme', None),
-            "request.query": environ.get('QUERY_STRING', None)
+            "request.user_agent": environ.get('HTTP_USER_AGENT'),
+            "request.scheme": environ.get('wsgi.url_scheme'),
+            "request.query": environ.get('QUERY_STRING')
         }, trace_id=trace_id, parent_span_id=parent_id)
 
         # populate any propagated custom context
