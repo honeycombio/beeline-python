@@ -60,46 +60,22 @@ class HoneyMiddlewareBase(object):
         # the view (and later middleware) are called.
 
         trace_id, parent_id, context = _get_trace_context(request)
-
-        request_method = request.get('method')
-        if request_method:
-            trace_name = "django_http_%s" % request_method.lower()
-        else: 
-            trace_name = "django_http"
-
-        meta = request.get('META')
-        remote_addr = None
-        content_length = None
-        user_agent = None
-        if meta:
-            remote_addr = meta.get('REMOTE_ADDR')
-            content_length = meta.get('CONTENT_LENGTH', 0)
-            user_agent = meta.get('HTTP_USER_AGENT')
-
-        post = request.get('POST')
-        post_request = None
-        if post:
-            post_request = post.dict()
-
-        get = request.get('GET')
-        get_request = None
-        if get:
-            get_request = get.dict()
+        trace_name = "django_http_%s" % request.method.lower()
 
         trace = beeline.start_trace(context={
             "name": trace_name,
             "type": "http_server",
             "request.host": request.get_host(),
-            "request.method": request_method,
-            "request.path": request.get('path'),
-            "request.remote_addr": remote_addr,
-            "request.content_length": content_length,
-            "request.user_agent": user_agent,
-            "request.scheme": request.get('scheme'),
+            "request.method": request.method,
+            "request.path": request.path,
+            "request.remote_addr": request.META.get('REMOTE_ADDR')
+            "request.content_length": request.META.get('CONTENT_LENGTH', 0)
+            "request.user_agent": request.META.get('HTTP_USER_AGENT')
+            "request.scheme": request.scheme,
             "request.secure": request.is_secure(),
-            "request.query": get_request,
+            "request.query": request.GET.dict(),
             "request.xhr": request.is_ajax(),
-            "request.post": post_request
+            "request.post": request.POST.dict()
         }, trace_id=trace_id, parent_span_id=parent_id)
 
         if isinstance(context, dict):
