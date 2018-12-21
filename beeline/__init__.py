@@ -164,7 +164,7 @@ class Beeline(object):
             self.tracer_impl.finish_span(span)
             span = self.tracer_impl.get_active_span()
 
-    def wrap(self, name, trace_id=None, parent_id=None):
+    def traced(self, name, trace_id=None, parent_id=None):
         def wrapped(fn, *args, **kwargs):
             def inner(*args, **kwargs):
                 with self.tracer(name=name, trace_id=trace_id, parent_id=parent_id):
@@ -518,16 +518,17 @@ def close():
 
     _GBL = None
 
-def wrap(name, trace_id=None, parent_id=None):
+def traced(name, trace_id=None, parent_id=None):
     '''
-    Function decorator to wrap an entire function in a span. If no trace
-    is active, starts a new trace, and the wrapping span will be a root
-    span.
+    Function decorator to wrap an entire function in a trace span. If no trace
+    is active in the current thread, starts a new trace, and the wrapping span
+    will be a root span. If a trace is active, creates a child span of the 
+    existing trace.
 
     Example use:
 
     ```
-    @wrap(name="my_expensive_function")
+    @traced(name="my_expensive_function")
     def my_func(n):
         recursive_fib(n)
 
@@ -535,7 +536,7 @@ def wrap(name, trace_id=None, parent_id=None):
     ```
 
     Args:
-    - `name`: a descriptive name for the this trace span, i.e. "function_name"
+    - `name`: a descriptive name for the this trace span, i.e. "function_name". This is required.
     - `trace_id`: the trace_id to use. If None, will be automatically generated.
         Use this if you want to explicitly resume a trace in this application that was
         initiated in another application, and you have the upstream trace_id.
@@ -553,4 +554,4 @@ def wrap(name, trace_id=None, parent_id=None):
 
         return wrapped
 
-    return _beeline.wrap(name, trace_id, parent_id)
+    return _beeline.traced(name, trace_id, parent_id)

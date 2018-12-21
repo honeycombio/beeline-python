@@ -164,7 +164,7 @@ class TestBeeline(unittest.TestCase):
             m_gbl.return_value = _beeline
             _beeline.tracer_impl._run_hooks_and_send = Mock()
 
-            @beeline.wrap(name="my_sum")
+            @beeline.traced(name="my_sum")
             def my_sum(a, b):
                 return a + b
 
@@ -183,7 +183,7 @@ class TestBeelineNotInitialized(unittest.TestCase):
     def test_trace_wrapper(self):
         ''' ensure the trace wrapper doesn't break if the beeline is not initialized '''
         self.assertIsNone(beeline.get_beeline())
-        @beeline.wrap(name="my_sum")
+        @beeline.traced(name="my_sum")
         def my_sum(a, b):
             return a + b
 
