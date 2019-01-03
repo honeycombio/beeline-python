@@ -18,7 +18,7 @@ setup(
     tests_require=[
         'mock',
         'flask',
-        'tornado',
+        'tornado==5',
         'django<2; python_version == "2.7"',
         'django>=2; python_version >= "3.0"',
     ],
