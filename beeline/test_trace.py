@@ -332,6 +332,18 @@ class TestSynchronousTracer(unittest.TestCase):
         # ensure we only added fields b and c and did not try to overwrite a
         self.assertDictContainsSubset({'app.a': 1, 'app.b': 2, 'app.c': 3}, m_span.event.fields())
 
+    def test_trace_context_manager_does_not_crash_if_span_is_none(self):
+        m_client = Mock()
+        tracer = SynchronousTracer(m_client)
+        tracer.start_span = Mock()
+        tracer.start_span.return_value = None
+        tracer.finish_span = Mock()
+
+        with tracer('foo'):
+            pass
+
+        tracer.start_span.assert_called_once_with(context={'name': 'foo'}, parent_id=None)
+
 class TestTraceContext(unittest.TestCase):
     def test_marshal_trace_context(self):
         trace_id = "123456"

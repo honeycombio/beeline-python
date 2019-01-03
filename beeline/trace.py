@@ -43,28 +43,34 @@ class SynchronousTracer(Tracer):
             span = None
             if self.get_active_trace_id():
                 span = self.start_span(context={'name': name})
-                log('tracer context manager started new span, id = %s',
-                    span.id)
+                if span:
+                    log('tracer context manager started new span, id = %s',
+                        span.id)
             else:
                 span = self.start_trace(context={'name': name})
-                log('tracer context manager started new trace, id = %s',
-                    span.trace_id)
+                if span:
+                    log('tracer context manager started new trace, id = %s',
+                        span.trace_id)
             yield
         except Exception as e:
-            span.add_context({
-                "app.exception_type": str(type(e)),
-                "app.exception_string": str(e),
-            })
+            if span:
+                span.add_context({
+                    "app.exception_type": str(type(e)),
+                    "app.exception_string": str(e),
+                })
             raise
         finally:
-            if span.is_root():
-                log('tracer context manager ending trace, id = %s',
-                    span.trace_id)
-                self.finish_trace(span)
+            if span:
+                if span.is_root():
+                    log('tracer context manager ending trace, id = %s',
+                        span.trace_id)
+                    self.finish_trace(span)
+                else:
+                    log('tracer context manager ending span, id = %s',
+                        span.id)
+                    self.finish_span(span)
             else:
-                log('tracer context manager ending span, id = %s',
-                    span.id)
-                self.finish_span(span)
+                log('tracer context manager span for %s was unexpectedly None', name)
 
     @init_state
     def start_trace(self, context=None, trace_id=None, parent_span_id=None):
