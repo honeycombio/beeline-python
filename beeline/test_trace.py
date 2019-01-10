@@ -274,8 +274,8 @@ class TestSynchronousTracer(unittest.TestCase):
         # always call send_presampled
         # send should never be called because at a minimum we always do deterministic
         # sampling
-        m_span.event.send.assert_not_called()
-        m_span.event.send_presampled.assert_called_once_with()
+        m_span.event.send.assert_not_called() # pylint: disable=no-member
+        m_span.event.send_presampled.assert_called_once_with() # pylint: disable=no-member
 
     def test_run_hooks_and_send_sampler(self):
         ''' ensure send works with a sampler hook defined '''
@@ -293,8 +293,8 @@ class TestSynchronousTracer(unittest.TestCase):
             tracer._run_hooks_and_send(m_span)
 
         # sampler ensures we drop everything
-        m_span.event.send.assert_not_called()
-        m_span.event.send_presampled.assert_not_called()
+        m_span.event.send.assert_not_called() # pylint: disable=no-member
+        m_span.event.send_presampled.assert_not_called() # pylint: disable=no-member
 
         def _sampler_drop_none(fields):
             return True, 100
@@ -308,8 +308,8 @@ class TestSynchronousTracer(unittest.TestCase):
 
         # sampler drops nothing, _should_sample rigged to always return true so
         # we always call send_presampled
-        m_span.event.send.assert_not_called()
-        m_span.event.send_presampled.assert_called_once_with()
+        m_span.event.send.assert_not_called() # pylint: disable=no-member
+        m_span.event.send_presampled.assert_called_once_with() # pylint: disable=no-member
         # ensure event is updated with new sample rate
         self.assertEqual(m_span.event.sample_rate, 100)
 
@@ -335,7 +335,7 @@ class TestSynchronousTracer(unittest.TestCase):
             m_sample_fn.return_value = True
             tracer._run_hooks_and_send(m_span)
 
-        m_span.event.send_presampled.assert_called_once_with()
+        m_span.event.send_presampled.assert_called_once_with() # pylint: disable=no-member
         self.assertDictEqual(
             m_span.event.fields(),
             {
