@@ -167,7 +167,6 @@ class Beeline(object):
     def traced(self, name, trace_id=None, parent_id=None):
         def wrapped(fn, *args, **kwargs):
             def inner(*args, **kwargs):
-                print(trace_id)
                 with self.tracer(name=name, trace_id=trace_id, parent_id=parent_id):
                     return fn(*args, **kwargs)
             return inner
