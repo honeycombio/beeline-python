@@ -190,10 +190,7 @@ class Beeline(object):
             self.log("executing presend hook on event ev = %s", ev.fields())
             self.presend_hook(ev.fields())
 
-        if hasattr(ev, 'traced_event'):
-            self.log("enqueuing traced event ev = %s", ev.fields())
-            self.tracer_impl.send_traced_event(ev, presampled=presampled)
-        elif presampled:
+        if presampled:
             self.log("enqueuing presampled event ev = %s", ev.fields())
             ev.send_presampled()
         else:

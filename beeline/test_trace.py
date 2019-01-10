@@ -44,7 +44,7 @@ class TestTraceSampling(unittest.TestCase):
 
 class TestSynchronousTracer(unittest.TestCase):
     def test_trace_context_manager_exception(self):
-        ''' ensure that send_traced_event is called even if an exception is
+        ''' ensure that span is sent even if an exception is
         raised inside the context manager '''
         m_client = Mock()
         tracer = SynchronousTracer(m_client)
