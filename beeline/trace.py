@@ -41,13 +41,13 @@ class SynchronousTracer(Tracer):
     def __call__(self, name, trace_id=None, parent_id=None):
         try:
             span = None
-            if self.get_active_trace_id():
-                span = self.start_span(context={'name': name})
+            if self.get_active_trace_id() and trace_id is None:
+                span = self.start_span(context={'name': name}, parent_id=parent_id)
                 if span:
                     log('tracer context manager started new span, id = %s',
                         span.id)
             else:
-                span = self.start_trace(context={'name': name})
+                span = self.start_trace(context={'name': name}, trace_id=trace_id, parent_span_id=parent_id)
                 if span:
                     log('tracer context manager started new trace, id = %s',
                         span.trace_id)

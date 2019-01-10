@@ -63,6 +63,8 @@ class TestSynchronousTracer(unittest.TestCase):
         m_client = Mock()
         tracer = SynchronousTracer(m_client)
         tracer.start_span = Mock()
+        tracer.start_trace = Mock()
+        tracer.get_active_trace_id = Mock(return_value='asdf')
         mock_span = Mock()
         tracer.start_span.return_value = mock_span
         tracer.finish_span = Mock()
@@ -71,6 +73,37 @@ class TestSynchronousTracer(unittest.TestCase):
             pass
 
         tracer.start_span.assert_called_once_with(context={'name': 'foo'}, parent_id=None)
+        tracer.start_trace.assert_not_called()
+        tracer.finish_span.assert_called_once_with(mock_span)
+
+    def test_trace_context_manager_passes_parent_id_if_supplied(self):
+        ''' ensure parent_id gets passed to start_span if supplied '''
+        m_client = Mock()
+        tracer = SynchronousTracer(m_client)
+        tracer.start_span = Mock()
+        mock_span = Mock()
+        tracer.start_span.return_value = mock_span
+        tracer.finish_span = Mock()
+
+        with tracer('foo', parent_id='zyxw'):
+            pass
+
+        tracer.start_span.assert_called_once_with(context={'name': 'foo'}, parent_id='zyxw')
+        tracer.finish_span.assert_called_once_with(mock_span)
+
+    def test_trace_context_manager_starts_trace_if_trace_id_supplied(self):
+        ''' ensure trace_id and parent_id get passed to start_trace if supplied '''
+        m_client = Mock()
+        tracer = SynchronousTracer(m_client)
+        tracer.start_trace = Mock()
+        mock_span = Mock()
+        tracer.start_trace.return_value = mock_span
+        tracer.finish_span = Mock()
+
+        with tracer('foo', trace_id='asdf', parent_id='zyxw'):
+            pass
+
+        tracer.start_trace.assert_called_once_with(context={'name': 'foo'}, trace_id='asdf', parent_span_id='zyxw')
         tracer.finish_span.assert_called_once_with(mock_span)
 
     def test_start_trace(self):
