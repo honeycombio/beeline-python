@@ -51,7 +51,7 @@ class SynchronousTracer(Tracer):
                 if span:
                     log('tracer context manager started new trace, id = %s',
                         span.trace_id)
-            yield
+            yield span
         except Exception as e:
             if span:
                 span.add_context({

@@ -69,8 +69,8 @@ class TestSynchronousTracer(unittest.TestCase):
         tracer.start_span.return_value = mock_span
         tracer.finish_span = Mock()
 
-        with tracer('foo'):
-            pass
+        with tracer('foo') as span:
+            self.assertEqual(span, mock_span, 'tracer context manager should yield the span')
 
         tracer.start_span.assert_called_once_with(context={'name': 'foo'}, parent_id=None)
         tracer.start_trace.assert_not_called()
