@@ -1,6 +1,7 @@
 ''' module beeline '''
 import os
 import socket
+from contextlib import contextmanager
 
 from libhoney import Client
 from beeline.trace import SynchronousTracer
@@ -365,8 +366,23 @@ def tracer(name, trace_id=None, parent_id=None):
 
     Args:
     - `name`: a descriptive name for the this trace span, i.e. "database query for user"
+    - `trace_id`: the trace_id to use. If None, will be automatically generated if no
+       current trace is ongoing. Use this if you want to explicitly resume a trace
+       in this application that was initiated in another application, and you have
+       the upstream trace_id.
+    - `parent_id`: If trace_id is set, will populate the root span's parent
+        with this id.
     '''
-    return _GBL.tracer(name=name, trace_id=trace_id, parent_id=parent_id)
+    if _GBL:
+        return _GBL.tracer(name=name, trace_id=trace_id, parent_id=parent_id)
+
+    # if the beeline is not initialized, build a dummy function
+    # that will work as a context manager and call that
+    @contextmanager
+    def _noop_cm():
+        yield
+
+    return _noop_cm()
 
 def start_trace(context=None, trace_id=None, parent_span_id=None):
     '''
@@ -519,7 +535,7 @@ def traced(name, trace_id=None, parent_id=None):
     '''
     Function decorator to wrap an entire function in a trace span. If no trace
     is active in the current thread, starts a new trace, and the wrapping span
-    will be a root span. If a trace is active, creates a child span of the 
+    will be a root span. If a trace is active, creates a child span of the
     existing trace.
 
     Example use:
