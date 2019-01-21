@@ -165,3 +165,14 @@ class TestBeelineNotInitialized(unittest.TestCase):
         # this should not crash if the beeline isn't initialized
         # it should also accept arguments normally and return the function's value
         self.assertEqual(my_sum(1, 2), 3)
+
+    def test_tracer_context_manager(self):
+        ''' ensure the tracer context manager doesn't break if the beeline is not initialized '''
+        self.assertIsNone(beeline.get_beeline())
+        def my_sum(a, b):
+            with beeline.tracer(name="my_sum"):
+                return a + b
+
+        # this should not crash if the beeline isn't initialized
+        # it should also accept arguments normally and return the function's value
+        self.assertEqual(my_sum(1, 2), 3)
