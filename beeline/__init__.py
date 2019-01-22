@@ -1,4 +1,5 @@
 ''' module beeline '''
+import functools
 import os
 import socket
 from contextlib import contextmanager
@@ -167,6 +168,7 @@ class Beeline(object):
 
     def traced(self, name, trace_id=None, parent_id=None):
         def wrapped(fn, *args, **kwargs):
+            @functools.wraps(fn)
             def inner(*args, **kwargs):
                 with self.tracer(name=name, trace_id=trace_id, parent_id=parent_id):
                     return fn(*args, **kwargs)
@@ -561,6 +563,7 @@ def traced(name, trace_id=None, parent_id=None):
     if not _beeline:
         # just pass through if not initialized
         def wrapped(fn, *args, **kwargs):
+            @functools.wraps(fn)
             def inner(*args, **kwargs):
                 return fn(*args, **kwargs)
             return inner
