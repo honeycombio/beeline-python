@@ -133,7 +133,7 @@ class TestBeeline(unittest.TestCase):
         self.assertEqual(val, 'asdf')
 
     def test_trace_wrapper(self):
-        ''' ensure that the trace wrapper decorarates a function and starts a trace '''
+        ''' ensure that the trace wrapper decorates a function and starts a trace '''
         _beeline = beeline.Beeline()
         with patch('beeline.get_beeline') as m_gbl:
             m_gbl.return_value = _beeline
