@@ -375,8 +375,9 @@ def tracer(name, trace_id=None, parent_id=None):
     - `parent_id`: If trace_id is set, will populate the root span's parent
         with this id.
     '''
-    if _GBL:
-        return _GBL.tracer(name=name, trace_id=trace_id, parent_id=parent_id)
+    bl = get_beeline()
+    if bl:
+        return bl.tracer(name=name, trace_id=trace_id, parent_id=parent_id)
 
     # if the beeline is not initialized, build a dummy function
     # that will work as a context manager and call that
@@ -559,15 +560,12 @@ def traced(name, trace_id=None, parent_id=None):
         with this id.
     '''
 
-    _beeline = get_beeline()
-    if not _beeline:
-        # just pass through if not initialized
-        def wrapped(fn, *args, **kwargs):
-            @functools.wraps(fn)
-            def inner(*args, **kwargs):
+    def wrapped(fn, *args, **kwargs):
+        @functools.wraps(fn)
+        def inner(*args, **kwargs):
+            with tracer(name=name, trace_id=trace_id, parent_id=parent_id):
                 return fn(*args, **kwargs)
-            return inner
 
-        return wrapped
+        return inner
 
-    return _beeline.traced(name, trace_id, parent_id)
+    return wrapped
