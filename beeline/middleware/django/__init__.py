@@ -10,7 +10,7 @@ def _get_trace_context(request):
         try:
             return unmarshal_trace_context(trace_context)
         except Exception as e:
-            beeline.internal.log('error attempting to extract trace context: %s', str(e))
+            beeline.internal.log('error attempting to extract trace context: %s', beeline.internal.stringify_exception(e))
 
     return None, None, None
 
@@ -35,7 +35,7 @@ class HoneyDBWrapper(object):
                     "db.duration", db_call_diff.total_seconds() * 1000)
             except Exception as e:
                 beeline.add_context_field("db.error", str(type(e)))
-                beeline.add_context_field("db.error_detail", str(e))
+                beeline.add_context_field("db.error_detail", beeline.internal.stringify_exception(e))
                 raise
             else:
                 return result
@@ -93,7 +93,7 @@ class HoneyMiddlewareBase(object):
         return response
 
     def process_exception(self, request, exception):
-        beeline.add_context_field("request.error_detail", str(exception))
+        beeline.add_context_field("request.error_detail", beeline.internal.stringify_exception(exception))
 
 
 class HoneyMiddlewareHttp(HoneyMiddlewareBase):

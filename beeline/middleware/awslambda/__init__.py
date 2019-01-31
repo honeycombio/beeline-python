@@ -50,12 +50,12 @@ def beeline_wrapper(handler):
             return handler(event, context)
 
         try:
-            # assume we're going to get bad values sometims in our headers
+            # assume we're going to get bad values sometimes in our headers
             trace_id, parent_id, trace_context = None, None, None
             try:
                 trace_id, parent_id, trace_context = _get_trace_data(event)
             except Exception as e:
-                beeline.internal.log('error attempting to extract trace context: %s', str(e))
+                beeline.internal.log('error attempting to extract trace context: %s', beeline.internal.stringify_exception(e))
                 pass
             with beeline.tracer(name=handler.__name__,
                     trace_id=trace_id, parent_id=parent_id):
