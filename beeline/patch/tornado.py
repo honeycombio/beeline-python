@@ -36,7 +36,7 @@ def log_exception(_log_exception, instance, args, kwargs):
                 "request.query": instance.request.query,
                 "request.host": instance.request.get('Host'),
                 "request.error": type(value).__name__,
-                "request.error_detail": str(value),
+                "request.error_detail": beeline.internal.stringify_exception(value),
             })
     except Exception:
         pass

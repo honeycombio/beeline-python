@@ -16,3 +16,12 @@ def log(msg, *args, **kwargs):
     bl = beeline.get_beeline()
     if bl:
         bl.log(msg, *args, **kwargs)
+
+def stringify_exception(e):
+    try:
+        return str(e)
+    except UnicodeEncodeError:
+        try:
+            return u"{}".format(e)
+        except Exception:
+            return "unable to decode exception"

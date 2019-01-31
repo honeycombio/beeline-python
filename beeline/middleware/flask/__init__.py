@@ -20,7 +20,7 @@ def _get_trace_context(environ):
         try:
             return unmarshal_trace_context(trace_context)
         except Exception as e:
-            beeline.internal.log('error attempting to extract trace context: %s', str(e))
+            beeline.internal.log('error attempting to extract trace context: %s', beeline.internal.stringify_exception(e))
 
     return None, None, None
 
@@ -36,7 +36,7 @@ class HoneyMiddleware(object):
 
     def _teardown_request(self, exception):
         if exception:
-            beeline.add_field('request.error_detail', str(exception))
+            beeline.add_field('request.error_detail', beeline.internal.stringify_exception(exception))
             beeline.add_field('request.error', str(type(exception)))
             beeline.internal.send_event()
 
@@ -142,7 +142,7 @@ class HoneyDBMiddleware(object):
         self.state.span = None
 
     def handle_error(self, context):
-        beeline.add_context_field("db.error", str(context.original_exception))
+        beeline.add_context_field("db.error", beeline.internal.stringify_exception(context.original_exception))
         if self.state.span:
             beeline.finish_span(self.state.span)
         self.state.span = None

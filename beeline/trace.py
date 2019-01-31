@@ -10,7 +10,7 @@ from functools import wraps
 
 from contextlib import contextmanager
 
-from beeline.internal import log
+from beeline.internal import log, stringify_exception
 
 MAX_INT32 = math.pow(2, 32) - 1
 
@@ -56,7 +56,7 @@ class SynchronousTracer(Tracer):
             if span:
                 span.add_context({
                     "app.exception_type": str(type(e)),
-                    "app.exception_string": str(e),
+                    "app.exception_string": stringify_exception(e),
                 })
             raise
         finally:

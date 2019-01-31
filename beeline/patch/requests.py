@@ -30,7 +30,7 @@ def request(_request, instance, args, kwargs):
         except Exception as e:
             beeline.add_context({
                 "request.error_type": str(type(e)),
-                "request.error": str(e),
+                "request.error": beeline.internal.stringify_exception(e),
             })
             raise
         finally:
