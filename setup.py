@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 setup(
     python_requires='>=2.7',
     name='honeycomb-beeline',
-    version='2.4.6',
+    version='2.4.7',
     description='Honeycomb library for easy instrumentation',
     url='https://github.com/honeycombio/beeline-python',
     author='Honeycomb.io',
@@ -12,7 +12,7 @@ setup(
     license='Apache',
     packages=find_packages(),
     install_requires=[
-        'libhoney>=1.6.0',
+        'libhoney>=1.7.0',
         'wrapt',
     ],
     tests_require=[
