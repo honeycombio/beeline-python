@@ -95,6 +95,11 @@ class HoneyMiddlewareBase(object):
     def process_exception(self, request, exception):
         beeline.add_context_field("request.error_detail", beeline.internal.stringify_exception(exception))
 
+    def process_view(self, request, view_func, view_args, view_kwargs):
+        try:
+            beeline.add_context_field("django.view_func", view_func.__name__)
+        except AttributeError:
+            pass
 
 class HoneyMiddlewareHttp(HoneyMiddlewareBase):
     pass
