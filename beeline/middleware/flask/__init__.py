@@ -112,10 +112,20 @@ class HoneyDBMiddleware(object):
             return
 
         params = []
-        for param in parameters:
-            if type(param) == datetime.datetime:
-                param = param.isoformat()
-            params.append(param)
+
+        # the type of parameters passed in varies depending on DB - handle list, dict, and tuple
+        if type(parameters) == tuple or type(parameters) == list:
+            for param in parameters:
+                if type(param) == datetime.datetime:
+                    param = param.isoformat()
+                params.append(param)
+        elif type(parameters) == dict:
+            for k,v in parameters.items():
+                param = "%s=" % k
+                if type(v) == datetime.datetime:
+                     v = v.isoformat()
+                param += "%s" % v
+                params.append(param)
 
         self.state.span = beeline.start_span(context={
             "name": "flask_db_query",
