@@ -1,3 +1,4 @@
+import threading
 import unittest
 from mock import Mock, patch, call
 
@@ -149,6 +150,49 @@ class TestBeeline(unittest.TestCase):
             # check that an event was sent, from which we can infer that the function was wrapped
             self.assertTrue(_beeline.tracer_impl._run_hooks_and_send.called)
 
+    def test_treaded_trace(self):
+        _beeline = beeline.Beeline()
+
+        with patch('beeline.get_beeline') as m_gbl:
+            m_gbl.return_value = _beeline
+            _beeline.tracer_impl._run_hooks_and_send = Mock()
+
+            _beeline.tracer_impl.start_trace(trace_id="asdf")
+            self.assertEqual(_beeline.tracer_impl._state.trace_id, "asdf")
+
+            def thread_func():
+                # confirm no trace state in new thread
+                self.assertFalse(hasattr(_beeline.tracer_impl._state, 'trace_id'))
+
+            t = threading.Thread(target=thread_func)
+            t.start()  
+            t.join()
+
+            @beeline.traced_thread
+            def traced_thread_func():
+                self.assertEqual(_beeline.tracer_impl._state.trace_id, "asdf")
+
+                with _beeline.tracer(name="foo") as span:
+                    self.assertEqual(span.trace_id, "asdf")
+                    self.assertEqual(span.parent_id, _beeline.tracer_impl._state.stack[0].id)
+
+            t = threading.Thread(target=traced_thread_func)
+            t.start()
+            t.join()
+
+            # test use of beeline client
+            @_beeline.traced_thread
+            def traced_thread_func_2():
+                self.assertEqual(_beeline.tracer_impl._state.trace_id, "asdf")
+
+                with _beeline.tracer(name="foo2") as span:
+                    self.assertEqual(span.trace_id, "asdf")
+                    self.assertEqual(span.parent_id, _beeline.tracer_impl._state.stack[0].id)
+
+            t = threading.Thread(target=traced_thread_func_2)
+            t.start()
+            t.join()
+
 class TestBeelineNotInitialized(unittest.TestCase):
     def setUp(self):
         self.addCleanup(patch.stopall)
@@ -172,6 +216,16 @@ class TestBeelineNotInitialized(unittest.TestCase):
         def my_sum(a, b):
             with beeline.tracer(name="my_sum"):
                 return a + b
+
+        # this should not crash if the beeline isn't initialized
+        # it should also accept arguments normally and return the function's value
+        self.assertEqual(my_sum(1, 2), 3)
+
+    def test_traced_thread(self):
+        self.assertIsNone(beeline.get_beeline())
+        @beeline.traced_thread
+        def my_sum(a, b):
+            return a + b
 
         # this should not crash if the beeline isn't initialized
         # it should also accept arguments normally and return the function's value
