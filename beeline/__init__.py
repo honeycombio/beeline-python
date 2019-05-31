@@ -1,4 +1,5 @@
 ''' module beeline '''
+import copy
 import functools
 import os
 import socket
@@ -173,6 +174,21 @@ class Beeline(object):
                 with self.tracer(name=name, trace_id=trace_id, parent_id=parent_id):
                     return fn(*args, **kwargs)
             return inner
+
+        return wrapped
+
+    def traced_thread(self, fn):
+        trace_id = self.tracer_impl._state.trace_id
+        # copy as a new list - reference will be unavailable when we enter the new thread
+        stack = copy.copy(self.tracer_impl._state.stack)
+        trace_fields = copy.copy(self.tracer_impl._state.trace_fields)
+        
+        @functools.wraps(fn)
+        def wrapped(*args, **kwargs):
+            self.tracer_impl._state.trace_id = trace_id
+            self.tracer_impl._state.stack = stack
+            self.tracer_impl._state.trace_fields = trace_fields
+            return fn(*args, **kwargs)
 
         return wrapped
 
@@ -567,5 +583,53 @@ def traced(name, trace_id=None, parent_id=None):
                 return fn(*args, **kwargs)
 
         return inner
+
+    return wrapped
+
+def traced_thread(fn):
+    '''
+    Function decorator to pass context to a function that is a thread target. Because the beeline uses
+    thread-local storage to keep track of trace state, tracing doesn't work across threads unless the state
+    is explicitly passed between threads. You can use this decorator to more easily pass state to a thread.
+
+    Example use:
+
+    ```
+    @traced(name="my_async_function")
+    def my_func():
+        # ...
+        with beeline.tracer(name="do_stuff"):
+            do_stuff()
+
+    # we want to call my_func asynchronously by passing to a thread or a thread pool
+    @beeline.traced_thread
+    def _my_func_t():
+        return my_func()
+
+    t = threading.Thread(target=_my_func_t)
+    t.start()
+    ```
+
+    '''
+
+    # if beeline is not initialized, or there is no active trace, do nothing
+    bl = get_beeline()
+    if bl is None or bl.tracer_impl._state.trace_id is None:
+        @functools.wraps(fn)
+        def noop(*args, **kwargs):
+            return fn(*args, **kwargs)
+        return noop
+
+    trace_id = bl.tracer_impl._state.trace_id
+    # copy as a new list - reference will be unavailable when we enter the new thread
+    stack = copy.copy(bl.tracer_impl._state.stack)
+    trace_fields = copy.copy(bl.tracer_impl._state.trace_fields)
+    
+    @functools.wraps(fn)
+    def wrapped(*args, **kwargs):
+        bl.tracer_impl._state.trace_id = trace_id
+        bl.tracer_impl._state.stack = stack
+        bl.tracer_impl._state.trace_fields = trace_fields
+        return fn(*args, **kwargs)
 
     return wrapped
