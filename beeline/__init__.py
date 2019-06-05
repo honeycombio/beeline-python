@@ -16,6 +16,8 @@ USER_AGENT_ADDITION = "beeline-python/%s" % VERSION
 
 # This is the global beeline created by init
 _GBL = None
+# This is the PID that initialized the beeline.
+_INITPID = None
 
 class Beeline(object):
     def __init__(self,
@@ -261,9 +263,14 @@ def init(writekey='', dataset='', service_name='', tracer=None,
     If in doubt, just set `writekey` and `dataset` and move on!
     '''
     global _GBL
+    global _INITPID
+    pid = os.getpid()
     if _GBL:
-        _GBL.log("beeline already initialized! skipping initialization")
-        return
+        if pid == _INITPID:
+            _GBL.log("beeline already initialized! skipping initialization")
+            return
+        _GBL.log("beeline already initialized, but process ID has changed (was {}, now {}). Reinitializing.".format(_INITPID, pid))
+        _GBL.close()
 
     _GBL = Beeline(
         writekey=writekey, dataset=dataset, sample_rate=sample_rate,
@@ -274,6 +281,10 @@ def init(writekey='', dataset='', service_name='', tracer=None,
         # pass on other args for backwards compatibility
         *args, **kwargs
     )
+    # Store the PID that initialized the beeline globally. If the beeline was initialized in another
+    # process that was later forked, we can use this to detect it and reinitialize the client (and the transmission
+    # thread).
+    _INITPID = pid
 
 def send_now(data):
     ''' Create an event and enqueue it immediately. Does not work with
