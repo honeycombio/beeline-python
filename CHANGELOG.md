@@ -1,5 +1,16 @@
 # beeline-python changelog
 
+## 2.6.0 2019-06-05 - Update recommended
+
+Features
+
+- Adds new `traced_thread` decorator to copy over trace state to new threads. Read more in the official docs [here](https://docs.honeycomb.io/getting-data-in/python/beeline/#threading-and-traces).
+- Adds initial support for [Werkzeug](https://werkzeug.palletsprojects.com/en/0.15.x/). Read about how to use it [here](https://docs.honeycomb.io/getting-data-in/python/beeline/#using-automatic-instrumentation).
+
+Fixes
+
+- `init` now works after a process fork. If the beeline has already been initialized prior to the fork, it will be reinitialized if called again. Prior to this change, calling `init` before fork would render the beeline inoperable in the forked process(es).
+
 ## 2.5.1 2019-05-13
 
 Fixes
