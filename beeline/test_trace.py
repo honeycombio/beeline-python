@@ -13,11 +13,73 @@ from beeline.trace import (
 class TestTraceSampling(unittest.TestCase):
     def test_deterministic(self):
         ''' test a specific id that should always work with the given sample rate '''
-        trace_id = '8bd68312-a3ce-4bf8-a2df-896cef4289e5'
+        trace_id = 'b8d674f1-04ed-4ea8-b16d-b4dbbe87c78e'
         n = 0
         while n < 1000:
             self.assertTrue(_should_sample(trace_id, 1000))
             n += 1
+
+    def test_deterministic_interop(self):
+        '''test a specific set of ids that should always have the given result (at sample rate 2)
+        Ensures interoperability with other beelines'''
+        ids = [
+            "4YeYygWjTZ41zOBKUoYUaSVxPGm78rdU",
+            "iow4KAFBl9u6lF4EYIcsFz60rXGvu7ph",
+            "EgQMHtruEfqaqQqRs5nwaDXsegFGmB5n",
+            "UnVVepVdyGIiwkHwofyva349tVu8QSDn",
+            "rWuxi2uZmBEprBBpxLLFcKtXHA8bQkvJ",
+            "8PV5LN1IGm5T0ZVIaakb218NvTEABNZz",
+            "EMSmscnxwfrkKd1s3hOJ9bL4zqT1uud5",
+            "YiLx0WGJrQAge2cVoAcCscDDVidbH4uE",
+            "IjD0JHdQdDTwKusrbuiRO4NlFzbPotvg",
+            "ADwiQogJGOS4X8dfIcidcfdT9fY2WpHC",
+            "DyGaS7rfQsMX0E6TD9yORqx7kJgUYvNR",
+            "MjOCkn11liCYZspTAhdULMEfWJGMHvpK",
+            "wtGa41YcFMR5CBNr79lTfRAFi6Vhr6UF",
+            "3AsMjnpTBawWv2AAPDxLjdxx4QYl9XXb",
+            "sa2uMVNPiZLK52zzxlakCUXLaRNXddBz",
+            "NYH9lkdbvXsiUFKwJtjSkQ1RzpHwWloK",
+            "8AwzQeY5cudY8YUhwxm3UEP7Oos61RTY",
+            "ADKWL3p5gloRYO3ptarTCbWUHo5JZi3j",
+            "UAnMARj5x7hkh9kwBiNRfs5aYDsbHKpw",
+            "Aes1rgTLMNnlCkb9s6bH7iT5CbZTdxUw",
+            "eh1LYTOfgISrZ54B7JbldEpvqVur57tv",
+            "u5A1wEYax1kD9HBeIjwyNAoubDreCsZ6",
+            "mv70SFwpAOHRZt4dmuw5n2lAsM1lOrcx",
+            "i4nIu0VZMuh5hLrUm9w2kqNxcfYY7Y3a",
+            "UqfewK2qFZqfJ619RKkRiZeYtO21ngX1",
+        ]
+        expected = [
+            False,
+            True,
+            True,
+            True,
+            True,
+            False,
+            True,
+            True,
+            False,
+            False,
+            True,
+            False,
+            True,
+            False,
+            False,
+            False,
+            False,
+            False,
+            True,
+            True,
+            False,
+            False,
+            True,
+            True,
+            False,
+        ]
+
+        for i in range(len(ids)):
+            self.assertEqual(_should_sample(ids[i], 2), expected[i])
+
 
     def test_probability(self):
         ''' test that _should_sample approximates 1 in N sampling for random IDs '''
@@ -270,7 +332,7 @@ class TestSynchronousTracer(unittest.TestCase):
             m_sample_fn.return_value = True
             tracer._run_hooks_and_send(m_span)
 
-        # no hooks - trace's _should_sample is rigged to always return true, so we
+        # no hooks - trace's _should_sample is rigged to always return True, so we
         # always call send_presampled
         # send should never be called because at a minimum we always do deterministic
         # sampling

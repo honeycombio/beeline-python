@@ -267,7 +267,7 @@ def _should_sample(trace_id, sample_rate):
     sha1 = hashlib.sha1()
     sha1.update(trace_id.encode('utf-8'))
     # convert last 4 digits to int
-    value, = struct.unpack('<I', sha1.digest()[-4:])
+    value, = struct.unpack('>I', sha1.digest()[:4])
     if value < sample_upper_bound:
         return True
     return False
