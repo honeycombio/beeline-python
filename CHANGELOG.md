@@ -1,5 +1,11 @@
 # beeline-python changelog
 
+## 2.6.1 2019-07-02
+
+Fixes
+
+- Python Beeline now uses the same method to compute deterministic sampling decisions as other beelines (Go, NodeJS, Ruby). Prior to the fix, Beeline-generated traces spanning multiple services implemented in Python and other languages would have sometimes arrived incomplete due to inconsistent sampling behavior.
+
 ## 2.6.0 2019-06-05 - Update recommended
 
 Features
