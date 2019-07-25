@@ -6,6 +6,7 @@ import math
 import struct
 import threading
 import uuid
+from collections import defaultdict
 from functools import wraps
 
 from contextlib import contextmanager
@@ -22,6 +23,7 @@ def init_state(f):
             self._state.trace_id = None
             self._state.stack = []
             self._state.trace_fields = {}
+            self._state.trace_rollup_fields = defaultdict(float)
 
         return f(self, *args, **kwargs)
     return d
@@ -85,6 +87,7 @@ class SynchronousTracer(Tracer):
         # reset our stack and context on new traces
         self._state.stack = []
         self._state.trace_fields = {}
+        self._state.trace_rollup_fields = defaultdict(float)
 
         # start the root span
         return self.start_span(context=context, parent_id=parent_span_id)
@@ -121,6 +124,14 @@ class SynchronousTracer(Tracer):
         # send the span's event. Even if the stack is in an unhealthy state,
         # it's probably better to send event data than not
         if span.event:
+            # add the trace's rollup fields to the root span
+            if span.is_root():
+                for k, v in self._state.trace_rollup_fields.items():
+                    span.event.add_field(k, v)
+
+            for k, v in span.rollup_fields.items():
+                span.event.add_field(k, v)
+
             # propagate trace fields that may have been added in later spans
             for k, v in self._state.trace_fields.items():
                 # don't overwrite existing values because they may be different
@@ -178,6 +189,16 @@ class SynchronousTracer(Tracer):
         span = self.get_active_span()
         if span:
             span.remove_context_field(name=name)
+
+    @init_state
+    def add_rollup_field(self, name, value):
+        value = float(value)
+
+        span = self.get_active_span()
+        if span:
+            span.rollup_fields[name] += value
+
+        self._state.trace_rollup_fields["rollup.%s" % name] += value
 
     @init_state
     def add_trace_field(self, name, value):
@@ -246,6 +267,7 @@ class Span(object):
         self.id = id
         self.event = event
         self.event.start_time = datetime.datetime.now()
+        self.rollup_fields = defaultdict(float)
         self._is_root = is_root
 
     def add_context_field(self, name, value):

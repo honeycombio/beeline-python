@@ -184,7 +184,7 @@ class Beeline(object):
         # copy as a new list - reference will be unavailable when we enter the new thread
         stack = copy.copy(self.tracer_impl._state.stack)
         trace_fields = copy.copy(self.tracer_impl._state.trace_fields)
-        
+
         @functools.wraps(fn)
         def wrapped(*args, **kwargs):
             self.tracer_impl._state.trace_id = trace_id
@@ -355,6 +355,22 @@ def remove_context_field(name):
      '''
     if _GBL:
         _GBL.tracer_impl.remove_context_field(name=name)
+
+def add_rollup_field(name, value):
+    ''' AddRollupField adds a key/value pair to the current span. If it is called repeatedly
+    on the same span, the values will be summed together.  Additionally, this
+    field will be summed across all spans and added to the trace as a total. It
+    is especially useful for doing things like adding the duration spent talking
+    to a specific external service - eg database time. The root span will then
+    get a field that represents the total time spent talking to the database from
+    all of the spans that are part of the trace.
+
+    Args:
+    - `name`: Name of field to add
+    - `value`: Numeric (float) value of new field
+    '''
+    if _GBL:
+        _GBL.tracer_impl.add_rollup_field(name=name, value=value)
 
 def add_trace_field(name, value):
     ''' Similar to `add_context_field` - adds a field to the current span, but
@@ -635,7 +651,7 @@ def traced_thread(fn):
     # copy as a new list - reference will be unavailable when we enter the new thread
     stack = copy.copy(bl.tracer_impl._state.stack)
     trace_fields = copy.copy(bl.tracer_impl._state.trace_fields)
-    
+
     @functools.wraps(fn)
     def wrapped(*args, **kwargs):
         bl.tracer_impl._state.trace_id = trace_id
