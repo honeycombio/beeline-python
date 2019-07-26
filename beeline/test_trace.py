@@ -1,4 +1,5 @@
-from mock import Mock, call, patch
+from collections import defaultdict
+from mock import ANY, Mock, call, patch
 import datetime
 import unittest
 import uuid
@@ -316,6 +317,59 @@ class TestSynchronousTracer(unittest.TestCase):
                 'app.more': 'data!',
         })
 
+    def test_add_rollup_field_propagates(self):
+        m_client = Mock()
+        tracer = SynchronousTracer(m_client)
+        tracer._run_hooks_and_send = Mock()
+
+        span1 = tracer.start_trace(context={'name': 'root'})
+        event1 = m_client.new_event.return_value
+
+        span2 = tracer.start_span(context={'name': 'middle'})
+        event2 = m_client.new_event.return_value
+
+        span3 = tracer.start_span(context={'name': 'inner1'})
+        event3 = m_client.new_event.return_value
+
+        tracer.add_rollup_field('database_ms', 17)
+        tracer.add_rollup_field('calories', 180)
+        tracer.add_rollup_field('database_ms', 23.1)
+
+        event3.add_field.reset_mock()
+        tracer.finish_span(span3)
+        event3.add_field.assert_has_calls([
+            call('database_ms', 17.0 + 23.1),
+            call('calories', 180.0),
+            call('duration_ms', ANY),
+        ], any_order=True)
+
+        span4 = tracer.start_span(context={'name': 'inner2'})
+        event4 = m_client.new_event.return_value
+
+        tracer.add_rollup_field('calories', 120)
+
+        event4.add_field.reset_mock()
+        tracer.finish_span(span4)
+        event4.add_field.assert_has_calls([
+            call('calories', 120.0),
+            call('duration_ms', ANY),
+        ], any_order=True)
+
+        event2.add_field.reset_mock()
+        tracer.finish_span(span2)
+        event2.add_field.assert_has_calls([
+            # This intermediate span doesn't get any rollup fields.
+            call('duration_ms', ANY),
+        ], any_order=True)
+
+        event1.add_field.reset_mock()
+        tracer.finish_span(span1)
+        event1.add_field.assert_has_calls([
+            call('rollup.database_ms', 17.0 + 23.1),
+            call('rollup.calories', 180.0 + 120.0),
+            call('duration_ms', ANY),
+        ], any_order=True)
+
     def test_get_active_span(self):
         m_client = Mock()
         tracer = SynchronousTracer(m_client)
@@ -415,6 +469,7 @@ class TestSynchronousTracer(unittest.TestCase):
         m_span.event.start_time = datetime.datetime.now()
         # set an existing trace field
         m_span.event.add_field('app.a', 1)
+        m_span.rollup_fields = defaultdict(float)
 
         with patch('beeline.trace._should_sample') as m_sample_fn:
             m_sample_fn.return_value = True
@@ -423,7 +478,7 @@ class TestSynchronousTracer(unittest.TestCase):
             tracer.add_trace_field('b', 2)
             tracer.add_trace_field('c', 3)
             tracer.finish_span(m_span)
-        
+
         # ensure we only added fields b and c and did not try to overwrite a
         self.assertDictContainsSubset({'app.a': 1, 'app.b': 2, 'app.c': 3}, m_span.event.fields())
 
