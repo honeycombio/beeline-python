@@ -1,5 +1,11 @@
 # beeline-python changelog
 
+## 2.7.0 2019-07-26
+
+Features
+
+- Implements `add_rollup_field` API used in other Beelines. See the official [API reference docs](https://honeycombio.github.io/beeline-python/) for full details.
+
 ## 2.6.1 2019-07-02
 
 Fixes
