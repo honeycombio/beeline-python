@@ -55,14 +55,9 @@ class HoneyMiddlewareBase(object):
         response = self.create_http_event(request)
         return response
 
-    def create_http_event(self, request):
-        # Code to be executed for each request before
-        # the view (and later middleware) are called.
-
-        trace_id, parent_id, context = _get_trace_context(request)
+    def get_context_from_request(self, request):
         trace_name = "django_http_%s" % request.method.lower()
-
-        trace = beeline.start_trace(context={
+        return {
             "name": trace_name,
             "type": "http_server",
             "request.host": request.get_host(),
@@ -75,19 +70,34 @@ class HoneyMiddlewareBase(object):
             "request.secure": request.is_secure(),
             "request.query": request.GET.dict(),
             "request.xhr": request.is_ajax(),
-            "request.post": request.POST.dict()
-        }, trace_id=trace_id, parent_span_id=parent_id)
+            "request.post": request.POST.dict(),
+        }
 
-        if isinstance(context, dict):
-            for k, v in context.items():
+    def get_context_from_response(self, response):
+        return {
+            "response.status_code": response.status_code,
+        }
+
+    def create_http_event(self, request):
+        # Code to be executed for each request before
+        # the view (and later middleware) are called.
+
+        trace_id, parent_id, parent_context = _get_trace_context(request)
+
+        request_context = self.get_context_from_request(request)
+
+        trace = beeline.start_trace(context=request_context, trace_id=trace_id, parent_span_id=parent_id)
+
+        if isinstance(parent_context, dict):
+            for k, v in parent_context.items():
                 beeline.add_trace_field(k, v)
 
         response = self.get_response(request)
 
         # Code to be executed for each request/response after
         # the view is called.
-
-        beeline.add_context_field("response.status_code", response.status_code)
+        response_context = self.get_context_from_response(response)
+        beeline.add_context(response_context)
         beeline.finish_trace(trace)
 
         return response
