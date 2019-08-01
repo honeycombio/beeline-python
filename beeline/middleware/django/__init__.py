@@ -73,7 +73,7 @@ class HoneyMiddlewareBase(object):
             "request.post": request.POST.dict(),
         }
 
-    def get_context_from_response(self, response):
+    def get_context_from_response(self, request, response):
         return {
             "response.status_code": response.status_code,
         }
@@ -96,7 +96,7 @@ class HoneyMiddlewareBase(object):
 
         # Code to be executed for each request/response after
         # the view is called.
-        response_context = self.get_context_from_response(response)
+        response_context = self.get_context_from_response(request, response)
         beeline.add_context(response_context)
         beeline.finish_trace(trace)
 
