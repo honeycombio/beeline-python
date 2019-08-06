@@ -1,5 +1,5 @@
 import unittest
-from mock import Mock, patch, call, ANY
+from mock import Mock, patch, ANY
 
 from beeline.middleware.werkzeug import HoneyWSGIMiddleware
 

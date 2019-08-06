@@ -1,5 +1,5 @@
 import unittest
-from mock import Mock, patch, call, ANY
+from mock import Mock, patch
 
 from beeline.middleware.django import HoneyMiddlewareBase
 
