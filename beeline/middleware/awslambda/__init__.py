@@ -60,9 +60,9 @@ def beeline_wrapper(handler):
             with beeline.tracer(name=handler.__name__,
                     trace_id=trace_id, parent_id=parent_id):
                 beeline.add_context({
-                    "app.function_name": context.function_name,
-                    "app.function_version": context.function_version,
-                    "app.request_id": context.aws_request_id,
+                    "app.function_name": context.function_name or "",
+                    "app.function_version": context.function_version or "",
+                    "app.request_id": context.aws_request_id or "",
                     "app.event": event,
                     "meta.cold_start": COLD_START,
                 })
