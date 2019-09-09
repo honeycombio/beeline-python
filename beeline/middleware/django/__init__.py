@@ -1,7 +1,8 @@
+import contextlib
 import datetime
 import beeline
 from beeline.trace import unmarshal_trace_context
-from django.db import connection
+from django.db import connections
 
 def _get_trace_context(request):
     trace_context = request.META.get('HTTP_X_HONEYCOMB_TRACE')
@@ -119,7 +120,9 @@ class HoneyMiddleware(HoneyMiddlewareBase):
         try:
             db_wrapper = HoneyDBWrapper()
             # db instrumentation is only present in Django > 2.0
-            with connection.execute_wrapper(db_wrapper):
+            with contextlib.ExitStack() as stack:
+                for connection in connections.all():
+                    stack.enter_context(connection.execute_wrapper(db_wrapper))
                 response = self.create_http_event(request)
         except AttributeError:
             response = self.create_http_event(request)
