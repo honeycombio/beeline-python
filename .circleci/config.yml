@@ -40,6 +40,12 @@ executors:
     docker:
       - image: circleci/python:3.7
 
+# required as all of the jobs need to have a tag filter for some reason
+tag_filters: &tag_filters
+  filters:
+      tags:
+        only: /.*/
+
 jobs:
   test_python2-7:
     executor: python2-7
@@ -66,10 +72,10 @@ workflows:
   version: 2
   build_beeline:
     jobs:
-      - test_python2-7
-      - test_python3-5
-      - test_python3-6
-      - test_python3-7
+      - test_python2-7: *tag_filters
+      - test_python3-5: *tag_filters
+      - test_python3-6: *tag_filters
+      - test_python3-7: *tag_filters
       - publish:
           requires:
             - test_python2-7
