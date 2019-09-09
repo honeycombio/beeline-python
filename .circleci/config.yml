@@ -17,7 +17,7 @@ commands:
           command: |
             python3 -m venv venv
             . venv/bin/activate
-            pip install --upgrade setuptools
+            pip install --upgrade setuptools wheel
             echo -e "[pypi]" >> ~/.pypirc
             echo -e "username = honeycomb" >> ~/.pypirc
             echo -e "password = ${PYPI_PASSWORD}" >> ~/.pypirc
