@@ -1,5 +1,11 @@
 # beeline-python changelog
 
+## 2.9.0 2019-09-09
+
+Improvements
+
+- Django middleware now supports instrumentation of multiple database connections. See [#80](https://github.com/honeycombio/beeline-python/pull/80).
+
 ## 2.8.0 2019-08-06
 
 Features
