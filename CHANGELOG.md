@@ -1,5 +1,11 @@
 # beeline-python changelog
 
+## 2.9.1 2019-09-10
+
+Fixes
+
+- Don't try to access self.state.span in handle_error of Flask DB middleware if there is no current_app [#81](https://github.com/honeycombio/beeline-python/pull/81).
+
 ## 2.9.0 2019-09-09
 
 Improvements

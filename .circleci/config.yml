@@ -82,7 +82,7 @@ workflows:
             - test_python2-7
             - test_python3-5
             - test_python3-6
-            - test_python2-7
+            - test_python3-7
           filters:
             tags:
               only: /v[0-9]+(\.[0-9]+)*/
