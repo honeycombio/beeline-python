@@ -156,6 +156,9 @@ class HoneyDBMiddleware(object):
         self.state.span = None
 
     def handle_error(self, context):
+        if not current_app:
+            return
+
         beeline.add_context_field("db.error", beeline.internal.stringify_exception(context.original_exception))
         if self.state.span:
             beeline.finish_span(self.state.span)
