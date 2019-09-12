@@ -27,6 +27,7 @@ commands:
             # create a wheel
             python setup.py bdist_wheel
             twine upload dist/*
+            ./push_docs.sh
 executors:
   python2-7:
     docker:
