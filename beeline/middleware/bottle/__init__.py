@@ -31,7 +31,7 @@ class HoneyWSGIMiddleware(object):
             "request.path": environ.get('PATH_INFO'),
             "request.remote_addr": environ.get('REMOTE_ADDR'),
             "request.content_length": environ.get('CONTENT_LENGTH', 0),
-            "request.user_agent": environ.get('HTTP_USER_AGENT'),
+            "request.header.user_agent": environ.get('HTTP_USER_AGENT'),
             "request.scheme": environ.get('wsgi.url_scheme'),
             "request.query": environ.get('QUERY_STRING')
         }
