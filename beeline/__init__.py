@@ -1,6 +1,7 @@
 ''' module beeline '''
 import copy
 import functools
+import logging
 import os
 import socket
 from contextlib import contextmanager
@@ -218,7 +219,6 @@ class Beeline(object):
             ev.send()
 
     def _init_logger(self):
-        import logging
         self._logger = logging.getLogger('honeycomb-beeline')
         self._logger.setLevel(logging.DEBUG)
         ch = logging.StreamHandler()
