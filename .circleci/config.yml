@@ -7,7 +7,7 @@ commands:
       - run:
           command: |
             sudo pip install pyflakes==1.5.0 pylint setuptools-lint
-            pip install --upgrade setuptools
+            sudo pip install --upgrade setuptools
             pyflakes beeline && python setup.py lint --lint-rcfile pylint.rc && python setup.py test
   publish:
     steps:
