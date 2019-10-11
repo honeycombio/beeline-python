@@ -121,6 +121,10 @@ class SynchronousTracer(Tracer):
 
     @init_state
     def finish_span(self, span):
+        # avoid exception if called with None
+        if span is None:
+            return
+
         # send the span's event. Even if the stack is in an unhealthy state,
         # it's probably better to send event data than not
         if span.event:

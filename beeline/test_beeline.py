@@ -193,6 +193,12 @@ class TestBeeline(unittest.TestCase):
             t.start()
             t.join()
 
+    def test_finish_span_none(self):
+        ''' ensure finish_span does not crash if an empty span is passed to it '''
+        _beeline = beeline.Beeline()
+        # should not crash
+        _beeline.tracer_impl.finish_span(None)
+
 class TestBeelineNotInitialized(unittest.TestCase):
     def setUp(self):
         self.addCleanup(patch.stopall)
