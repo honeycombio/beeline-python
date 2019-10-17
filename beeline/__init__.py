@@ -1,5 +1,4 @@
 ''' module beeline '''
-import copy
 import functools
 import logging
 import os
@@ -181,16 +180,11 @@ class Beeline(object):
         return wrapped
 
     def traced_thread(self, fn):
-        trace_id = self.tracer_impl._state.trace_id
-        # copy as a new list - reference will be unavailable when we enter the new thread
-        stack = copy.copy(self.tracer_impl._state.stack)
-        trace_fields = copy.copy(self.tracer_impl._state.trace_fields)
+        trace_copy = self.tracer_impl._state.trace.copy()
 
         @functools.wraps(fn)
         def wrapped(*args, **kwargs):
-            self.tracer_impl._state.trace_id = trace_id
-            self.tracer_impl._state.stack = stack
-            self.tracer_impl._state.trace_fields = trace_fields
+            self.tracer_impl._trace = trace_copy
             return fn(*args, **kwargs)
 
         return wrapped
@@ -641,22 +635,17 @@ def traced_thread(fn):
 
     # if beeline is not initialized, or there is no active trace, do nothing
     bl = get_beeline()
-    if bl is None or bl.tracer_impl._state.trace_id is None:
+    if bl is None or bl.tracer_impl.get_active_trace_id() is None:
         @functools.wraps(fn)
         def noop(*args, **kwargs):
             return fn(*args, **kwargs)
         return noop
 
-    trace_id = bl.tracer_impl._state.trace_id
-    # copy as a new list - reference will be unavailable when we enter the new thread
-    stack = copy.copy(bl.tracer_impl._state.stack)
-    trace_fields = copy.copy(bl.tracer_impl._state.trace_fields)
+    trace_copy = bl.tracer_impl._state.trace.copy()
 
     @functools.wraps(fn)
     def wrapped(*args, **kwargs):
-        bl.tracer_impl._state.trace_id = trace_id
-        bl.tracer_impl._state.stack = stack
-        bl.tracer_impl._state.trace_fields = trace_fields
+        bl.tracer_impl._trace = trace_copy
         return fn(*args, **kwargs)
 
     return wrapped

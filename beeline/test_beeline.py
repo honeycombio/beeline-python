@@ -175,32 +175,32 @@ class TestBeeline(unittest.TestCase):
             _beeline.tracer_impl._run_hooks_and_send = Mock()
 
             _beeline.tracer_impl.start_trace(trace_id="asdf")
-            self.assertEqual(_beeline.tracer_impl._state.trace_id, "asdf")
+            self.assertEqual(_beeline.tracer_impl._trace.id, "asdf")
 
             def thread_func():
                 # confirm no trace state in new thread
-                self.assertFalse(hasattr(_beeline.tracer_impl._state, 'trace_id'))
+                self.assertIsNone(_beeline.tracer_impl._trace)
 
             self.raising_run_in_thread(target=thread_func)
 
             @beeline.traced_thread
             def traced_thread_func():
-                self.assertEqual(_beeline.tracer_impl._state.trace_id, "asdf")
+                self.assertEqual(_beeline.tracer_impl._trace.id, "asdf")
 
                 with _beeline.tracer(name="foo") as span:
                     self.assertEqual(span.trace_id, "asdf")
-                    self.assertEqual(span.parent_id, _beeline.tracer_impl._state.stack[0].id)
+                    self.assertEqual(span.parent_id, _beeline.tracer_impl._trace.stack[0].id)
 
             self.raising_run_in_thread(target=traced_thread_func)
 
             # test use of beeline client
             @_beeline.traced_thread
             def traced_thread_func_2():
-                self.assertEqual(_beeline.tracer_impl._state.trace_id, "asdf")
+                self.assertEqual(_beeline.tracer_impl._trace.id, "asdf")
 
                 with _beeline.tracer(name="foo2") as span:
                     self.assertEqual(span.trace_id, "asdf")
-                    self.assertEqual(span.parent_id, _beeline.tracer_impl._state.stack[0].id)
+                    self.assertEqual(span.parent_id, _beeline.tracer_impl._trace.stack[0].id)
 
             self.raising_run_in_thread(target=traced_thread_func_2)
 
