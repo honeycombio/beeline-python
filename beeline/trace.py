@@ -31,23 +31,11 @@ class Trace(object):
         return result
 
 class Tracer(object):
-    pass
-
-class SynchronousTracer(Tracer):
     def __init__(self, client):
         self._client = client
-        self._state = threading.local()
 
         self.presend_hook = None
         self.sampler_hook = None
-
-    @property
-    def _trace(self):
-        return getattr(self._state, 'trace', None)
-
-    @_trace.setter
-    def _trace(self, new_trace):
-        self._state.trace = new_trace
 
     @contextmanager
     def __call__(self, name, trace_id=None, parent_id=None):
@@ -274,6 +262,19 @@ class SynchronousTracer(Tracer):
         elif _should_sample(span.trace_id, span.event.sample_rate):
             # if our sampler hook wasn't used, use deterministic sampling
             span.event.send_presampled()
+
+class SynchronousTracer(Tracer):
+    def __init__(self, client):
+        super(SynchronousTracer, self).__init__(client)
+        self._state = threading.local()
+
+    @property
+    def _trace(self):
+        return getattr(self._state, 'trace', None)
+
+    @_trace.setter
+    def _trace(self, new_trace):
+        self._state.trace = new_trace
 
 class Span(object):
     ''' Span represents an active span. Should not be initialized directly, but
