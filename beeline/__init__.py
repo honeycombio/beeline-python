@@ -19,6 +19,32 @@ _GBL = None
 # This is the PID that initialized the beeline.
 _INITPID = None
 
+try:
+    import asyncio
+    # The async functionality uses the contextvars module, added in
+    # Python 3.7
+    import contextvars
+    assert contextvars
+
+    from beeline.aiotrace import AsyncioTracer
+
+    def in_async_code():
+        """Return wether we are running inside an asynchronous task.
+
+        We use this information to determine which tracer
+        implementation to use.
+
+        """
+        try:
+            asyncio.get_running_loop()  # pylint: disable=no-member
+            return True
+        except RuntimeError:
+            return False
+
+except ImportError:
+    def in_async_code():
+        return False
+
 class Beeline(object):
     def __init__(self,
             writekey='', dataset='', service_name='',
@@ -68,7 +94,10 @@ class Beeline(object):
         self.client.add_field('meta.beeline_version', VERSION)
         self.client.add_field('meta.local_hostname', socket.gethostname())
 
-        self.tracer_impl = SynchronousTracer(self.client)
+        if in_async_code():
+            self.tracer_impl = AsyncioTracer(self.client)
+        else:
+            self.tracer_impl = SynchronousTracer(self.client)
         self.tracer_impl.register_hooks(presend=presend_hook, sampler=sampler_hook)
         self.sampler_hook = sampler_hook
         self.presend_hook = presend_hook
