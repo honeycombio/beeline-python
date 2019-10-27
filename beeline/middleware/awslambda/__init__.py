@@ -15,9 +15,16 @@ def _get_trace_data_from_message_attributes(attributes):
     if isinstance(attributes, dict):
         keymap = {k.lower(): k for k in attributes.keys()}
         if 'x-honeycomb-trace' in keymap:
-            trace_id, parent_id, context = unmarshal_trace_context(
-                attributes[keymap['x-honeycomb-trace']]['Value']
-            )
+            if 'Value' in attributes[keymap['x-honeycomb-trace']]:
+                # SNS
+                trace_id, parent_id, context = unmarshal_trace_context(
+                    attributes[keymap['x-honeycomb-trace']]['Value']
+                )
+            elif 'stringValue' in attributes[keymap['x-honeycomb-trace']]:
+                # SQS
+                trace_id, parent_id, context = unmarshal_trace_context(
+                    attributes[keymap['x-honeycomb-trace']]['stringValue']
+                )
 
     return trace_id, parent_id, context
 

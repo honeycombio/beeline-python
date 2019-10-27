@@ -102,11 +102,11 @@ class TestGetTraceIds(unittest.TestCase):
                     "messageAttributes": {
                         'X-HoNEyComb-TrACE': {
                             "Type":"String",
-                            "Value": "1;trace_id=bloop,parent_id=scoop,context=e30K",
+                            "stringValue": "1;trace_id=bloop,parent_id=scoop,context=e30K",
                         },
                         'foo': {
                             "Type": "String",
-                            "Value": "bar",
+                            "stringValue": "bar",
                         },
                     },
                     "eventSource": "aws:sqs",
@@ -129,11 +129,11 @@ class TestGetTraceIds(unittest.TestCase):
                     "messageAttributes": {
                         'X-HoNEyComb-TrACE': {
                             "Type": "String",
-                            "Value": "1;trace_id=beep,parent_id=moop,context=e29K",
+                            "stringValue": "1;trace_id=beep,parent_id=moop,context=e29K",
                         },
                         'foo': {
                             "Type": "String",
-                            "Value": "bar",
+                            "stringValue": "bar",
                         },
                     },
                     "eventSource": "aws:sqs",
@@ -143,11 +143,11 @@ class TestGetTraceIds(unittest.TestCase):
                     "messageAttributes": {
                         'X-HoNEyComb-TrACE': {
                             "Type": "String",
-                            "Value": "1;trace_id=bloop,parent_id=scoop,context=e30K",
+                            "stringValue": "1;trace_id=bloop,parent_id=scoop,context=e30K",
                         },
                         'foo': {
                             "Type": "String",
-                            "Value": "baz",
+                            "stringValue": "baz",
                         },
                     },
                     "eventSource": "aws:sqs",
