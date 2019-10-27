@@ -12,8 +12,6 @@ def _get_trace_context(environ):
     # http://werkzeug.pocoo.org/docs/0.14/wrappers/#base-wrappers
     req = Request(environ, shallow=True)
 
-
-
     trace_context = req.headers.get('x-honeycomb-trace')
     beeline.internal.log("got trace context: %s", trace_context)
     if trace_context:
@@ -23,6 +21,7 @@ def _get_trace_context(environ):
             beeline.internal.log('error attempting to extract trace context: %s', beeline.internal.stringify_exception(e))
 
     return None, None, None
+
 
 class HoneyMiddleware(object):
 
@@ -47,26 +46,11 @@ class HoneyWSGIMiddleware(object):
         self.app = app
 
     def __call__(self, environ, start_response):
-        request_method = environ.get('REQUEST_METHOD')
-        if request_method:
-            trace_name = "flask_http_%s" % request_method.lower()
-        else:
-            trace_name = "flask_http"
-
         trace_id, parent_id, context = _get_trace_context(environ)
 
-        root_span = beeline.start_trace(context={
-            "type": "http_server",
-            "name": trace_name,
-            "request.host": environ.get('HTTP_HOST'),
-            "request.method": request_method,
-            "request.path": environ.get('PATH_INFO'),
-            "request.remote_addr": environ.get('REMOTE_ADDR'),
-            "request.content_length": environ.get('CONTENT_LENGTH', 0),
-            "request.user_agent": environ.get('HTTP_USER_AGENT'),
-            "request.scheme": environ.get('wsgi.url_scheme'),
-            "request.query": environ.get('QUERY_STRING')
-        }, trace_id=trace_id, parent_span_id=parent_id)
+        root_span = beeline.start_trace(
+            context=self.get_context_from_environ(environ), 
+            trace_id=trace_id, parent_span_id=parent_id)
 
         # populate any propagated custom context
         if isinstance(context, dict):
@@ -84,6 +68,26 @@ class HoneyWSGIMiddleware(object):
             return start_response(status, headers, *args)
 
         return self.app(environ, _start_response)
+
+    def get_context_from_environ(self, environ):
+        request_method = environ.get('REQUEST_METHOD')
+        if request_method:
+            trace_name = "flask_http_%s" % request_method.lower()
+        else:
+            trace_name = "flask_http"
+
+        return {
+            "type": "http_server",
+            "name": trace_name,
+            "request.host": environ.get('HTTP_HOST'),
+            "request.method": request_method,
+            "request.path": environ.get('PATH_INFO'),
+            "request.remote_addr": environ.get('REMOTE_ADDR'),
+            "request.content_length": environ.get('CONTENT_LENGTH', 0),
+            "request.user_agent": environ.get('HTTP_USER_AGENT'),
+            "request.scheme": environ.get('wsgi.url_scheme'),
+            "request.query": environ.get('QUERY_STRING')
+        }
 
 
 class HoneyDBMiddleware(object):
@@ -152,6 +156,9 @@ class HoneyDBMiddleware(object):
         self.state.span = None
 
     def handle_error(self, context):
+        if not current_app:
+            return
+
         beeline.add_context_field("db.error", beeline.internal.stringify_exception(context.original_exception))
         if self.state.span:
             beeline.finish_span(self.state.span)

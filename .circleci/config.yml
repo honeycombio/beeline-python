@@ -1,0 +1,91 @@
+version: 2.1
+
+commands:
+  runtests:
+    steps:
+      - checkout
+      - run:
+          command: |
+            sudo pip install pyflakes==1.5.0 pylint setuptools-lint
+            sudo pip install --upgrade setuptools
+            pyflakes beeline && python setup.py lint --lint-rcfile pylint.rc && python setup.py test
+  publish:
+    steps:
+      - checkout
+      - run:
+          name: "publish to pypi"
+          command: |
+            python3 -m venv venv
+            . venv/bin/activate
+            pip install --upgrade setuptools wheel twine
+            echo -e "[pypi]" >> ~/.pypirc
+            echo -e "username = honeycomb" >> ~/.pypirc
+            echo -e "password = ${PYPI_PASSWORD}" >> ~/.pypirc
+
+            # create a source distribution
+            python setup.py sdist
+            # create a wheel
+            python setup.py bdist_wheel
+            twine upload dist/*
+            ./push_docs.sh
+executors:
+  python2-7:
+    docker:
+      - image: circleci/python:2.7
+  python3-5:
+    docker:
+      - image: circleci/python:3.5
+  python3-6:
+    docker:
+      - image: circleci/python:3.6
+  python3-7:
+    docker:
+      - image: circleci/python:3.7
+
+# required as all of the jobs need to have a tag filter for some reason
+tag_filters: &tag_filters
+  filters:
+      tags:
+        only: /.*/
+
+jobs:
+  test_python2-7:
+    executor: python2-7
+    steps:
+      - runtests
+  test_python3-5:
+    executor: python3-5
+    steps:
+      - runtests
+  test_python3-6:
+    executor: python3-6
+    steps:
+      - runtests
+  test_python3-7:
+    executor: python3-7
+    steps:
+      - runtests
+  publish:
+    executor: python3-7
+    steps:
+      - publish
+
+workflows:
+  version: 2
+  build_beeline:
+    jobs:
+      - test_python2-7: *tag_filters
+      - test_python3-5: *tag_filters
+      - test_python3-6: *tag_filters
+      - test_python3-7: *tag_filters
+      - publish:
+          requires:
+            - test_python2-7
+            - test_python3-5
+            - test_python3-6
+            - test_python3-7
+          filters:
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*/
+            branches:
+              ignore: /.*/
