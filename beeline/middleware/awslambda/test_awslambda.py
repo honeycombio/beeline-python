@@ -29,6 +29,137 @@ class TestGetTraceIds(unittest.TestCase):
         self.assertIsNone(parent_id)
         self.assertIsNone(context)
 
+    def test_get_trace_ids_sns_none(self):
+        ''' ensure that we handle SNS events with no honeycomb key '''
+        event = {
+            "Records":
+            [
+                {
+                    "EventSource": "aws:sns",
+                    "Sns": {
+                        "Message": "Hello from SNS!",
+                        "MessageAttributes": {}
+                    }
+                }
+            ],
+        }
+
+        trace_id, parent_id, context = awslambda._get_trace_data(event)
+        self.assertIsNone(trace_id)
+        self.assertIsNone(parent_id)
+        self.assertIsNone(context)
+
+    def test_get_trace_ids_sns_attribute(self):
+        ''' ensure that we extract SNS data from message attributes'''
+        event = {
+            "Records":
+            [
+                {
+                    "EventSource": "aws:sns",
+                    "Sns": {
+                        "Message": "Hello from SNS!",
+                        "MessageAttributes": {
+                            'X-HoNEyComb-TrACE': {
+                                "Type": "String",
+                                "Value": "1;trace_id=bloop,parent_id=scoop,context=e30K",
+                            }
+                        }
+                    }
+                }
+            ],
+        }
+
+        trace_id, parent_id, context = awslambda._get_trace_data(event)
+        self.assertEqual(trace_id, 'bloop')
+        self.assertEqual(parent_id, 'scoop')
+        self.assertEqual(context, {})
+
+    def test_get_trace_ids_sqs_none(self):
+        ''' ensure that we handle SQS events with no honeycomb key '''
+        event = {
+            "Records":
+            [
+                {
+                    "body": "Hello from SQS!",
+                    "messageAttributes": {},
+                    "eventSource": "aws:sqs",
+                },
+            ],
+        }
+
+        trace_id, parent_id, context = awslambda._get_trace_data(event)
+        self.assertIsNone(trace_id)
+        self.assertIsNone(parent_id)
+        self.assertIsNone(context)
+
+    def test_get_trace_ids_sqs_attributes(self):
+        ''' ensure that we extract SQS data from message attributes'''
+        event = {
+            "Records":
+            [
+                {
+                    "body": "Hello from SQS!",
+                    "messageAttributes": {
+                        'X-HoNEyComb-TrACE': {
+                            "Type":"String",
+                            "stringValue": "1;trace_id=bloop,parent_id=scoop,context=e30K",
+                        },
+                        'foo': {
+                            "Type": "String",
+                            "stringValue": "bar",
+                        },
+                    },
+                    "eventSource": "aws:sqs",
+                },
+            ],
+        }
+
+        trace_id, parent_id, context = awslambda._get_trace_data(event)
+        self.assertEqual(trace_id, 'bloop')
+        self.assertEqual(parent_id, 'scoop')
+        self.assertEqual(context, {})
+
+    def test_message_batch_is_ignored(self):
+        ''' ensure that we don't process batches'''
+        event = {
+            "Records":
+            [
+                {
+                    "body": "Hello from SQS!",
+                    "messageAttributes": {
+                        'X-HoNEyComb-TrACE': {
+                            "Type": "String",
+                            "stringValue": "1;trace_id=beep,parent_id=moop,context=e29K",
+                        },
+                        'foo': {
+                            "Type": "String",
+                            "stringValue": "bar",
+                        },
+                    },
+                    "eventSource": "aws:sqs",
+                },
+                {
+                    "body": "Another hello from SQS!",
+                    "messageAttributes": {
+                        'X-HoNEyComb-TrACE': {
+                            "Type": "String",
+                            "stringValue": "1;trace_id=bloop,parent_id=scoop,context=e30K",
+                        },
+                        'foo': {
+                            "Type": "String",
+                            "stringValue": "baz",
+                        },
+                    },
+                    "eventSource": "aws:sqs",
+                },
+            ],
+        }
+
+        trace_id, parent_id, context = awslambda._get_trace_data(event)
+        self.assertIsNone(trace_id)
+        self.assertIsNone(parent_id)
+        self.assertIsNone(context)
+
 class TestLambdaWrapper(unittest.TestCase):
     def test_wrapper_works_no_init(self):
         ''' ensure that the wrapper doesn't break anything if used before
