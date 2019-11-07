@@ -1,5 +1,11 @@
 # beeline-python changelog
 
+## 2.10.0 2019-10-07
+
+Features
+
+- `awslambda` middleware can now extract Honeycomb Trace context from single SNS/SQS messages. [#77](https://github.com/honeycombio/beeline-python/pull/77)
+
 ## 2.9.1 2019-09-10
 
 Fixes
