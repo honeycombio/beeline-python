@@ -26,7 +26,7 @@ try:
     import contextvars
     assert contextvars
 
-    from beeline.aiotrace import AsyncioTracer
+    from beeline.aiotrace import AsyncioTracer, traced_impl
 
     def in_async_code():
         """Return wether we are running inside an asynchronous task.
@@ -42,8 +42,22 @@ try:
             return False
 
 except ImportError:
+    # Use these non-async versions if we don't have asyncio or
+    # contextvars.
     def in_async_code():
         return False
+
+    def traced_impl(tracer_fn, name, trace_id, parent_id):
+        """Implementation of the traced decorator without async support."""
+        def wrapped(fn):
+            @functools.wraps(fn)
+            def inner(*args, **kwargs):
+                with tracer_fn(name=name, trace_id=trace_id, parent_id=parent_id):
+                    return fn(*args, **kwargs)
+
+            return inner
+
+        return wrapped
 
 class Beeline(object):
     def __init__(self,
@@ -199,14 +213,7 @@ class Beeline(object):
             span = self.tracer_impl.get_active_span()
 
     def traced(self, name, trace_id=None, parent_id=None):
-        def wrapped(fn, *args, **kwargs):
-            @functools.wraps(fn)
-            def inner(*args, **kwargs):
-                with self.tracer(name=name, trace_id=trace_id, parent_id=parent_id):
-                    return fn(*args, **kwargs)
-            return inner
-
-        return wrapped
+        return traced_impl(tracer_fn=self.tracer, name=name, trace_id=trace_id, parent_id=parent_id)
 
     def traced_thread(self, fn):
         trace_copy = self.tracer_impl._state.trace.copy()
@@ -626,15 +633,7 @@ def traced(name, trace_id=None, parent_id=None):
         with this id.
     '''
 
-    def wrapped(fn, *args, **kwargs):
-        @functools.wraps(fn)
-        def inner(*args, **kwargs):
-            with tracer(name=name, trace_id=trace_id, parent_id=parent_id):
-                return fn(*args, **kwargs)
-
-        return inner
-
-    return wrapped
+    return traced_impl(tracer_fn=tracer, name=name, trace_id=trace_id, parent_id=parent_id)
 
 def traced_thread(fn):
     '''

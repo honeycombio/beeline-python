@@ -5,6 +5,7 @@ This requires Python 3.7, because it uses the contextvars module.
 """
 import asyncio
 import contextvars  # pylint: disable=import-error
+import functools
 
 from beeline.trace import Tracer
 
@@ -57,3 +58,32 @@ class AsyncioTracer(Tracer):
     @_trace.setter
     def _trace(self, new_trace):
         current_trace_var.set(new_trace)
+
+
+def traced_impl(tracer_fn, name, trace_id, parent_id):
+    """Implementation of the traced decorator including async support.
+
+    The async version needs to be different, because the trace should
+    cover the execution of the whole decorated function. If using the
+    synchronous version, the trace would only cover the time it takes
+    to return the coroutine object.
+
+    """
+    def wrapped(fn):
+        if asyncio.iscoroutinefunction(fn):
+            @functools.wraps(fn)
+            async def async_inner(*args, **kwargs):
+                with tracer_fn(name=name, trace_id=trace_id, parent_id=parent_id):
+                    return await fn(*args, **kwargs)
+
+            return async_inner
+
+        else:
+            @functools.wraps(fn)
+            def inner(*args, **kwargs):
+                with tracer_fn(name=name, trace_id=trace_id, parent_id=parent_id):
+                    return fn(*args, **kwargs)
+
+            return inner
+
+    return wrapped
