@@ -87,3 +87,27 @@ def traced_impl(tracer_fn, name, trace_id, parent_id):
             return inner
 
     return wrapped
+
+
+def untraced(fn):
+    """Async function decorator detaching from any ongoing trace.
+
+    This decorator is necessary for starting independent async tasks
+    from within a trace, since async tasks inherit trace state by
+    default.
+
+    """
+    @functools.wraps(fn)
+    async def wrapped(*args, **kwargs):
+        try:
+            token = None
+            current_trace = current_trace_var.get(None)
+            if current_trace is not None:
+                token = current_trace_var.set(None)
+
+            return await fn(*args, **kwargs)
+        finally:
+            if token is not None:
+                current_trace_var.reset(token)
+
+    return wrapped

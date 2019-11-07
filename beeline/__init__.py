@@ -26,7 +26,8 @@ try:
     import contextvars
     assert contextvars
 
-    from beeline.aiotrace import AsyncioTracer, traced_impl
+    from beeline.aiotrace import AsyncioTracer, traced_impl, untraced
+    assert untraced
 
     def in_async_code():
         """Return wether we are running inside an asynchronous task.

@@ -256,3 +256,51 @@ class TestAsynchronousTracer(unittest.TestCase):
 
         # Check that only the trace produced a span.
         self.assertEqual(task0_span["name"], "task0")
+
+    @async_test
+    async def test_untraced_async_functions_should_work(self):
+        """Call functions with the untraced decorator from within a trace.
+
+        A trace is started and untraced async functions are called.
+        They start spans, but the spans are not expected to be
+        recorded since they should be considered started outside of
+        any trace.
+
+        """
+
+        calls = set()
+
+        trace = self.tracer.start_trace(context={"name": "root"})
+
+        @beeline.untraced
+        async def fn0():
+            span0 = self.tracer.start_span(context={"name": "fn0"})
+            await asyncio.sleep(0.2)
+            self.tracer.finish_span(span0)
+            calls.add("fn0")
+
+        @beeline.untraced
+        async def fn1():
+            await asyncio.sleep(0.1)
+            span1 = self.tracer.start_span(context={"name": "fn1"})
+            await asyncio.sleep(0.2)
+            self.tracer.finish_span(span1)
+            calls.add("fn1")
+
+        # Use the decorated function as a plain coroutine
+        await fn0()
+
+        # Use the decorated function as a task
+        task = asyncio.create_task(fn1())  # pylint: disable=no-member
+        await task
+
+        self.tracer.finish_trace(trace)
+
+        self.assertEqual(len(self.finished_spans), 1)
+        root_span = self.finished_spans[0]
+
+        self.assertEqual(root_span["name"], "root")
+
+        # Verify that the untraced functions were actually called
+        self.assertTrue("fn0" in calls)
+        self.assertTrue("fn1" in calls)
