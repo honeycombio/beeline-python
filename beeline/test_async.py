@@ -304,3 +304,53 @@ class TestAsynchronousTracer(unittest.TestCase):
         # Verify that the untraced functions were actually called
         self.assertTrue("fn0" in calls)
         self.assertTrue("fn1" in calls)
+
+    @async_test
+    async def test_untraced_synchronous_functions_should_work(self):
+        """Call synchronous functions with the untraced decorator.
+
+        A trace is started and untraced synchronous functions are
+        called. They start spans, but the spans are not expected to be
+        recorded since they should be considered started outside of
+        any trace.
+
+        """
+
+        calls = set()
+
+        trace = self.tracer.start_trace(context={"name": "root"})
+
+        @beeline.untraced
+        def fn0():
+            span0 = self.tracer.start_span(context={"name": "fn0"})
+            self.tracer.finish_span(span0)
+            calls.add("fn0")
+
+        @beeline.untraced
+        def fn1():
+            async def task1():
+                await asyncio.sleep(0.1)
+                span1 = self.tracer.start_span(context={"name": "fn1"})
+                await asyncio.sleep(0.2)
+                self.tracer.finish_span(span1)
+                calls.add("fn1")
+
+            return asyncio.create_task(task1())  # pylint: disable=no-member
+
+        # Call one synchronous function
+        fn0()
+        # Spawn a task within another synchronous function
+        task = fn1()
+
+        await task
+
+        self.tracer.finish_trace(trace)
+
+        self.assertEqual(len(self.finished_spans), 1)
+        root_span = self.finished_spans[0]
+
+        self.assertEqual(root_span["name"], "root")
+
+        # Verify that the untraced functions were actually called
+        self.assertTrue("fn0" in calls)
+        self.assertTrue("fn1" in calls)
