@@ -102,8 +102,8 @@ class HoneyDBMiddleware(object):
 
     def init_app(self, app):
         try:
-            from sqlalchemy.engine import Engine
-            from sqlalchemy.event import listen
+            from sqlalchemy.engine import Engine # pylint: disable=bad-option-value,import-outside-toplevel
+            from sqlalchemy.event import listen # pylint: disable=bad-option-value,import-outside-toplevel
 
             listen(Engine, 'before_cursor_execute', self.before_cursor_execute)
             listen(Engine, 'after_cursor_execute', self.after_cursor_execute)

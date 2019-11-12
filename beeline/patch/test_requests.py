@@ -3,7 +3,7 @@ from mock import Mock, patch
 
 class TestRequestsPatch(unittest.TestCase):
     def test_request_fn_injects_headers_and_returns(self):
-        from beeline.patch.requests import request
+        from beeline.patch.requests import request # pylint: disable=bad-option-value,import-outside-toplevel
 
         with patch('beeline.get_beeline') as m_bl:
             bl = Mock()

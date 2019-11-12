@@ -1,6 +1,10 @@
 # beeline-python changelog
 
-## 2.10.0 2019-10-07
+## 2.10.1 2019-11-12
+
+- Traces propagated from other beelines (nodejs, go) which supply the "dataset" field in the trace context can now be handled by `unmarshal_trace_context`. The dataset is discarded - honoring this override will come in a later version.
+
+## 2.10.0 2019-11-07
 
 Features
 

@@ -319,9 +319,9 @@ def unmarshal_trace_context(trace_context):
     kv_pairs = data.split(',')
 
     trace_id, parent_id, context = None, None, None
-    # For version 1, we expect three kv pairs. If there's anything else, the
-    # payload is malformed and we do nothing.
-    if len(kv_pairs) == 3:
+    # For version 1, we expect at least 3 pairs. Some beelines send "dataset" but we do
+    # not handle that yet
+    if len(kv_pairs) >= 3:
         for pair in kv_pairs:
             k, v = pair.split('=', 1)
             if k == 'trace_id':
