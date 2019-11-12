@@ -8,3 +8,5 @@ venv
 .eggs
 
 .vscode
+.coverage
+htmlcov

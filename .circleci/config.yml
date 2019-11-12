@@ -6,9 +6,15 @@ commands:
       - checkout
       - run:
           command: |
-            sudo pip install pyflakes==1.5.0 pylint setuptools-lint
+            sudo pip install pyflakes==1.5.0 pylint setuptools-lint coverage
             sudo pip install --upgrade setuptools
-            pyflakes beeline && python setup.py lint --lint-rcfile pylint.rc && python setup.py test
+            pyflakes beeline
+            python setup.py lint --lint-rcfile pylint.rc
+            coverage run ./setup.py test
+            coverage report --include="beeline/*"
+            coverage html --include="beeline/*"
+      - store_artifacts:
+          path: htmlcov
   publish:
     steps:
       - checkout
