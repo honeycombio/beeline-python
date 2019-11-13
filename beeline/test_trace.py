@@ -1,6 +1,8 @@
 from collections import defaultdict
 from mock import ANY, Mock, call, patch
+import base64
 import datetime
+import json
 import unittest
 import uuid
 
@@ -501,6 +503,22 @@ class TestTraceContext(unittest.TestCase):
         trace_fields = {"i": "like", "to": "trace"}
 
         trace_context = marshal_trace_context(trace_id, parent_id, trace_fields)
+
+        trace_id_u, parent_id_u, trace_fields_u = unmarshal_trace_context(trace_context)
+        self.assertEqual(trace_id_u, trace_id, "unmarshaled trace id should match original")
+        self.assertEqual(parent_id_u, parent_id, "unmarshaled parent id should match original")
+        self.assertDictEqual(trace_fields_u, trace_fields, "unmarshaled trace fields should match original")
+
+    def test_marshal_trace_context_dataset_included(self):
+        """ ensures unmarshalling still works if there's a dataset context field """
+        trace_id = "123456"
+        parent_id = "654321"
+        dataset_id = "foo"
+        trace_fields = {"i": "like", "to": "trace"}
+        fields_string = base64.b64encode(json.dumps(trace_fields).encode()).decode()
+        trace_context = "{};trace_id={},parent_id={},dataset_id={},context={}".format(
+            1, trace_id, parent_id, dataset_id, fields_string
+        )
 
         trace_id_u, parent_id_u, trace_fields_u = unmarshal_trace_context(trace_context)
         self.assertEqual(trace_id_u, trace_id, "unmarshaled trace id should match original")
