@@ -45,20 +45,10 @@ try:
 except ImportError:
     # Use these non-async versions if we don't have asyncio or
     # contextvars.
+    from beeline.trace import traced_impl
+
     def in_async_code():
         return False
-
-    def traced_impl(tracer_fn, name, trace_id, parent_id):
-        """Implementation of the traced decorator without async support."""
-        def wrapped(fn):
-            @functools.wraps(fn)
-            def inner(*args, **kwargs):
-                with tracer_fn(name=name, trace_id=trace_id, parent_id=parent_id):
-                    return fn(*args, **kwargs)
-
-            return inner
-
-        return wrapped
 
 class Beeline(object):
     def __init__(self,

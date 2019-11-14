@@ -1,6 +1,7 @@
 import base64
 import copy
 import datetime
+import functools
 import hashlib
 import json
 import math
@@ -346,3 +347,15 @@ def unmarshal_trace_context(trace_context):
                 context = json.loads(base64.b64decode(v.encode()).decode())
 
     return trace_id, parent_id, context
+
+def traced_impl(tracer_fn, name, trace_id, parent_id):
+    """Implementation of the traced decorator without async support."""
+    def wrapped(fn):
+        @functools.wraps(fn)
+        def inner(*args, **kwargs):
+            with tracer_fn(name=name, trace_id=trace_id, parent_id=parent_id):
+                return fn(*args, **kwargs)
+
+        return inner
+
+    return wrapped
