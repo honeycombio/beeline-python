@@ -1,5 +1,7 @@
 import asyncio
+import concurrent.futures
 import datetime
+import time
 import unittest
 
 import beeline
@@ -354,3 +356,58 @@ class TestAsynchronousTracer(unittest.TestCase):
         # Verify that the untraced functions were actually called
         self.assertTrue("fn0" in calls)
         self.assertTrue("fn1" in calls)
+
+    @async_test
+    async def test_traced_thread_should_work_with_async_tracer(self):
+        """Run traced code in threads from within async code.
+
+        A trace is started and two functions are run in threads via a
+        ThreadPoolExecutor. Both functions start spans, but only one
+        of them is decorated with the traced_thread decorator. Only
+        the span from the decorated function is expected to show up in
+        the trace.
+
+        """
+        loop = asyncio.get_running_loop()  # pylint: disable=no-member
+        executor = concurrent.futures.ThreadPoolExecutor(max_workers=2)
+        calls = set()
+
+        trace = self.tracer.start_trace(context={"name": "root"})
+
+        @self.beeline.traced_thread
+        def traced_worker():
+            span = self.tracer.start_span(context={"name": "traced_worker"})
+            time.sleep(0.2)
+            self.tracer.finish_span(span)
+
+        def untraced_worker():
+            span = self.tracer.start_span(context={"name": "untraced_worker"})
+            time.sleep(0.2)
+            self.tracer.finish_span(span)
+            calls.add("untraced_worker")
+
+        future0 = loop.run_in_executor(executor, traced_worker)
+        future1 = loop.run_in_executor(executor, untraced_worker)
+
+        await asyncio.gather(future0, future1)
+
+        self.tracer.finish_trace(trace)
+
+        self.assertEqual(len(self.finished_spans), 2)
+
+        worker_span, root_span = self.finished_spans  # pylint: disable=unbalanced-tuple-unpacking
+
+        # Check that the spans finished in the expected order, with
+        # the root span last.
+        self.assertEqual(worker_span["name"], "traced_worker")
+        self.assertEqual(root_span["name"], "root")
+        self.assertLessEqual(worker_span["end"], root_span["end"])
+
+        # Check that the root span was started before the worker span.
+        self.assertLess(root_span["start"], worker_span["start"])
+
+        # Check that the worker span is a child of the root span.
+        self.assertEqual(root_span["span"].id, worker_span["span"].parent_id)
+
+        # Verify that the untraced function was actually called
+        self.assertTrue("untraced_worker" in calls)

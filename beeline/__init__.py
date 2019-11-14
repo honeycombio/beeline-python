@@ -207,7 +207,7 @@ class Beeline(object):
         return traced_impl(tracer_fn=self.tracer, name=name, trace_id=trace_id, parent_id=parent_id)
 
     def traced_thread(self, fn):
-        trace_copy = self.tracer_impl._state.trace.copy()
+        trace_copy = self.tracer_impl._trace.copy()
 
         @functools.wraps(fn)
         def wrapped(*args, **kwargs):
@@ -660,7 +660,7 @@ def traced_thread(fn):
             return fn(*args, **kwargs)
         return noop
 
-    trace_copy = bl.tracer_impl._state.trace.copy()
+    trace_copy = bl.tracer_impl._trace.copy()
 
     @functools.wraps(fn)
     def wrapped(*args, **kwargs):
