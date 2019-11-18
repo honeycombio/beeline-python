@@ -1,4 +1,3 @@
-import sys
 from setuptools import setup, find_packages
 
 setup(
@@ -22,6 +21,6 @@ setup(
         'django<2; python_version == "2.7"',
         'django>=2; python_version >= "3.0"',
     ],
-    test_suite='beeline',
+    test_suite='beeline.test_suite.get_test_suite',
     zip_safe=False
 )

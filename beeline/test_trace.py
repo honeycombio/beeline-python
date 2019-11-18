@@ -186,9 +186,9 @@ class TestSynchronousTracer(unittest.TestCase):
                 'trace.span_id': span.id,
             }),
         ])
-        self.assertEqual(tracer._state.stack[0], span)
-        # ensure we started a trace by setting a trace_id
-        self.assertIsNotNone(tracer._state.trace_id)
+        self.assertEqual(tracer._trace.stack[0], span)
+        # ensure we started a trace
+        self.assertIsNotNone(tracer._trace)
 
     def test_start_span(self):
         m_client = Mock()
@@ -196,19 +196,19 @@ class TestSynchronousTracer(unittest.TestCase):
 
         span = tracer.start_trace(context={'big': 'important_stuff'})
         # make sure this is the only event in the stack
-        self.assertEqual(tracer._state.stack[0], span)
-        self.assertEqual(len(tracer._state.stack), 1)
+        self.assertEqual(tracer._trace.stack[0], span)
+        self.assertEqual(len(tracer._trace.stack), 1)
 
         span2 = tracer.start_span(context={'more': 'important_stuff'})
         # should still have the root span as the first item in the stack
-        self.assertEqual(tracer._state.stack[0], span)
-        self.assertEqual(tracer._state.stack[-1], span2)
+        self.assertEqual(tracer._trace.stack[0], span)
+        self.assertEqual(tracer._trace.stack[-1], span2)
         # should have the first span id as its parent
         # should share the same trace id
         self.assertEqual(span.trace_id, span2.trace_id)
         self.assertEqual(span.id, span2.parent_id)
         # trace id should match what the tracer has
-        self.assertEqual(span.trace_id, tracer._state.trace_id)
+        self.assertEqual(span.trace_id, tracer._trace.id)
         m_client.new_event.return_value.add.assert_has_calls([
             call(data={'more': 'important_stuff'}),
             call(data={
@@ -223,9 +223,9 @@ class TestSynchronousTracer(unittest.TestCase):
         tracer = SynchronousTracer(m_client)
 
         span = tracer.start_span(context={'more': 'important_stuff'})
-        # should still have the root span as the first item in the stack
+        # should still have no active trace
         self.assertIsNone(span)
-        self.assertEqual(len(tracer._state.stack), 0)
+        self.assertIsNone(tracer._trace)
 
     def test_finish_trace(self):
         # implicitly tests finish_span
@@ -236,15 +236,13 @@ class TestSynchronousTracer(unittest.TestCase):
         tracer = SynchronousTracer(m_client)
 
         span = tracer.start_trace(context={'big': 'important_stuff'})
-        self.assertEqual(tracer._state.stack[0], span)
+        self.assertEqual(tracer._trace.stack[0], span)
 
         tracer.finish_trace(span)
         # ensure the event is sent
         span.event.send_presampled.assert_called_once_with()
-        # ensure the stack is clean
-        self.assertEqual(len(tracer._state.stack), 0)
-        # ensure the trace_id is reset to None
-        self.assertIsNone(tracer._state.trace_id)
+        # ensure that there is no current trace
+        self.assertIsNone(tracer._trace)
 
     def test_start_trace_with_trace_id_set(self):
         m_client = Mock()
@@ -253,7 +251,7 @@ class TestSynchronousTracer(unittest.TestCase):
         span = tracer.start_trace(trace_id='123456', parent_span_id='999999')
         self.assertEqual(span.trace_id, '123456')
         self.assertEqual(span.parent_id, '999999')
-        self.assertEqual(tracer._state.trace_id, '123456')
+        self.assertEqual(tracer._trace.id, '123456')
 
         m_client.new_event.return_value.add.assert_has_calls([
             call(data={
@@ -269,8 +267,8 @@ class TestSynchronousTracer(unittest.TestCase):
 
         span = tracer.start_trace(context={'big': 'important_stuff'})
         # make sure this is the only event in the stack
-        self.assertEqual(tracer._state.stack[0], span)
-        self.assertEqual(len(tracer._state.stack), 1)
+        self.assertEqual(tracer._trace.stack[0], span)
+        self.assertEqual(len(tracer._trace.stack), 1)
 
         m_client.new_event.reset_mock()
 
@@ -279,14 +277,14 @@ class TestSynchronousTracer(unittest.TestCase):
 
         span2 = tracer.start_span(context={'more': 'important_stuff'})
         # should still have the root span as the first item in the stack
-        self.assertEqual(tracer._state.stack[0], span)
-        self.assertEqual(tracer._state.stack[-1], span2)
+        self.assertEqual(tracer._trace.stack[0], span)
+        self.assertEqual(tracer._trace.stack[-1], span2)
         # should have the first span id as its parent
         # should share the same trace id
         self.assertEqual(span.trace_id, span2.trace_id)
         self.assertEqual(span.id, span2.parent_id)
         # trace id should match what the tracer has
-        self.assertEqual(span.trace_id, tracer._state.trace_id)
+        self.assertEqual(span.trace_id, tracer._trace.id)
         m_client.new_event.assert_called_once_with(data={
                 'app.another': 'important_thing',
                 'app.wide': 'events_are_great'
@@ -307,9 +305,9 @@ class TestSynchronousTracer(unittest.TestCase):
         tracer.remove_trace_field('another')
 
         span3 = tracer.start_span(context={'more': 'important_stuff'})
-        self.assertEqual(tracer._state.stack[0], span)
-        self.assertEqual(tracer._state.stack[1], span2)
-        self.assertEqual(tracer._state.stack[-1], span3)
+        self.assertEqual(tracer._trace.stack[0], span)
+        self.assertEqual(tracer._trace.stack[1], span2)
+        self.assertEqual(tracer._trace.stack[-1], span3)
         # should have the second span id as its parent
         # should share the same trace id
         self.assertEqual(span.trace_id, span3.trace_id)
@@ -376,7 +374,7 @@ class TestSynchronousTracer(unittest.TestCase):
         m_client = Mock()
         tracer = SynchronousTracer(m_client)
         span = tracer.start_trace()
-        self.assertEquals(tracer.get_active_span().id, span.id)
+        self.assertEqual(tracer.get_active_span().id, span.id)
 
     def test_run_hooks_and_send_no_hooks(self):
         ''' ensure send works when no hooks defined '''
@@ -466,6 +464,7 @@ class TestSynchronousTracer(unittest.TestCase):
         ''' ensure trace fields are propagated backwards '''
         m_client = Mock()
         tracer = SynchronousTracer(m_client)
+        tracer.start_trace()
         m_span = Mock()
         m_span.event = Event()
         m_span.event.start_time = datetime.datetime.now()

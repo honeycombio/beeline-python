@@ -1,13 +1,27 @@
 version: 2.1
 
 commands:
-  runtests:
+  setup:
     steps:
       - checkout
       - run:
           command: |
             sudo pip install pyflakes==1.5.0 pylint setuptools-lint coverage
             sudo pip install --upgrade setuptools
+  runtests-py2:
+    steps:
+      - run:
+          command: |
+            python setup.py lint --lint-ignore aiotrace.py,test_async.py --lint-rcfile pylint.rc
+            coverage run ./setup.py test
+            coverage report --include="beeline/*"
+            coverage html --include="beeline/*"
+      - store_artifacts:
+          path: htmlcov
+  runtests-py3:
+    steps:
+      - run:
+          command: |
             pyflakes beeline
             python setup.py lint --lint-rcfile pylint.rc
             coverage run ./setup.py test
@@ -58,19 +72,23 @@ jobs:
   test_python2-7:
     executor: python2-7
     steps:
-      - runtests
+      - setup
+      - runtests-py2
   test_python3-5:
     executor: python3-5
     steps:
-      - runtests
+      - setup
+      - runtests-py3
   test_python3-6:
     executor: python3-6
     steps:
-      - runtests
+      - setup
+      - runtests-py3
   test_python3-7:
     executor: python3-7
     steps:
-      - runtests
+      - setup
+      - runtests-py3
   publish:
     executor: python3-7
     steps:

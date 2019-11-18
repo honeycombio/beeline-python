@@ -1,5 +1,4 @@
 ''' module beeline '''
-import copy
 import functools
 import logging
 import os
@@ -19,6 +18,37 @@ USER_AGENT_ADDITION = "beeline-python/%s" % VERSION
 _GBL = None
 # This is the PID that initialized the beeline.
 _INITPID = None
+
+try:
+    import asyncio
+    # The async functionality uses the contextvars module, added in
+    # Python 3.7
+    import contextvars
+    assert contextvars
+
+    from beeline.aiotrace import AsyncioTracer, traced_impl, untraced
+    assert untraced
+
+    def in_async_code():
+        """Return wether we are running inside an asynchronous task.
+
+        We use this information to determine which tracer
+        implementation to use.
+
+        """
+        try:
+            asyncio.get_running_loop()  # pylint: disable=no-member
+            return True
+        except RuntimeError:
+            return False
+
+except ImportError:
+    # Use these non-async versions if we don't have asyncio or
+    # contextvars.
+    from beeline.trace import traced_impl
+
+    def in_async_code():
+        return False
 
 class Beeline(object):
     def __init__(self,
@@ -69,7 +99,10 @@ class Beeline(object):
         self.client.add_field('meta.beeline_version', VERSION)
         self.client.add_field('meta.local_hostname', socket.gethostname())
 
-        self.tracer_impl = SynchronousTracer(self.client)
+        if in_async_code():
+            self.tracer_impl = AsyncioTracer(self.client)
+        else:
+            self.tracer_impl = SynchronousTracer(self.client)
         self.tracer_impl.register_hooks(presend=presend_hook, sampler=sampler_hook)
         self.sampler_hook = sampler_hook
         self.presend_hook = presend_hook
@@ -171,26 +204,14 @@ class Beeline(object):
             span = self.tracer_impl.get_active_span()
 
     def traced(self, name, trace_id=None, parent_id=None):
-        def wrapped(fn, *args, **kwargs):
-            @functools.wraps(fn)
-            def inner(*args, **kwargs):
-                with self.tracer(name=name, trace_id=trace_id, parent_id=parent_id):
-                    return fn(*args, **kwargs)
-            return inner
-
-        return wrapped
+        return traced_impl(tracer_fn=self.tracer, name=name, trace_id=trace_id, parent_id=parent_id)
 
     def traced_thread(self, fn):
-        trace_id = self.tracer_impl._state.trace_id
-        # copy as a new list - reference will be unavailable when we enter the new thread
-        stack = copy.copy(self.tracer_impl._state.stack)
-        trace_fields = copy.copy(self.tracer_impl._state.trace_fields)
+        trace_copy = self.tracer_impl._trace.copy()
 
         @functools.wraps(fn)
         def wrapped(*args, **kwargs):
-            self.tracer_impl._state.trace_id = trace_id
-            self.tracer_impl._state.stack = stack
-            self.tracer_impl._state.trace_fields = trace_fields
+            self.tracer_impl._trace = trace_copy
             return fn(*args, **kwargs)
 
         return wrapped
@@ -603,15 +624,7 @@ def traced(name, trace_id=None, parent_id=None):
         with this id.
     '''
 
-    def wrapped(fn, *args, **kwargs):
-        @functools.wraps(fn)
-        def inner(*args, **kwargs):
-            with tracer(name=name, trace_id=trace_id, parent_id=parent_id):
-                return fn(*args, **kwargs)
-
-        return inner
-
-    return wrapped
+    return traced_impl(tracer_fn=tracer, name=name, trace_id=trace_id, parent_id=parent_id)
 
 def traced_thread(fn):
     '''
@@ -641,22 +654,17 @@ def traced_thread(fn):
 
     # if beeline is not initialized, or there is no active trace, do nothing
     bl = get_beeline()
-    if bl is None or bl.tracer_impl._state.trace_id is None:
+    if bl is None or bl.tracer_impl.get_active_trace_id() is None:
         @functools.wraps(fn)
         def noop(*args, **kwargs):
             return fn(*args, **kwargs)
         return noop
 
-    trace_id = bl.tracer_impl._state.trace_id
-    # copy as a new list - reference will be unavailable when we enter the new thread
-    stack = copy.copy(bl.tracer_impl._state.stack)
-    trace_fields = copy.copy(bl.tracer_impl._state.trace_fields)
+    trace_copy = bl.tracer_impl._trace.copy()
 
     @functools.wraps(fn)
     def wrapped(*args, **kwargs):
-        bl.tracer_impl._state.trace_id = trace_id
-        bl.tracer_impl._state.stack = stack
-        bl.tracer_impl._state.trace_fields = trace_fields
+        bl.tracer_impl._trace = trace_copy
         return fn(*args, **kwargs)
 
     return wrapped

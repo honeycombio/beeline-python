@@ -150,6 +150,23 @@ class TestBeeline(unittest.TestCase):
             # check that an event was sent, from which we can infer that the function was wrapped
             self.assertTrue(_beeline.tracer_impl._run_hooks_and_send.called)
 
+    @staticmethod
+    def raising_run_in_thread(target):
+        closure_dict = {}
+
+        def wrapper():
+            try:
+                target()
+            except Exception as exc:
+                closure_dict["thread_exception"] = exc
+
+        thread = threading.Thread(target=wrapper)
+        thread.start()
+        thread.join()
+
+        if "thread_exception" in closure_dict:
+            raise closure_dict["thread_exception"]
+
     def test_treaded_trace(self):
         _beeline = beeline.Beeline()
 
@@ -158,40 +175,34 @@ class TestBeeline(unittest.TestCase):
             _beeline.tracer_impl._run_hooks_and_send = Mock()
 
             _beeline.tracer_impl.start_trace(trace_id="asdf")
-            self.assertEqual(_beeline.tracer_impl._state.trace_id, "asdf")
+            self.assertEqual(_beeline.tracer_impl._trace.id, "asdf")
 
             def thread_func():
                 # confirm no trace state in new thread
-                self.assertFalse(hasattr(_beeline.tracer_impl._state, 'trace_id'))
+                self.assertIsNone(_beeline.tracer_impl._trace)
 
-            t = threading.Thread(target=thread_func)
-            t.start()  
-            t.join()
+            self.raising_run_in_thread(target=thread_func)
 
             @beeline.traced_thread
             def traced_thread_func():
-                self.assertEqual(_beeline.tracer_impl._state.trace_id, "asdf")
+                self.assertEqual(_beeline.tracer_impl._trace.id, "asdf")
 
                 with _beeline.tracer(name="foo") as span:
                     self.assertEqual(span.trace_id, "asdf")
-                    self.assertEqual(span.parent_id, _beeline.tracer_impl._state.stack[0].id)
+                    self.assertEqual(span.parent_id, _beeline.tracer_impl._trace.stack[0].id)
 
-            t = threading.Thread(target=traced_thread_func)
-            t.start()
-            t.join()
+            self.raising_run_in_thread(target=traced_thread_func)
 
             # test use of beeline client
             @_beeline.traced_thread
             def traced_thread_func_2():
-                self.assertEqual(_beeline.tracer_impl._state.trace_id, "asdf")
+                self.assertEqual(_beeline.tracer_impl._trace.id, "asdf")
 
                 with _beeline.tracer(name="foo2") as span:
                     self.assertEqual(span.trace_id, "asdf")
-                    self.assertEqual(span.parent_id, _beeline.tracer_impl._state.stack[0].id)
+                    self.assertEqual(span.parent_id, _beeline.tracer_impl._trace.stack[0].id)
 
-            t = threading.Thread(target=traced_thread_func_2)
-            t.start()
-            t.join()
+            self.raising_run_in_thread(target=traced_thread_func_2)
 
     def test_finish_span_none(self):
         ''' ensure finish_span does not crash if an empty span is passed to it '''
