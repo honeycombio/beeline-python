@@ -1,5 +1,11 @@
 # beeline-python changelog
 
+## 2.11.0 2019-11-18
+
+Features
+
+- Asyncio support! The new `AsyncioTracer` is used instead of `SynchronousTracer` when the beeline is initialized from within an asyncio event loop. [#87](https://github.com/honeycombio/beeline-python/pull/87)
+
 ## 2.10.1 2019-11-12
 
 - Traces propagated from other beelines (nodejs, go) which supply the "dataset" field in the trace context can now be handled by `unmarshal_trace_context`. The dataset is discarded - honoring this override will come in a later version.
