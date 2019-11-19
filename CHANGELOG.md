@@ -1,5 +1,11 @@
 # beeline-python changelog
 
+## 2.11.1 2019-11-19
+
+Fixes
+
+- Flask Middleware: AttributeError in DB instrumentation when cursor.lastrowid doesn't exist [#91](https://github.com/honeycombio/beeline-python/pull/91).
+
 ## 2.11.0 2019-11-18
 
 Features
