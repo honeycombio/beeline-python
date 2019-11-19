@@ -148,7 +148,7 @@ class HoneyDBMiddleware(object):
 
         beeline.add_context({
             "db.duration": query_duration.total_seconds() * 1000,
-            "db.last_insert_id": cursor.lastrowid,
+            "db.last_insert_id": getattr(cursor, 'lastrowid', None),
             "db.rows_affected": cursor.rowcount,
         })
         if self.state.span:
