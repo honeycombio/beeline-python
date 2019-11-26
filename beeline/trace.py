@@ -334,17 +334,19 @@ def unmarshal_trace_context(trace_context):
     kv_pairs = data.split(',')
 
     trace_id, parent_id, context = None, None, None
-    # For version 1, we expect at least 3 pairs. Some beelines send "dataset" but we do
-    # not handle that yet
-    if len(kv_pairs) >= 3:
-        for pair in kv_pairs:
-            k, v = pair.split('=', 1)
-            if k == 'trace_id':
-                trace_id = v
-            elif k == 'parent_id':
-                parent_id = v
-            elif k == 'context':
-                context = json.loads(base64.b64decode(v.encode()).decode())
+    # Some beelines send "dataset" but we do not handle that yet
+    for pair in kv_pairs:
+        k, v = pair.split('=', 1)
+        if k == 'trace_id':
+            trace_id = v
+        elif k == 'parent_id':
+            parent_id = v
+        elif k == 'context':
+            context = json.loads(base64.b64decode(v.encode()).decode())
+
+    # context should be a dict
+    if context is None:
+        context = {}
 
     return trace_id, parent_id, context
 
