@@ -508,6 +508,16 @@ class TestTraceContext(unittest.TestCase):
         self.assertEqual(parent_id_u, parent_id, "unmarshaled parent id should match original")
         self.assertDictEqual(trace_fields_u, trace_fields, "unmarshaled trace fields should match original")
 
+    def test_marshal_trace_context_empty_context(self):
+        trace_id = "123456"
+        parent_id = "654321"
+        trace_context = "{};trace_id={},parent_id={}".format(1, trace_id, parent_id)
+
+        trace_id_u, parent_id_u, trace_fields_u = unmarshal_trace_context(trace_context)
+        self.assertEqual(trace_id_u, trace_id, "unmarshaled trace id should match original")
+        self.assertEqual(parent_id_u, parent_id, "unmarshaled parent id should match original")
+        self.assertDictEqual(trace_fields_u, {}, "unmarshaled trace fields should match original")
+
     def test_marshal_trace_context_dataset_included(self):
         """ ensures unmarshalling still works if there's a dataset context field """
         trace_id = "123456"

@@ -1,5 +1,11 @@
 # beeline-python changelog
 
+## 2.11.2 2019-11-26
+
+Fixes
+
+- Allows less than three fields in trace context headers.
+
 ## 2.11.1 2019-11-19
 
 Fixes
