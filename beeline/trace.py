@@ -205,7 +205,9 @@ class Tracer(object):
 
     def add_trace_field(self, name, value):
         # prefix with app to avoid key conflicts
-        key = "app.%s" % name
+        # add the app prefix if it's missing
+        if not name.startswith("app."):
+            key = "app.%s" % name
         # also add to current span
         self.add_context_field(key, value)
 
