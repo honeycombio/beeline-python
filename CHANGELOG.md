@@ -1,5 +1,11 @@
 # beeline-python changelog
 
+## 2.11.3 2020-01-23
+
+Fixes
+
+- Prevent duplicate `app.` prefixes in trace fields. [#96](https://github.com/honeycombio/beeline-python/pull/96)
+
 ## 2.11.2 2019-11-26
 
 Fixes

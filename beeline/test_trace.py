@@ -274,6 +274,10 @@ class TestSynchronousTracer(unittest.TestCase):
 
         tracer.add_trace_field('another', 'important_thing')
         tracer.add_trace_field('wide', 'events_are_great')
+        # ensure we don't crash if non-string added here
+        tracer.add_trace_field(12345, 54321)
+        # ensure fields prefixed with app. don't get another prefix
+        tracer.add_trace_field('app.prefixes', 'there should only be 1')
 
         span2 = tracer.start_span(context={'more': 'important_stuff'})
         # should still have the root span as the first item in the stack
@@ -287,7 +291,9 @@ class TestSynchronousTracer(unittest.TestCase):
         self.assertEqual(span.trace_id, tracer._trace.id)
         m_client.new_event.assert_called_once_with(data={
                 'app.another': 'important_thing',
-                'app.wide': 'events_are_great'
+                'app.wide': 'events_are_great',
+                'app.12345': 54321,
+                'app.prefixes': 'there should only be 1',
         })
         m_client.new_event.return_value.add.assert_has_calls([
             call(data={'more': 'important_stuff'}),
@@ -315,6 +321,8 @@ class TestSynchronousTracer(unittest.TestCase):
         m_client.new_event.assert_called_once_with(data={
                 'app.wide': 'events_are_great',
                 'app.more': 'data!',
+                'app.12345': 54321,
+                'app.prefixes': 'there should only be 1',
         })
 
     def test_add_rollup_field_propagates(self):
