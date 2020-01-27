@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 setup(
     python_requires='>=2.7',
     name='honeycomb-beeline',
-    version='2.11.3',
+    version='2.11.4',
     description='Honeycomb library for easy instrumentation',
     url='https://github.com/honeycombio/beeline-python',
     author='Honeycomb.io',

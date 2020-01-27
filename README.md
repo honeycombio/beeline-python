@@ -24,4 +24,6 @@ Features, bug fixes and other changes to `beeline-python` are gladly accepted. P
 open issues or a pull request with your change. Remember to add your name to the
 CONTRIBUTORS file!
 
+If you add a new test module, be sure and update `beeline.test_suite` to pick up the new tests.
+
 All contributions will be released under the Apache License 2.0.
