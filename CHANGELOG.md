@@ -1,5 +1,11 @@
 # beeline-python changelog
 
+## 2.11.4 2020-01-27
+
+Fixes
+
+- Trace context headers injected with the `requests` middleware now reference the correct parent span. Previously, the trace context was generated prior to the wrapping span around the request call, anchoring spans generated with this trace context to the wrong span.
+
 ## 2.11.3 2020-01-23
 
 Fixes

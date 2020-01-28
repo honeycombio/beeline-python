@@ -11,7 +11,16 @@ except ImportError:
 def get_test_suite():
     """Return the set of tests suitable for the current Python version"""
     test_suite = defaultTestLoader.loadTestsFromNames(
-        ("beeline.test_beeline", "beeline.test_internal", "beeline.test_trace")
+        ("beeline.test_beeline",
+         "beeline.test_internal", 
+         "beeline.test_trace",
+         "beeline.patch.test_requests",
+         "beeline.middleware.awslambda.test_awslambda",
+         "beeline.middleware.django.test_django",
+         "beeline.middleware.bottle.test_bottle",
+         "beeline.middleware.flask.test_flask",
+         "beeline.middleware.werkzeug.test_werkzeug",
+        )
     )
     if contextvars:
         async_suite = defaultTestLoader.loadTestsFromName("beeline.test_async")

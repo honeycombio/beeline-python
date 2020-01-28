@@ -316,8 +316,10 @@ def send_now(data):
               in the event
     '''
     # no-op if we're not initialized
-    if _GBL:
-        _GBL.send_now(data)
+    bl = get_beeline()
+
+    if bl:
+        bl.send_now(data)
 
 def add_field(name, value):
     ''' DEPRECATED: use `add_context_field`
@@ -334,8 +336,10 @@ def add(data):
     Args:
     - `data`: dictionary of field names (strings) to field values to add
     '''
-    if _GBL:
-        _GBL.add(data)
+    bl = get_beeline()
+
+    if bl:
+        bl.add(data)
 
 def add_context(data):
     '''Similar to add_context_field(), but allows you to add a number of name:value pairs
@@ -346,8 +350,10 @@ def add_context(data):
     Args:
     - `data`: dictionary of field names (strings) to field values to add
     '''
-    if _GBL:
-        _GBL.tracer_impl.add_context(data=data)
+    bl = get_beeline()
+
+    if bl:
+        bl.tracer_impl.add_context(data=data)
 
 def add_context_field(name, value):
     ''' Add a field to the currently active span. For example, if you are
@@ -360,8 +366,10 @@ def add_context_field(name, value):
     - `name`: Name of field to add
     - `value`: Value of new field
     '''
-    if _GBL:
-        _GBL.tracer_impl.add_context_field(name=name, value=value)
+    bl = get_beeline()
+
+    if bl:
+        bl.tracer_impl.add_context_field(name=name, value=value)
 
 def remove_context_field(name):
     ''' Remove a single field from the current span.
@@ -374,8 +382,10 @@ def remove_context_field(name):
     - `name`: Name of field to remove
     ```
      '''
-    if _GBL:
-        _GBL.tracer_impl.remove_context_field(name=name)
+    bl = get_beeline()
+
+    if bl:
+        bl.tracer_impl.remove_context_field(name=name)
 
 def add_rollup_field(name, value):
     ''' AddRollupField adds a key/value pair to the current span. If it is called repeatedly
@@ -390,8 +400,11 @@ def add_rollup_field(name, value):
     - `name`: Name of field to add
     - `value`: Numeric (float) value of new field
     '''
-    if _GBL:
-        _GBL.tracer_impl.add_rollup_field(name=name, value=value)
+    
+    bl = get_beeline()
+
+    if bl:
+        bl.tracer_impl.add_rollup_field(name=name, value=value)
 
 def add_trace_field(name, value):
     ''' Similar to `add_context_field` - adds a field to the current span, but
@@ -403,8 +416,10 @@ def add_trace_field(name, value):
     - `name`: Name of field to add
     - `value`: Value of new field
     '''
-    if _GBL:
-        _GBL.tracer_impl.add_trace_field(name=name, value=value)
+    bl = get_beeline()
+
+    if bl:
+        bl.tracer_impl.add_trace_field(name=name, value=value)
 
 def remove_trace_field(name):
     ''' Removes a trace context field from the current span. This will not
@@ -414,8 +429,11 @@ def remove_trace_field(name):
     Args:
     - `name`: Name of field to remove
     '''
-    if _GBL:
-        _GBL.tracer_impl.remove_trace_field(name=name)
+    
+    bl = get_beeline()
+
+    if bl:
+        bl.tracer_impl.remove_trace_field(name=name)
 
 def tracer(name, trace_id=None, parent_id=None):
     '''
@@ -466,8 +484,10 @@ def start_trace(context=None, trace_id=None, parent_span_id=None):
     - `parent_span_id`: If trace_id is set, will populate the root span's parent
         with this id.
     '''
-    if _GBL:
-        return _GBL.tracer_impl.start_trace(context=context, trace_id=trace_id, parent_span_id=parent_span_id)
+    bl = get_beeline()
+
+    if bl:
+        return bl.tracer_impl.start_trace(context=context, trace_id=trace_id, parent_span_id=parent_span_id)
 
 def finish_trace(span):
     ''' Explicitly finish a trace. If you started a trace with `start_trace`, you must call
@@ -478,8 +498,10 @@ def finish_trace(span):
     Args:
     - `span`: Span object that was returned by `start_trace`
     '''
-    if _GBL:
-        _GBL.tracer_impl.finish_trace(span=span)
+    bl = get_beeline()
+
+    if bl:
+        bl.tracer_impl.finish_trace(span=span)
 
 def start_span(context=None, parent_id=None):
     '''
@@ -501,20 +523,25 @@ def start_span(context=None, parent_id=None):
     - `parent_id`: ID of parent span - use this only if you have a very good reason to
         do so.
     '''
-    if _GBL:
-        return _GBL.tracer_impl.start_span(context=context, parent_id=parent_id)
+    bl = get_beeline()
+
+    if bl:
+        return bl.tracer_impl.start_span(context=context, parent_id=parent_id)
 
 def finish_span(span):
     '''
     Finish the provided span, sending the associated event data to Honeycomb.
 
-    For each `start_span`, there should be one call to `close_span`.
+    For each `start_span`, there should be one call to `finish_span`.
 
     Args:
     - `span`: Span object that was returned by `start_trace`
     '''
-    if _GBL:
-        _GBL.tracer_impl.finish_span(span=span)
+    
+    bl = get_beeline()
+
+    if bl:
+        bl.tracer_impl.finish_span(span=span)
 
 def marshal_trace_context():
     '''
@@ -530,8 +557,10 @@ def marshal_trace_context():
     requests.get("http://...", headers=headers)
     ```
     '''
-    if _GBL:
-        return _GBL.tracer_impl.marshal_trace_context()
+    bl = get_beeline()
+
+    if bl:
+        return bl.tracer_impl.marshal_trace_context()
 
 
 def new_event(data=None, trace_name=''):
@@ -551,8 +580,11 @@ def new_event(data=None, trace_name=''):
     If trace_name is specified, will set the "name" field of the current span,
     which is used in the trace visualizer.
     '''
-    if _GBL:
-        _GBL.new_event(data=data, trace_name=trace_name)
+    
+    bl = get_beeline()
+
+    if bl:
+        bl.new_event(data=data, trace_name=trace_name)
 
 def send_event():
     ''' DEPRECATED: Sends the currently active event (current span),
@@ -560,8 +592,11 @@ def send_event():
 
     There must be one call to `send_event` for each call to `new_event`.
     '''
-    if _GBL:
-        _GBL.send_event()
+    
+    bl = get_beeline()
+
+    if bl:
+        bl.send_event()
 
 def send_all():
     ''' send all spans in the trace stack, regardless of their
@@ -569,8 +604,11 @@ def send_all():
     along with `beeline.close()` to send all events before the program
     terminates abruptly.
     '''
-    if _GBL:
-        _GBL.send_all()
+    
+    bl = get_beeline()
+
+    if bl:
+        bl.send_all()
 
 def get_beeline():
     return _GBL
@@ -587,8 +625,11 @@ def get_responses_queue():
     When the Client's `close` method is called, a None will be inserted on
     the queue, indicating that no further responses will be written.
     '''
-    if _GBL:
-        return _GBL.get_responses_queue()
+    
+    bl = get_beeline()
+
+    if bl:
+        return bl.get_responses_queue()
 
 def close():
     ''' close the beeline and libhoney client, flushing any unsent events. '''
