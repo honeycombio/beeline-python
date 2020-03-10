@@ -1,6 +1,5 @@
 from wrapt import wrap_function_wrapper
 import beeline
-import jinja2
 
 def _render_template(fn, instance, args, kwargs):
     span = beeline.start_span(context = {

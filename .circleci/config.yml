@@ -12,7 +12,8 @@ commands:
     steps:
       - run:
           command: |
-            python setup.py lint --lint-ignore aiotrace.py,test_async.py --lint-rcfile pylint.rc
+            # skip lint for asyncio and urllib things, which are python3
+            python setup.py lint --lint-ignore aiotrace.py,test_async.py,urllib.py,test_urllib.py --lint-rcfile pylint.rc
             coverage run ./setup.py test
             coverage report --include="beeline/*"
             coverage html --include="beeline/*"

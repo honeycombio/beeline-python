@@ -3,6 +3,9 @@ import beeline
 import urllib.request
 
 def _urllibopen(_urlopen, instance, args, kwargs):
+    # urlopen accepts either a string URL or a Request object as its first arg
+    # It's easier to process the info contained in the request and modify it
+    # by converting the URL string into a Request
     if type(args[0]) != urllib.request.Request:
         args[0] = urllib.request.Request(args[0])
     
