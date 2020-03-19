@@ -1,5 +1,16 @@
 # beeline-python changelog
 
+## 2.12.0 2020-03-19
+
+Features
+
+- urllib auto-instrumentation via patch.[#102](https://github.com/honeycombio/beeline-python/pull/102)
+- jinja2 auto-instrumentation via patch. [#103](https://github.com/honeycombio/beeline-python/pull/103)
+
+Improvements
+
+- flask auto-instrumentation now includes the route as `request.route` field on the root span.
+
 ## 2.11.4 2020-01-27
 
 Fixes
