@@ -2,6 +2,7 @@ import datetime
 import threading
 
 import beeline
+import flask # to avoid namespace collision with request vs Request
 from beeline.trace import unmarshal_trace_context
 from flask import current_app, signals
 # needed to build a request object from environ in the middleware
@@ -27,11 +28,15 @@ class HoneyMiddleware(object):
 
     def __init__(self, app, db_events=True):
         self.app = app
+        self.app.before_request(self._before_request):
         if signals.signals_available:
             self.app.teardown_request(self._teardown_request)
         app.wsgi_app = HoneyWSGIMiddleware(app.wsgi_app)
         if db_events:
             app = HoneyDBMiddleware(app)
+
+    def _before_request(self):
+        beeline.add_trace_field("route", flask.request.endpoint)
 
     def _teardown_request(self, exception):
         if exception:
