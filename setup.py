@@ -15,6 +15,7 @@ setup(
         'wrapt',
     ],
     tests_require=[
+   	    'Jinja2',
         'mock',
         'flask',
         'tornado==5',
