@@ -8,6 +8,7 @@ import math
 import struct
 import threading
 import uuid
+import inspect
 from collections import defaultdict
 
 from contextlib import contextmanager
@@ -359,11 +360,18 @@ def unmarshal_trace_context(trace_context):
 def traced_impl(tracer_fn, name, trace_id, parent_id):
     """Implementation of the traced decorator without async support."""
     def wrapped(fn):
-        @functools.wraps(fn)
-        def inner(*args, **kwargs):
-            with tracer_fn(name=name, trace_id=trace_id, parent_id=parent_id):
-                return fn(*args, **kwargs)
-
-        return inner
-
+        if inspect.isgeneratorfunction(fn):
+            @functools.wraps(fn)
+            def inner(*args, **kwargs):
+                inner_generator = fn(*args, **kwargs)
+                with tracer_fn(name=name, trace_id=trace_id, parent_id=parent_id):
+                    for value in inner_generator:
+                        yield value
+            return inner
+        else:
+            @functools.wraps(fn)
+            def inner(*args, **kwargs):
+                with tracer_fn(name=name, trace_id=trace_id, parent_id=parent_id):
+                    return fn(*args, **kwargs)
+            return inner
     return wrapped
