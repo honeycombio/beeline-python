@@ -6,6 +6,7 @@ This requires Python 3.7, because it uses the contextvars module.
 import asyncio
 import contextvars  # pylint: disable=import-error
 import functools
+import inspect
 
 from beeline.trace import Tracer
 
@@ -77,7 +78,14 @@ def traced_impl(tracer_fn, name, trace_id, parent_id):
                     return await fn(*args, **kwargs)
 
             return async_inner
+        elif inspect.isgeneratorfunction(fn):
+            @functools.wraps(fn)
+            def inner(*args, **kwargs):
+                inner_generator = fn(*args, **kwargs)
+                with tracer_fn(name=name, trace_id=trace_id, parent_id=parent_id):
+                    yield from inner_generator
 
+            return inner
         else:
             @functools.wraps(fn)
             def inner(*args, **kwargs):

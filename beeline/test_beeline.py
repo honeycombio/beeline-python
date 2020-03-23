@@ -150,6 +150,41 @@ class TestBeeline(unittest.TestCase):
             # check that an event was sent, from which we can infer that the function was wrapped
             self.assertTrue(_beeline.tracer_impl._run_hooks_and_send.called)
 
+    def test_generator_wrapper(self):
+        ''' ensure that the trace wrapper decorates a generator function and starts a trace
+            also ensure that child traces get the parent trace correctly set
+        '''
+
+        _beeline = beeline.Beeline()
+
+        with patch('beeline.get_beeline') as m_gbl:
+            m_gbl.return_value = _beeline
+            _beeline.tracer_impl._run_hooks_and_send = Mock()
+
+            @beeline.traced(name="return_integer_n")
+            def return_integer(n):
+                return n
+
+            @beeline.traced(name="output_integers_to")
+            def output_integers_to(n):
+                for i in range(n):
+                    yield return_integer(i)
+
+            # should accept the function's arguments normally and yield the items from the
+            # generator
+            self.assertEqual(list(output_integers_to(3)), [0, 1, 2])
+
+            self.assertTrue(_beeline.tracer_impl._run_hooks_and_send.called)
+
+            spans = [x[0][0] for x in _beeline.tracer_impl._run_hooks_and_send.call_args_list]
+
+            # check the child spans now
+            parent_span = spans[-1]
+            child_spans = spans[:-1]
+
+            for child_span in child_spans:
+                self.assertEqual(child_span.parent_id, parent_span.id)
+
     @staticmethod
     def raising_run_in_thread(target):
         closure_dict = {}
