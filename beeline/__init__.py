@@ -21,16 +21,16 @@ _INITPID = None
 
 try:
     import asyncio
-    # The async functionality uses the contextvars module, added in
-    # Python 3.7
-    import contextvars
-    assert contextvars
+    try:
+        asyncio.get_running_loop()  # pylint: disable=no-member
+    except RuntimeError:
+        pass
 
     from beeline.aiotrace import AsyncioTracer, traced_impl, untraced
     assert untraced
 
     def in_async_code():
-        """Return wether we are running inside an asynchronous task.
+        """Return whether we are running inside an asynchronous task.
 
         We use this information to determine which tracer
         implementation to use.
@@ -42,9 +42,8 @@ try:
         except RuntimeError:
             return False
 
-except ImportError:
-    # Use these non-async versions if we don't have asyncio or
-    # contextvars.
+except (ImportError, AttributeError):
+    # Use these non-async versions if we don't have asyncio.
     from beeline.trace import traced_impl
 
     def in_async_code():
