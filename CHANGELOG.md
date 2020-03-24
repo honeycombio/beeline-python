@@ -1,5 +1,12 @@
 # beeline-python changelog
 
+## 2.12.1 2020-03-24
+
+Fixes
+
+- Fixes `traced` decorator behavior when working with generators. [#106](https://github.com/honeycombio/beeline-python/pull/106)
+- Fixes method for detection of asyncio. [#107](https://github.com/honeycombio/beeline-python/pull/107)
+
 ## 2.12.0 2020-03-19
 
 Features
@@ -9,7 +16,7 @@ Features
 
 Improvements
 
-- flask auto-instrumentation now includes the route as `request.route` field on the root span.
+- flask auto-instrumentation now includes the route as `request.route` field on the root span. [#104](https://github.com/honeycombio/beeline-python/pull/104)
 
 ## 2.11.4 2020-01-27
 
