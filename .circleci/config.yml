@@ -1,54 +1,8 @@
 version: 2.1
 
-commands:
-  setup:
-    steps:
-      - checkout
-      - run:
-          command: |
-            sudo pip install pyflakes==1.5.0 pylint setuptools-lint coverage
-            sudo pip install --upgrade setuptools
-  runtests-py2:
-    steps:
-      - run:
-          command: |
-            # skip lint for asyncio and urllib things, which are python3
-            python setup.py lint --lint-ignore aiotrace.py,test_async.py,urllib.py,test_urllib.py --lint-rcfile pylint.rc
-            coverage run ./setup.py test
-            coverage report --include="beeline/*"
-            coverage html --include="beeline/*"
-      - store_artifacts:
-          path: htmlcov
-  runtests-py3:
-    steps:
-      - run:
-          command: |
-            pyflakes beeline
-            python setup.py lint --lint-rcfile pylint.rc
-            coverage run ./setup.py test
-            coverage report --include="beeline/*"
-            coverage html --include="beeline/*"
-      - store_artifacts:
-          path: htmlcov
-  publish:
-    steps:
-      - checkout
-      - run:
-          name: "publish to pypi"
-          command: |
-            python3 -m venv venv
-            . venv/bin/activate
-            pip install --upgrade setuptools wheel twine
-            echo -e "[pypi]" >> ~/.pypirc
-            echo -e "username = honeycomb" >> ~/.pypirc
-            echo -e "password = ${PYPI_PASSWORD}" >> ~/.pypirc
+orbs:
+  buildevents: honeycombio/buildevents@0.2.6
 
-            # create a source distribution
-            python setup.py sdist
-            # create a wheel
-            python setup.py bdist_wheel
-            twine upload dist/*
-            ./push_docs.sh
 executors:
   python2-7:
     docker:
@@ -62,55 +16,202 @@ executors:
   python3-7:
     docker:
       - image: circleci/python:3.7
+  python3-8:
+    docker:
+      - image: circleci/python:3.8
+  github:
+    docker:
+      - image: cibuilds/github:0.13.0
+
+commands:
+  setup:
+    steps:
+      - checkout
+      - run:
+          command: |
+            poetry install --no-root
+  run_lint_python2:
+    steps:
+      - buildevents/berun:
+          bename: run_lint_python2
+          becommand: poetry run pylint --ignore=aiotrace.py,test_async.py,urllib.py,test_urllib.py --rcfile=pylint.rc beeline
+  run_lint:
+    steps:
+      - buildevents/berun:
+          bename: run_lint
+          becommand: poetry run pylint --rcfile=pylint.rc beeline
+  run_tests:
+    steps:
+      - buildevents/berun:
+          bename: run_tests
+          becommand: poetry run coverage run -m beeline.test_suite
+  run_coverage:
+    steps:
+      - buildevents/berun:
+          bename: coverage_report
+          becommand: poetry run coverage report --include="beeline/*"
+      - buildevents/berun:
+          bename: coverage_html
+          becommand: poetry run coverage html --include="beeline/*"
+
+  runtests-py2:
+    steps:
+      - setup
+      - run_lint_python2
+      - run_tests
+      - run_coverage
+      - store_artifacts:
+          path: htmlcov
+  runtests-py3:
+    steps:
+      - setup
+      - run_lint
+      - run_tests
+      - run_coverage
+      - store_artifacts:
+          path: htmlcov
+  build:
+    steps:
+      - setup
+      - run: mkdir -p ~/artifacts
+      - buildevents/berun:
+          bename: poetry_build
+          becommand: poetry build
+      - buildevents/berun:
+          bename: copy_binaries
+          becommand: cp dist/* ~/artifacts
+      - persist_to_workspace:
+          root: ~/
+          paths:
+            - artifacts
+      - store_artifacts:
+          path: ~/artifacts
+
+  publish_github:
+    steps:
+      - attach_workspace:
+          at: ~/
+      - run:
+          name: "Publish Release on GitHub"
+          command: |
+            echo "about to publish to tag ${CIRCLE_TAG}"
+            ls -l ~/artifacts/*
+            ghr -draft -n ${CIRCLE_TAG} -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} ${CIRCLE_TAG} ~/artifacts
+
+  publish_pypi:
+    steps:
+      - setup
+      - buildevents/berun:
+          bename: poetry_publish
+          becommand: poetry publish --build -u honeycomb -p ${PYPI_PASSWORD}
 
 # required as all of the jobs need to have a tag filter for some reason
 tag_filters: &tag_filters
   filters:
-      tags:
-        only: /.*/
+    tags:
+      only: /.*/
 
 jobs:
+  setup_trace:
+    executor: python3-8
+    steps:
+      - buildevents/start_trace
+  watch:
+    executor: python3-8
+    steps:
+      - buildevents/watch_build_and_finish
   test_python2-7:
     executor: python2-7
     steps:
-      - setup
-      - runtests-py2
+      - buildevents/with_job_span:
+          steps:
+            - runtests-py2
   test_python3-5:
     executor: python3-5
     steps:
-      - setup
-      - runtests-py3
+      - buildevents/with_job_span:
+          steps:
+            - runtests-py3
   test_python3-6:
     executor: python3-6
     steps:
-      - setup
-      - runtests-py3
+      - buildevents/with_job_span:
+          steps:
+            - runtests-py3
   test_python3-7:
     executor: python3-7
     steps:
-      - setup
-      - runtests-py3
-  publish:
-    executor: python3-7
+      - buildevents/with_job_span:
+          steps:
+            - runtests-py3
+  test_python3-8:
+    executor: python3-8
     steps:
-      - publish
+      - buildevents/with_job_span:
+          steps:
+            - runtests-py3
+  build:
+    executor: python3-8
+    steps:
+      - buildevents/with_job_span:
+          steps:
+            - build
+  publish_github:
+    executor: github
+    steps:
+      - buildevents/with_job_span:
+          steps:
+            - publish_github
+  publish_pypi:
+    executor: python3-8
+    steps:
+      - buildevents/with_job_span:
+          steps:
+            - publish_pypi
 
 workflows:
   version: 2
   build_beeline:
     jobs:
-      - test_python2-7: *tag_filters
-      - test_python3-5: *tag_filters
-      - test_python3-6: *tag_filters
-      - test_python3-7: *tag_filters
-      - publish:
+      - setup_trace
+      - watch:
+          requires:
+            - setup_trace
+      - test_python2-7:
+          requires:
+            - setup_trace
+      - test_python3-5:
+          requires:
+            - setup_trace
+      - test_python3-6:
+          requires:
+            - setup_trace
+      - test_python3-7:
+          requires:
+            - setup_trace
+      - test_python3-8:
+          requires:
+            - setup_trace
+      - build:
           requires:
             - test_python2-7
             - test_python3-5
             - test_python3-6
             - test_python3-7
+            - test_python3-8
+      - publish_github:
+          requires:
+            - build
           filters:
             tags:
-              only: /v[0-9]+(\.[0-9]+)*/
+              only: /v.*/
+            branches:
+              ignore: /.*/
+      - publish_pypi:
+          requires:
+            - build
+          filters:
+            tags:
+              only: /v.*/
             branches:
               ignore: /.*/

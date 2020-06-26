@@ -1,5 +1,14 @@
 # beeline-python changelog
 
+## 2.12.2
+
+Improvements
+
+- Now using [poetry](https://python-poetry.org/) for packaging and dependency management.
+- Tests now exclude `test_async` on Python versions which don't support async instead of requiring maintenance of an includelist of tests.
+- CI improvements:
+  - Now testing on Python 3.8
+
 ## 2.12.1 2020-03-24
 
 Fixes

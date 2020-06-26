@@ -1,0 +1,27 @@
+[tool.poetry]
+name = "honeycomb-beeline"
+version = "2.12.2.dev1"
+description = "Honeycomb library for easy instrumentation"
+authors = ["Honeycomb.io <feedback@honeycomb.io>"]
+license = "Apache-2.0"
+packages = [
+    { include = "beeline" }
+]
+readme = "README.md"
+homepage = "https://github.com/honeycombio/beeline-python"
+repository = "https://github.com/honeycombio/beeline-python"
+
+[tool.poetry.dependencies]
+python = ">=2.7"
+libhoney = ">=1.7.0"
+wrapt = "^1.12.1"
+[tool.poetry.dev-dependencies]
+mock = {version = "3.0.5", python = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"}
+coverage = [{version = "^5", python = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, <4"}]
+pylint = [{version = "^1.9", python = "<3.0"},{version = "^2", python = ">=3.5"}]
+flask = "^1.1.2"
+django = [{version = "^1", python = "<3.0"},{version = "2.*", python = ">= 3.5"}]
+tornado = [{version = "^6.0.4", python = ">=3.5"}]
+
+[tool.poetry.scripts]
+tests = "beeline.test_suite:run_tests"
