@@ -173,26 +173,50 @@ workflows:
   version: 2
   build_beeline:
     jobs:
-      - setup_trace
+      - setup_trace:
+          filters:
+            tags:
+              only: /.*/
       - watch:
+          filters:
+            tags:
+              only: /.*/
           requires:
             - setup_trace
       - test_python2-7:
+          filters:
+            tags:
+              only: /.*/
           requires:
             - setup_trace
       - test_python3-5:
+          filters:
+            tags:
+              only: /.*/
           requires:
             - setup_trace
       - test_python3-6:
+          filters:
+            tags:
+              only: /.*/
           requires:
             - setup_trace
       - test_python3-7:
+          filters:
+            tags:
+              only: /.*/
           requires:
             - setup_trace
       - test_python3-8:
+          filters:
+            tags:
+              only: /.*/
           requires:
             - setup_trace
       - build:
+          filters:
+            tags:
+              only: /.*/
           requires:
             - test_python2-7
             - test_python3-5
