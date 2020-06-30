@@ -200,6 +200,7 @@ workflows:
             - test_python3-7
             - test_python3-8
       - publish_github:
+          context: Honeycomb Secrets
           requires:
             - build
           filters:
@@ -208,6 +209,7 @@ workflows:
             branches:
               ignore: /.*/
       - publish_pypi:
+          context: Honeycomb Secrets
           requires:
             - build
           filters:
