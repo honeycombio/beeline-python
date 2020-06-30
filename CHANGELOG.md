@@ -6,6 +6,7 @@ Improvements
 
 - Now using [poetry](https://python-poetry.org/) for packaging and dependency management.
 - Tests now exclude `test_async` on Python versions which don't support async instead of requiring maintenance of an includelist of tests.
+- No longer use `pyflask` in tests as `pylint` covers all issues checked by `pyflask`
 - CI improvements:
   - Now testing on Python 3.8
 
