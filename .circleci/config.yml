@@ -231,7 +231,7 @@ workflows:
             - build
           filters:
             tags:
-              only: /v.*/
+              only: /v[0-9].*/
             branches:
               ignore: /.*/
       - publish_pypi:
@@ -240,6 +240,6 @@ workflows:
             - build
           filters:
             tags:
-              only: /v.*/
+              only: /v[0-9].*/
             branches:
               ignore: /.*/
