@@ -35,11 +35,17 @@ commands:
       - buildevents/berun:
           bename: run_lint_python2
           becommand: poetry run pylint --ignore=aiotrace.py,test_async.py,urllib.py,test_urllib.py --rcfile=pylint.rc beeline
+      - buildevents/berun:
+          bename: run_pycodestyle
+          becommand: poetry run pycodestyle beeline --max-line-length=140
   run_lint:
     steps:
       - buildevents/berun:
           bename: run_lint
           becommand: poetry run pylint --rcfile=pylint.rc beeline
+      - buildevents/berun:
+          bename: run_pycodestyle
+          becommand: poetry run pycodestyle beeline --max-line-length=140
   run_tests:
     steps:
       - buildevents/berun:
