@@ -5,9 +5,9 @@ import functools
 import hashlib
 import json
 import math
+import random
 import struct
 import threading
-import uuid
 import inspect
 from collections import defaultdict
 
@@ -16,9 +16,13 @@ from contextlib import contextmanager
 from beeline.internal import log, stringify_exception
 
 MAX_INT32 = math.pow(2, 32) - 1
+SPAN_ID_BYTES = 8
+TRACE_ID_BYTES = 16
+
 
 class Trace(object):
     '''Object encapsulating all state of an ongoing trace.'''
+
     def __init__(self, trace_id):
         self.id = trace_id
         self.stack = []
@@ -32,6 +36,7 @@ class Trace(object):
         result.fields = copy.copy(self.fields)
         return result
 
+
 class Tracer(object):
     def __init__(self, client):
         self._client = client
@@ -44,12 +49,14 @@ class Tracer(object):
         try:
             span = None
             if self.get_active_trace_id() and trace_id is None:
-                span = self.start_span(context={'name': name}, parent_id=parent_id)
+                span = self.start_span(
+                    context={'name': name}, parent_id=parent_id)
                 if span:
                     log('tracer context manager started new span, id = %s',
                         span.id)
             else:
-                span = self.start_trace(context={'name': name}, trace_id=trace_id, parent_span_id=parent_id)
+                span = self.start_trace(
+                    context={'name': name}, trace_id=trace_id, parent_span_id=parent_id)
                 if span:
                     log('tracer context manager started new trace, id = %s',
                         span.trace_id)
@@ -81,7 +88,7 @@ class Tracer(object):
                     'starting new trace with id = %s', trace_id)
             self._trace = Trace(trace_id)
         else:
-            self._trace = Trace(str(uuid.uuid4()))
+            self._trace = Trace(generate_trace_id())
 
         # start the root span
         return self.start_span(context=context, parent_id=parent_span_id)
@@ -91,7 +98,7 @@ class Tracer(object):
             log('start_span called but no trace is active')
             return None
 
-        span_id = str(uuid.uuid4())
+        span_id = generate_span_id()
         if parent_id:
             parent_span_id = parent_id
         else:
@@ -255,7 +262,8 @@ class Tracer(object):
             log("executing sampler hook on event ev = %s", span.event.fields())
             keep, new_rate = self.sampler_hook(span.event.fields())
             if not keep:
-                log("skipping event due to sampler hook sampling ev = %s", span.event.fields())
+                log("skipping event due to sampler hook sampling ev = %s",
+                    span.event.fields())
                 return
             span.event.sample_rate = new_rate
             presampled = True
@@ -271,6 +279,7 @@ class Tracer(object):
             # if our sampler hook wasn't used, use deterministic sampling
             span.event.send_presampled()
 
+
 class SynchronousTracer(Tracer):
     def __init__(self, client):
         super(SynchronousTracer, self).__init__(client)
@@ -284,9 +293,11 @@ class SynchronousTracer(Tracer):
     def _trace(self, new_trace):
         self._state.trace = new_trace
 
+
 class Span(object):
     ''' Span represents an active span. Should not be initialized directly, but
     through a Tracer object's `start_span` method. '''
+
     def __init__(self, trace_id, parent_id, id, event, is_root=False):
         self.trace_id = trace_id
         self.parent_id = parent_id
@@ -309,6 +320,7 @@ class Span(object):
     def is_root(self):
         return self._is_root
 
+
 def _should_sample(trace_id, sample_rate):
     sample_upper_bound = MAX_INT32 / sample_rate
     # compute a sha1
@@ -320,6 +332,7 @@ def _should_sample(trace_id, sample_rate):
         return True
     return False
 
+
 def marshal_trace_context(trace_id, parent_id, context):
     version = 1
     trace_fields = base64.b64encode(json.dumps(context).encode()).decode()
@@ -328,6 +341,7 @@ def marshal_trace_context(trace_id, parent_id, context):
     )
 
     return trace_context
+
 
 def unmarshal_trace_context(trace_context):
     # the first value is the trace payload version
@@ -357,6 +371,7 @@ def unmarshal_trace_context(trace_context):
 
     return trace_id, parent_id, context
 
+
 def traced_impl(tracer_fn, name, trace_id, parent_id):
     """Implementation of the traced decorator without async support."""
     def wrapped(fn):
@@ -375,3 +390,19 @@ def traced_impl(tracer_fn, name, trace_id, parent_id):
                     return fn(*args, **kwargs)
             return inner
     return wrapped
+
+
+# Use system random instead of default psuedorandom generator
+system_random = random.SystemRandom()
+
+
+def generate_span_id():
+    """Generate span ID compatible with w3c tracing spec."""
+    format_str = "{{:0{:d}x}}".format(SPAN_ID_BYTES*2)
+    return format_str.format(system_random.getrandbits(SPAN_ID_BYTES*8))
+
+
+def generate_trace_id():
+    """Generate trace ID compatible with w3c tracing spec."""
+    format_str = "{{:0{:d}x}}".format(TRACE_ID_BYTES*2)
+    return format_str.format(system_random.getrandbits(TRACE_ID_BYTES*8))

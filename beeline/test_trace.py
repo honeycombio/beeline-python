@@ -4,14 +4,27 @@ import base64
 import datetime
 import json
 import unittest
-import uuid
+import re
 
 from libhoney import Event
 
 from beeline.trace import (
     _should_sample, SynchronousTracer, marshal_trace_context,
-    unmarshal_trace_context, Span
+    unmarshal_trace_context, Span, generate_span_id, generate_trace_id
 )
+
+
+class TestIDGeneration(unittest.TestCase):
+    def test_span_id(self):
+        '''Test that span ID generation meets basic length and character constraints'''
+        span_id = generate_span_id()
+        self.assertIsNotNone(re.match("[\da-f]{16}", span_id))
+
+    def test_trace_id(self):
+        '''Test that trace ID generation meets basic length and character constraints'''
+        trace_id = generate_trace_id()
+        self.assertIsNotNone(re.match("[\da-f]{32}", trace_id))
+
 
 class TestTraceSampling(unittest.TestCase):
     def test_deterministic(self):
@@ -83,7 +96,6 @@ class TestTraceSampling(unittest.TestCase):
         for i in range(len(ids)):
             self.assertEqual(_should_sample(ids[i], 2), expected[i])
 
-
     def test_probability(self):
         ''' test that _should_sample approximates 1 in N sampling for random IDs '''
         tests_count = 50000
@@ -96,7 +108,7 @@ class TestTraceSampling(unittest.TestCase):
 
             while n < tests_count:
                 n += 1
-                if _should_sample(str(uuid.uuid4()), rate):
+                if _should_sample(generate_trace_id(), rate):
                     sampled += 1
 
             expected = tests_count // rate
@@ -106,6 +118,7 @@ class TestTraceSampling(unittest.TestCase):
 
             self.assertLessEqual(sampled, acceptable_upper_bound)
             self.assertGreaterEqual(sampled, acceptable_lower_bound)
+
 
 class TestSynchronousTracer(unittest.TestCase):
     def test_trace_context_manager_exception(self):
@@ -135,9 +148,11 @@ class TestSynchronousTracer(unittest.TestCase):
         tracer.finish_span = Mock()
 
         with tracer('foo') as span:
-            self.assertEqual(span, mock_span, 'tracer context manager should yield the span')
+            self.assertEqual(
+                span, mock_span, 'tracer context manager should yield the span')
 
-        tracer.start_span.assert_called_once_with(context={'name': 'foo'}, parent_id=None)
+        tracer.start_span.assert_called_once_with(
+            context={'name': 'foo'}, parent_id=None)
         tracer.start_trace.assert_not_called()
         tracer.finish_span.assert_called_once_with(mock_span)
 
@@ -153,7 +168,8 @@ class TestSynchronousTracer(unittest.TestCase):
         with tracer('foo', parent_id='zyxw'):
             pass
 
-        tracer.start_span.assert_called_once_with(context={'name': 'foo'}, parent_id='zyxw')
+        tracer.start_span.assert_called_once_with(
+            context={'name': 'foo'}, parent_id='zyxw')
         tracer.finish_span.assert_called_once_with(mock_span)
 
     def test_trace_context_manager_starts_trace_if_trace_id_supplied(self):
@@ -168,7 +184,8 @@ class TestSynchronousTracer(unittest.TestCase):
         with tracer('foo', trace_id='asdf', parent_id='zyxw'):
             pass
 
-        tracer.start_trace.assert_called_once_with(context={'name': 'foo'}, trace_id='asdf', parent_span_id='zyxw')
+        tracer.start_trace.assert_called_once_with(
+            context={'name': 'foo'}, trace_id='asdf', parent_span_id='zyxw')
         tracer.finish_span.assert_called_once_with(mock_span)
 
     def test_start_trace(self):
@@ -290,10 +307,10 @@ class TestSynchronousTracer(unittest.TestCase):
         # trace id should match what the tracer has
         self.assertEqual(span.trace_id, tracer._trace.id)
         m_client.new_event.assert_called_once_with(data={
-                'app.another': 'important_thing',
-                'app.wide': 'events_are_great',
-                'app.12345': 54321,
-                'app.prefixes': 'there should only be 1',
+            'app.another': 'important_thing',
+            'app.wide': 'events_are_great',
+            'app.12345': 54321,
+            'app.prefixes': 'there should only be 1',
         })
         m_client.new_event.return_value.add.assert_has_calls([
             call(data={'more': 'important_stuff'}),
@@ -319,10 +336,10 @@ class TestSynchronousTracer(unittest.TestCase):
         self.assertEqual(span.trace_id, span3.trace_id)
         self.assertEqual(span2.id, span3.parent_id)
         m_client.new_event.assert_called_once_with(data={
-                'app.wide': 'events_are_great',
-                'app.more': 'data!',
-                'app.12345': 54321,
-                'app.prefixes': 'there should only be 1',
+            'app.wide': 'events_are_great',
+            'app.more': 'data!',
+            'app.12345': 54321,
+            'app.prefixes': 'there should only be 1',
         })
 
     def test_add_rollup_field_propagates(self):
@@ -398,8 +415,8 @@ class TestSynchronousTracer(unittest.TestCase):
         # always call send_presampled
         # send should never be called because at a minimum we always do deterministic
         # sampling
-        m_span.event.send.assert_not_called() # pylint: disable=no-member
-        m_span.event.send_presampled.assert_called_once_with() # pylint: disable=no-member
+        m_span.event.send.assert_not_called()  # pylint: disable=no-member
+        m_span.event.send_presampled.assert_called_once_with()  # pylint: disable=no-member
 
     def test_run_hooks_and_send_sampler(self):
         ''' ensure send works with a sampler hook defined '''
@@ -417,8 +434,8 @@ class TestSynchronousTracer(unittest.TestCase):
             tracer._run_hooks_and_send(m_span)
 
         # sampler ensures we drop everything
-        m_span.event.send.assert_not_called() # pylint: disable=no-member
-        m_span.event.send_presampled.assert_not_called() # pylint: disable=no-member
+        m_span.event.send.assert_not_called()  # pylint: disable=no-member
+        m_span.event.send_presampled.assert_not_called()  # pylint: disable=no-member
 
         def _sampler_drop_none(fields):
             return True, 100
@@ -432,8 +449,8 @@ class TestSynchronousTracer(unittest.TestCase):
 
         # sampler drops nothing, _should_sample rigged to always return true so
         # we always call send_presampled
-        m_span.event.send.assert_not_called() # pylint: disable=no-member
-        m_span.event.send_presampled.assert_called_once_with() # pylint: disable=no-member
+        m_span.event.send.assert_not_called()  # pylint: disable=no-member
+        m_span.event.send_presampled.assert_called_once_with()  # pylint: disable=no-member
         # ensure event is updated with new sample rate
         self.assertEqual(m_span.event.sample_rate, 100)
 
@@ -459,7 +476,7 @@ class TestSynchronousTracer(unittest.TestCase):
             m_sample_fn.return_value = True
             tracer._run_hooks_and_send(m_span)
 
-        m_span.event.send_presampled.assert_called_once_with() # pylint: disable=no-member
+        m_span.event.send_presampled.assert_called_once_with()  # pylint: disable=no-member
         self.assertDictEqual(
             m_span.event.fields(),
             {
@@ -489,7 +506,8 @@ class TestSynchronousTracer(unittest.TestCase):
             tracer.finish_span(m_span)
 
         # ensure we only added fields b and c and did not try to overwrite a
-        self.assertDictContainsSubset({'app.a': 1, 'app.b': 2, 'app.c': 3}, m_span.event.fields())
+        self.assertDictContainsSubset(
+            {'app.a': 1, 'app.b': 2, 'app.c': 3}, m_span.event.fields())
 
     def test_trace_context_manager_does_not_crash_if_span_is_none(self):
         m_client = Mock()
@@ -501,7 +519,9 @@ class TestSynchronousTracer(unittest.TestCase):
         with tracer('foo'):
             pass
 
-        tracer.start_span.assert_called_once_with(context={'name': 'foo'}, parent_id=None)
+        tracer.start_span.assert_called_once_with(
+            context={'name': 'foo'}, parent_id=None)
+
 
 class TestTraceContext(unittest.TestCase):
     def test_marshal_trace_context(self):
@@ -509,22 +529,32 @@ class TestTraceContext(unittest.TestCase):
         parent_id = "654321"
         trace_fields = {"i": "like", "to": "trace"}
 
-        trace_context = marshal_trace_context(trace_id, parent_id, trace_fields)
+        trace_context = marshal_trace_context(
+            trace_id, parent_id, trace_fields)
 
-        trace_id_u, parent_id_u, trace_fields_u = unmarshal_trace_context(trace_context)
-        self.assertEqual(trace_id_u, trace_id, "unmarshaled trace id should match original")
-        self.assertEqual(parent_id_u, parent_id, "unmarshaled parent id should match original")
-        self.assertDictEqual(trace_fields_u, trace_fields, "unmarshaled trace fields should match original")
+        trace_id_u, parent_id_u, trace_fields_u = unmarshal_trace_context(
+            trace_context)
+        self.assertEqual(trace_id_u, trace_id,
+                         "unmarshaled trace id should match original")
+        self.assertEqual(parent_id_u, parent_id,
+                         "unmarshaled parent id should match original")
+        self.assertDictEqual(trace_fields_u, trace_fields,
+                             "unmarshaled trace fields should match original")
 
     def test_marshal_trace_context_empty_context(self):
         trace_id = "123456"
         parent_id = "654321"
-        trace_context = "{};trace_id={},parent_id={}".format(1, trace_id, parent_id)
+        trace_context = "{};trace_id={},parent_id={}".format(
+            1, trace_id, parent_id)
 
-        trace_id_u, parent_id_u, trace_fields_u = unmarshal_trace_context(trace_context)
-        self.assertEqual(trace_id_u, trace_id, "unmarshaled trace id should match original")
-        self.assertEqual(parent_id_u, parent_id, "unmarshaled parent id should match original")
-        self.assertDictEqual(trace_fields_u, {}, "unmarshaled trace fields should match original")
+        trace_id_u, parent_id_u, trace_fields_u = unmarshal_trace_context(
+            trace_context)
+        self.assertEqual(trace_id_u, trace_id,
+                         "unmarshaled trace id should match original")
+        self.assertEqual(parent_id_u, parent_id,
+                         "unmarshaled parent id should match original")
+        self.assertDictEqual(trace_fields_u, {},
+                             "unmarshaled trace fields should match original")
 
     def test_marshal_trace_context_dataset_included(self):
         """ ensures unmarshalling still works if there's a dataset context field """
@@ -532,15 +562,20 @@ class TestTraceContext(unittest.TestCase):
         parent_id = "654321"
         dataset_id = "foo"
         trace_fields = {"i": "like", "to": "trace"}
-        fields_string = base64.b64encode(json.dumps(trace_fields).encode()).decode()
+        fields_string = base64.b64encode(
+            json.dumps(trace_fields).encode()).decode()
         trace_context = "{};trace_id={},parent_id={},dataset_id={},context={}".format(
             1, trace_id, parent_id, dataset_id, fields_string
         )
 
-        trace_id_u, parent_id_u, trace_fields_u = unmarshal_trace_context(trace_context)
-        self.assertEqual(trace_id_u, trace_id, "unmarshaled trace id should match original")
-        self.assertEqual(parent_id_u, parent_id, "unmarshaled parent id should match original")
-        self.assertDictEqual(trace_fields_u, trace_fields, "unmarshaled trace fields should match original")
+        trace_id_u, parent_id_u, trace_fields_u = unmarshal_trace_context(
+            trace_context)
+        self.assertEqual(trace_id_u, trace_id,
+                         "unmarshaled trace id should match original")
+        self.assertEqual(parent_id_u, parent_id,
+                         "unmarshaled parent id should match original")
+        self.assertDictEqual(trace_fields_u, trace_fields,
+                             "unmarshaled trace fields should match original")
 
 
 class TestSpan(unittest.TestCase):
