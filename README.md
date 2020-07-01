@@ -1,8 +1,9 @@
 # Honeycomb Beeline for Python
 
-[![Build Status](https://travis-ci.org/honeycombio/beeline-python.svg?branch=master)](https://travis-ci.org/honeycombio/beeline-python)
+[![Build Status](https://circleci.com/gh/honeycombio/beeline-python.svg?style=svg)](https://app.circleci.com/pipelines/github/honeycombio/beeline-python)
 
 This package makes it easy to instrument your Python web application to send useful events to [Honeycomb](https://honeycomb.io), a service for debugging your software in production.
+
 - [Usage and Examples](https://docs.honeycomb.io/getting-data-in/beelines/beeline-python/)
 - [API Reference](https://honeycombio.github.io/beeline-python/)
 

@@ -1,8 +1,18 @@
+import unittest
+try:
+    # The async functionality uses the contextvars module, added in
+    # Python 3.7
+    import contextvars
+except ImportError:
+    contextvars = None
+if not contextvars:
+    raise unittest.SkipTest("No contextvars failed. Skipping test_async")
+
 import asyncio
 import concurrent.futures
 import datetime
 import time
-import unittest
+import sys
 
 import beeline
 import beeline.aiotrace
@@ -16,6 +26,7 @@ def async_test(fn):
     if it exists.
 
     """
+
     def wrapper(self, *args, **kwargs):
         async def sequence():
             if hasattr(self, "async_setup"):
