@@ -27,9 +27,9 @@ commands:
   setup:
     steps:
       - checkout
-      - run:
-          command: |
-            poetry install --no-root
+      - buildevents/berun:
+          bename: poetry_install
+          becommand: poetry install --no-root
   run_lint_python2:
     steps:
       - buildevents/berun:
@@ -92,11 +92,13 @@ commands:
       - attach_workspace:
           at: ~/
       - run:
-          name: "Publish Release on GitHub"
+          name: "Artifacts being published"
           command: |
             echo "about to publish to tag ${CIRCLE_TAG}"
             ls -l ~/artifacts/*
-            ghr -draft -n ${CIRCLE_TAG} -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} ${CIRCLE_TAG} ~/artifacts
+      - buildevents/berun:
+          bename: ghr_draft
+          becommand: ghr -draft -n ${CIRCLE_TAG} -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} ${CIRCLE_TAG} ~/artifacts
 
   publish_pypi:
     steps:
