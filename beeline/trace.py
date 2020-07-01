@@ -16,6 +16,8 @@ from contextlib import contextmanager
 from beeline.internal import log, stringify_exception
 
 MAX_INT32 = math.pow(2, 32) - 1
+SPAN_ID_BYTES = 8
+TRACE_ID_BYTES = 16
 
 
 class Trace(object):
@@ -396,9 +398,11 @@ system_random = random.SystemRandom()
 
 def generate_span_id():
     """Generate span ID compatible with w3c tracing spec."""
-    return "{:016x}".format(system_random.getrandbits(64))
+    format_str = "{{:0{:d}x}}".format(SPAN_ID_BYTES*2)
+    return format_str.format(system_random.getrandbits(SPAN_ID_BYTES*8))
 
 
 def generate_trace_id():
     """Generate trace ID compatible with w3c tracing spec."""
-    return "{:032x}".format(system_random.getrandbits(128))
+    format_str = "{{:0{:d}x}}".format(TRACE_ID_BYTES*2)
+    return format_str.format(system_random.getrandbits(TRACE_ID_BYTES*8))
