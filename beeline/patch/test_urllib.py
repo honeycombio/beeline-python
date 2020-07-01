@@ -30,8 +30,8 @@ class TestUrllibPatch(unittest.TestCase):
             self.assertEqual(type(args[0]), urllib.request.Request)
             self.assertEqual(
                 args[0].full_url, 'https://example.com')  # pylint: disable=no-member
-            self.assertEqual(args[0].headers['X-Honeycomb-Trace'],
-                             trace_context)  # pylint: disable=no-member
+            self.assertEqual(args[0].headers['X-Honeycomb-Trace'],   # pylint: disable=no-member
+                             trace_context)
             m_urlopen.assert_called_once_with(*args, **kwargs)
             m_urlopen.reset_mock()
 
