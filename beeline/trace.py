@@ -395,8 +395,10 @@ system_random = random.SystemRandom()
 
 
 def generate_span_id():
+    """Generate span ID compatible with w3c tracing spec."""
     return "{:016x}".format(system_random.getrandbits(64))
 
 
 def generate_trace_id():
+    """Generate trace ID compatible with w3c tracing spec."""
     return "{:032x}".format(system_random.getrandbits(128))
