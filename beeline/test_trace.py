@@ -14,7 +14,7 @@ from beeline.trace import (
 )
 
 
-class TestIDGenerator(unittest.TestCase):
+class TestIDGeneration(unittest.TestCase):
     def test_span_id(self):
         span_id = generate_span_id()
         self.assertIsNotNone(re.match("[\da-f]{16}", span_id))
