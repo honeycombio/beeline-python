@@ -4,6 +4,7 @@
 
 Improvements
 
+- Trace IDs and Span IDs now correspond to W3C trace context specification. See https://www.w3.org/TR/trace-context/
 - Now using [poetry](https://python-poetry.org/) for packaging and dependency management.
 - Tests now exclude `test_async` on Python versions which don't support async instead of requiring maintenance of an includelist of tests.
 - No longer use `pyflask` in tests as `pylint` covers all issues checked by `pyflask`
