@@ -2,11 +2,12 @@ import datetime
 import threading
 
 import beeline
-import flask # to avoid namespace collision with request vs Request
+import flask  # to avoid namespace collision with request vs Request
 from beeline.trace import unmarshal_trace_context
 from flask import current_app, signals
 # needed to build a request object from environ in the middleware
 from werkzeug.wrappers import Request
+
 
 def _get_trace_context(environ):
     ''' returns trace_id, parent_id, context '''
@@ -19,7 +20,8 @@ def _get_trace_context(environ):
         try:
             return unmarshal_trace_context(trace_context)
         except Exception as e:
-            beeline.internal.log('error attempting to extract trace context: %s', beeline.internal.stringify_exception(e))
+            beeline.internal.log(
+                'error attempting to extract trace context: %s', beeline.internal.stringify_exception(e))
 
     return None, None, None
 
@@ -40,7 +42,8 @@ class HoneyMiddleware(object):
 
     def _teardown_request(self, exception):
         if exception:
-            beeline.add_field('request.error_detail', beeline.internal.stringify_exception(exception))
+            beeline.add_field('request.error_detail',
+                              beeline.internal.stringify_exception(exception))
             beeline.add_field('request.error', str(type(exception)))
             beeline.internal.send_event()
 
@@ -54,7 +57,7 @@ class HoneyWSGIMiddleware(object):
         trace_id, parent_id, context = _get_trace_context(environ)
 
         root_span = beeline.start_trace(
-            context=self.get_context_from_environ(environ), 
+            context=self.get_context_from_environ(environ),
             trace_id=trace_id, parent_span_id=parent_id)
 
         # populate any propagated custom context
@@ -107,8 +110,8 @@ class HoneyDBMiddleware(object):
 
     def init_app(self, app):
         try:
-            from sqlalchemy.engine import Engine # pylint: disable=bad-option-value,import-outside-toplevel
-            from sqlalchemy.event import listen # pylint: disable=bad-option-value,import-outside-toplevel
+            from sqlalchemy.engine import Engine  # pylint: disable=bad-option-value,import-outside-toplevel
+            from sqlalchemy.event import listen  # pylint: disable=bad-option-value,import-outside-toplevel
 
             listen(Engine, 'before_cursor_execute', self.before_cursor_execute)
             listen(Engine, 'after_cursor_execute', self.after_cursor_execute)
@@ -129,10 +132,10 @@ class HoneyDBMiddleware(object):
                     param = param.isoformat()
                 params.append(param)
         elif type(parameters) == dict:
-            for k,v in parameters.items():
+            for k, v in parameters.items():
                 param = "%s=" % k
                 if type(v) == datetime.datetime:
-                     v = v.isoformat()
+                    v = v.isoformat()
                 param += "%s" % v
                 params.append(param)
 
@@ -164,7 +167,8 @@ class HoneyDBMiddleware(object):
         if not current_app:
             return
 
-        beeline.add_context_field("db.error", beeline.internal.stringify_exception(context.original_exception))
+        beeline.add_context_field(
+            "db.error", beeline.internal.stringify_exception(context.original_exception))
         if self.state.span:
             beeline.finish_span(self.state.span)
         self.state.span = None

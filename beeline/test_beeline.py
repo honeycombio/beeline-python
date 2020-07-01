@@ -6,6 +6,7 @@ import beeline
 import libhoney
 assert libhoney
 
+
 class TestBeeline(unittest.TestCase):
     def setUp(self):
         self.addCleanup(patch.stopall)
@@ -176,7 +177,8 @@ class TestBeeline(unittest.TestCase):
 
             self.assertTrue(_beeline.tracer_impl._run_hooks_and_send.called)
 
-            spans = [x[0][0] for x in _beeline.tracer_impl._run_hooks_and_send.call_args_list]
+            spans = [x[0][0]
+                     for x in _beeline.tracer_impl._run_hooks_and_send.call_args_list]
 
             # check the child spans now
             parent_span = spans[-1]
@@ -224,7 +226,8 @@ class TestBeeline(unittest.TestCase):
 
                 with _beeline.tracer(name="foo") as span:
                     self.assertEqual(span.trace_id, "asdf")
-                    self.assertEqual(span.parent_id, _beeline.tracer_impl._trace.stack[0].id)
+                    self.assertEqual(
+                        span.parent_id, _beeline.tracer_impl._trace.stack[0].id)
 
             self.raising_run_in_thread(target=traced_thread_func)
 
@@ -235,7 +238,8 @@ class TestBeeline(unittest.TestCase):
 
                 with _beeline.tracer(name="foo2") as span:
                     self.assertEqual(span.trace_id, "asdf")
-                    self.assertEqual(span.parent_id, _beeline.tracer_impl._trace.stack[0].id)
+                    self.assertEqual(
+                        span.parent_id, _beeline.tracer_impl._trace.stack[0].id)
 
             self.raising_run_in_thread(target=traced_thread_func_2)
 
@@ -244,6 +248,7 @@ class TestBeeline(unittest.TestCase):
         _beeline = beeline.Beeline()
         # should not crash
         _beeline.tracer_impl.finish_span(None)
+
 
 class TestBeelineNotInitialized(unittest.TestCase):
     def setUp(self):
@@ -254,6 +259,7 @@ class TestBeelineNotInitialized(unittest.TestCase):
     def test_trace_wrapper(self):
         ''' ensure the trace wrapper doesn't break if the beeline is not initialized '''
         self.assertIsNone(beeline.get_beeline())
+
         @beeline.traced(name="my_sum")
         def my_sum(a, b):
             return a + b
@@ -265,6 +271,7 @@ class TestBeelineNotInitialized(unittest.TestCase):
     def test_tracer_context_manager(self):
         ''' ensure the tracer context manager doesn't break if the beeline is not initialized '''
         self.assertIsNone(beeline.get_beeline())
+
         def my_sum(a, b):
             with beeline.tracer(name="my_sum"):
                 return a + b
@@ -275,6 +282,7 @@ class TestBeelineNotInitialized(unittest.TestCase):
 
     def test_traced_thread(self):
         self.assertIsNone(beeline.get_beeline())
+
         @beeline.traced_thread
         def my_sum(a, b):
             return a + b

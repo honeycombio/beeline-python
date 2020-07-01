@@ -4,6 +4,7 @@ import beeline
 from beeline.trace import unmarshal_trace_context
 from django.db import connections
 
+
 def _get_trace_context(request):
     trace_context = request.META.get('HTTP_X_HONEYCOMB_TRACE')
     beeline.internal.log("got trace context: %s", trace_context)
@@ -11,9 +12,11 @@ def _get_trace_context(request):
         try:
             return unmarshal_trace_context(trace_context)
         except Exception as e:
-            beeline.internal.log('error attempting to extract trace context: %s', beeline.internal.stringify_exception(e))
+            beeline.internal.log(
+                'error attempting to extract trace context: %s', beeline.internal.stringify_exception(e))
 
     return None, None, None
+
 
 class HoneyDBWrapper(object):
 
@@ -36,7 +39,8 @@ class HoneyDBWrapper(object):
                     "db.duration", db_call_diff.total_seconds() * 1000)
             except Exception as e:
                 beeline.add_context_field("db.error", str(type(e)))
-                beeline.add_context_field("db.error_detail", beeline.internal.stringify_exception(e))
+                beeline.add_context_field(
+                    "db.error_detail", beeline.internal.stringify_exception(e))
                 raise
             else:
                 return result
@@ -86,7 +90,8 @@ class HoneyMiddlewareBase(object):
 
         request_context = self.get_context_from_request(request)
 
-        trace = beeline.start_trace(context=request_context, trace_id=trace_id, parent_span_id=parent_id)
+        trace = beeline.start_trace(
+            context=request_context, trace_id=trace_id, parent_span_id=parent_id)
 
         if isinstance(parent_context, dict):
             for k, v in parent_context.items():
@@ -103,13 +108,15 @@ class HoneyMiddlewareBase(object):
         return response
 
     def process_exception(self, request, exception):
-        beeline.add_context_field("request.error_detail", beeline.internal.stringify_exception(exception))
+        beeline.add_context_field(
+            "request.error_detail", beeline.internal.stringify_exception(exception))
 
     def process_view(self, request, view_func, view_args, view_kwargs):
         try:
             beeline.add_context_field("django.view_func", view_func.__name__)
         except AttributeError:
             pass
+
 
 class HoneyMiddlewareHttp(HoneyMiddlewareBase):
     pass
@@ -129,10 +136,12 @@ class HoneyMiddleware(HoneyMiddlewareBase):
 
         return response
 
+
 class HoneyMiddlewareWithPOST(HoneyMiddleware):
     ''' HoneyMiddlewareWithPOST is a subclass of HoneyMiddleware. The only difference is that
     the `request.post` field is instrumented. This was removed from the base implementation in 2.8.0
     due to conflicts with other middleware. See https://github.com/honeycombio/beeline-python/issues/74.'''
+
     def get_context_from_request(self, request):
         trace_name = "django_http_%s" % request.method.lower()
         return {

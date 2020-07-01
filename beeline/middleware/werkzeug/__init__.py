@@ -1,5 +1,6 @@
 import beeline
 
+
 class HoneyWSGIMiddleware(object):
 
     def __init__(self, app):
@@ -7,7 +8,8 @@ class HoneyWSGIMiddleware(object):
 
     def __call__(self, environ, start_response):
 
-        trace = beeline.start_trace(context=self.get_context_from_environ(environ))
+        trace = beeline.start_trace(
+            context=self.get_context_from_environ(environ))
 
         def _start_response(status, headers, *args):
             beeline.add_context_field("response.status_code", status)

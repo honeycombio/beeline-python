@@ -7,6 +7,7 @@ from beeline.trace import unmarshal_trace_context
 # worth instrumenting.
 COLD_START = True
 
+
 def _get_trace_data_from_message_attributes(attributes):
     ''' Look for the trace data from SNS/SQS Messsage Atrributes
     '''
@@ -28,6 +29,7 @@ def _get_trace_data_from_message_attributes(attributes):
 
     return trace_id, parent_id, context
 
+
 def _get_trace_data(event):
     ''' Extract trace/parent ids and context object that are threaded through
     in various ways from other beelines'''
@@ -41,7 +43,7 @@ def _get_trace_data(event):
         if 'headers' in event:
             if isinstance(event['headers'], dict):
                 # deal with possible case issues
-                keymap = {k.lower(): k  for k in event['headers'].keys()}
+                keymap = {k.lower(): k for k in event['headers'].keys()}
                 if 'x-honeycomb-trace' in keymap:
                     trace_id, parent_id, context = unmarshal_trace_context(
                         event['headers'][keymap['x-honeycomb-trace']]
@@ -72,6 +74,7 @@ def _get_trace_data(event):
 
     return trace_id, parent_id, context
 
+
 def beeline_wrapper(handler):
     ''' Honeycomb Beeline decorator for Lambda functions. Expects a handler
     function with the signature:
@@ -101,10 +104,11 @@ def beeline_wrapper(handler):
             try:
                 trace_id, parent_id, trace_context = _get_trace_data(event)
             except Exception as e:
-                beeline.internal.log('error attempting to extract trace context: %s', beeline.internal.stringify_exception(e))
+                beeline.internal.log(
+                    'error attempting to extract trace context: %s', beeline.internal.stringify_exception(e))
                 pass
             with beeline.tracer(name=handler.__name__,
-                    trace_id=trace_id, parent_id=parent_id):
+                                trace_id=trace_id, parent_id=parent_id):
                 beeline.add_context({
                     "app.function_name": getattr(context, 'function_name', ""),
                     "app.function_version": getattr(context, 'function_version', ""),

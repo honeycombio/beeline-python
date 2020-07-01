@@ -1,9 +1,10 @@
 ''' patches base tornado classes to add honeycomb instrumentation '''
 
+from wrapt import wrap_function_wrapper
 import beeline
 import tornado
-assert tornado # for pyflakes
-from wrapt import wrap_function_wrapper
+assert tornado  # for pyflakes
+
 
 def log_request(_log_request, instance, args, kwargs):
     try:
@@ -24,6 +25,7 @@ def log_request(_log_request, instance, args, kwargs):
     finally:
         _log_request(*args, **kwargs)
 
+
 def log_exception(_log_exception, instance, args, kwargs):
     try:
         # expecting signature `log_exception(self, typ, value, tb)``
@@ -43,5 +45,7 @@ def log_exception(_log_exception, instance, args, kwargs):
     finally:
         _log_exception(*args, **kwargs)
 
+
 wrap_function_wrapper('tornado.web', 'Application.log_request', log_request)
-wrap_function_wrapper('tornado.web', 'RequestHandler.log_exception', log_exception)
+wrap_function_wrapper(
+    'tornado.web', 'RequestHandler.log_exception', log_exception)
