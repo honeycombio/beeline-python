@@ -390,9 +390,13 @@ def traced_impl(tracer_fn, name, trace_id, parent_id):
     return wrapped
 
 
+# Use system random instead of default psuedorandom generator
+system_random = random.SystemRandom()
+
+
 def generate_span_id():
-    return "{:016x}".format(random.getrandbits(64))
+    return "{:016x}".format(system_random.getrandbits(64))
 
 
 def generate_trace_id():
-    return "{:032x}".format(random.getrandbits(128))
+    return "{:032x}".format(system_random.getrandbits(128))
