@@ -3,6 +3,7 @@ from mock import Mock, patch
 
 from beeline.middleware.django import HoneyMiddlewareBase
 
+
 class SimpleWSGITest(unittest.TestCase):
     def setUp(self):
         self.addCleanup(patch.stopall)

@@ -4,7 +4,8 @@ from mock import Mock, patch
 
 import jinja2
 import beeline.patch.jinja2
-assert beeline.patch.jinja2 # make pyflake stop complainings
+assert beeline.patch.jinja2  # make pyflake stop complainings
+
 
 class TestJinja2Patch(unittest.TestCase):
     def test_wrapper_executes(self):
@@ -15,7 +16,7 @@ class TestJinja2Patch(unittest.TestCase):
 
             t = jinja2.Template("my template")
             t.render()
-            m_beeline.start_span.assert_called_once_with(context = {
+            m_beeline.start_span.assert_called_once_with(context={
                 "name": "jinja2_render_template",
                 "template.name": "[string]",
             })
@@ -27,7 +28,7 @@ class TestJinja2Patch(unittest.TestCase):
             t = jinja2.Template("my template")
             t.name = 'foo'
             t.render()
-            m_beeline.start_span.assert_called_once_with(context = {
+            m_beeline.start_span.assert_called_once_with(context={
                 "name": "jinja2_render_template",
                 "template.name": "foo",
             })

@@ -3,6 +3,7 @@ from mock import Mock, patch
 
 from beeline.middleware import awslambda
 
+
 class TestGetTraceIds(unittest.TestCase):
     def test_get_trace_ids_from_header(self):
         ''' test that trace_id and parent_id are extracted regardless of case '''
@@ -101,7 +102,7 @@ class TestGetTraceIds(unittest.TestCase):
                     "body": "Hello from SQS!",
                     "messageAttributes": {
                         'X-HoNEyComb-TrACE': {
-                            "Type":"String",
+                            "Type": "String",
                             "stringValue": "1;trace_id=bloop,parent_id=scoop,context=e30K",
                         },
                         'foo': {
@@ -160,6 +161,7 @@ class TestGetTraceIds(unittest.TestCase):
         self.assertIsNone(parent_id)
         self.assertIsNone(context)
 
+
 class TestLambdaWrapper(unittest.TestCase):
     def test_wrapper_works_no_init(self):
         ''' ensure that the wrapper doesn't break anything if used before
@@ -167,6 +169,7 @@ class TestLambdaWrapper(unittest.TestCase):
         '''
         with patch('beeline.get_beeline') as p:
             p.return_value = None
+
             @awslambda.beeline_wrapper
             def foo(event, context):
                 return 1

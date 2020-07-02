@@ -1,8 +1,9 @@
+import beeline
 from wrapt import wrap_function_wrapper
 import requests
 # needed for pyflakes
 assert requests
-import beeline
+
 
 def request(_request, instance, args, kwargs):
     span = beeline.start_span(context={"meta.type": "http_client"})
@@ -35,12 +36,15 @@ def request(_request, instance, args, kwargs):
         if resp:
             content_type = resp.headers.get('content-type')
             if content_type:
-                beeline.add_context_field("response.content_type", content_type)
+                beeline.add_context_field(
+                    "response.content_type", content_type)
             content_length = resp.headers.get('content-length')
             if content_length:
-                beeline.add_context_field("response.content_length", content_length)
+                beeline.add_context_field(
+                    "response.content_length", content_length)
             if hasattr(resp, 'status_code'):
-                beeline.add_context_field("response.status_code", resp.status_code)
+                beeline.add_context_field(
+                    "response.status_code", resp.status_code)
         beeline.finish_span(span)
 
 

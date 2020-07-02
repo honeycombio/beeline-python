@@ -18,12 +18,12 @@ class TestIDGeneration(unittest.TestCase):
     def test_span_id(self):
         '''Test that span ID generation meets basic length and character constraints'''
         span_id = generate_span_id()
-        self.assertIsNotNone(re.match("[\da-f]{16}", span_id))
+        self.assertIsNotNone(re.match(r"[\da-f]{16}", span_id))
 
     def test_trace_id(self):
         '''Test that trace ID generation meets basic length and character constraints'''
         trace_id = generate_trace_id()
-        self.assertIsNotNone(re.match("[\da-f]{32}", trace_id))
+        self.assertIsNotNone(re.match(r"[\da-f]{32}", trace_id))
 
 
 class TestTraceSampling(unittest.TestCase):
