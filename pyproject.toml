@@ -23,6 +23,7 @@ flask = "^1.1.2"
 django = [{version = "^1", python = "<3.0"},{version = "2.*", python = ">= 3.5"}]
 tornado = [{version = "^6.0.4", python = ">=3.5"}]
 pycodestyle = "^2.6.0"
+bump2version = {version="^1.0.0", python = ">=3.5"}
 
 [tool.poetry.scripts]
 tests = "beeline.test_suite:run_tests"
