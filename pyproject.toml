@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "honeycomb-beeline"
-version = "2.12.2.dev1"
+version = "2.12.2" # Update using bump2version
 description = "Honeycomb library for easy instrumentation"
 authors = ["Honeycomb.io <feedback@honeycomb.io>"]
 license = "Apache-2.0"
@@ -23,6 +23,7 @@ flask = "^1.1.2"
 django = [{version = "^1", python = "<3.0"},{version = "2.*", python = ">= 3.5"}]
 tornado = [{version = "^6.0.4", python = ">=3.5"}]
 pycodestyle = "^2.6.0"
+bump2version = {version="^1.0.0", python = ">=3.5"}
 
 [tool.poetry.scripts]
 tests = "beeline.test_suite:run_tests"
