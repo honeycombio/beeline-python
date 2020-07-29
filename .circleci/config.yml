@@ -179,6 +179,66 @@ jobs:
 
 workflows:
   version: 2
+  nightly:
+    triggers:
+      - schedule:
+          cron: "0 0 * * *"
+          filters:
+            branches:
+              only:
+                - main
+    jobs:
+      - setup_trace:
+          filters:
+            tags:
+              only: /.*/
+      - watch:
+          filters:
+            tags:
+              only: /.*/
+          requires:
+            - setup_trace
+      - test_python2-7:
+          filters:
+            tags:
+              only: /.*/
+          requires:
+            - setup_trace
+      - test_python3-5:
+          filters:
+            tags:
+              only: /.*/
+          requires:
+            - setup_trace
+      - test_python3-6:
+          filters:
+            tags:
+              only: /.*/
+          requires:
+            - setup_trace
+      - test_python3-7:
+          filters:
+            tags:
+              only: /.*/
+          requires:
+            - setup_trace
+      - test_python3-8:
+          filters:
+            tags:
+              only: /.*/
+          requires:
+            - setup_trace
+      - build:
+          filters:
+            tags:
+              only: /.*/
+          requires:
+            - test_python2-7
+            - test_python3-5
+            - test_python3-6
+            - test_python3-7
+            - test_python3-8
+
   build_beeline:
     jobs:
       - setup_trace:
