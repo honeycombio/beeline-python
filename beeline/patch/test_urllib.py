@@ -17,7 +17,11 @@ class TestUrllibPatch(unittest.TestCase):
 
             trace_context = "1;trace_id=foo,parent_id=bar,context=base64value=="
 
-            bl.tracer_impl.marshal_trace_context.return_value = trace_context
+            # FIXME: Not sure that this is a great test, although it matches the previous
+            # test.
+            bl.tracer_impl.http_trace_propagation_hook.return_value = {
+                'X-Honeycomb-Trace': trace_context
+            }
             # this is our request call that's being wrapped
             m_urlopen = Mock()
             m_urlopen.return_value = Mock(

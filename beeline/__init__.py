@@ -57,12 +57,15 @@ class Beeline(object):
                  max_concurrent_batches=10, max_batch_size=100, send_frequency=0.25,
                  block_on_send=False, block_on_response=False,
                  transmission_impl=None, sampler_hook=None, presend_hook=None,
+                 http_trace_parser_hook=None, http_trace_propagation_hook=None,
                  debug=False):
 
         self.client = None
         self.tracer_impl = None
         self.presend_hook = None
         self.sampler_hook = None
+        self.http_trace_parser_hook = None
+        self.http_trace_propagation_hook = None
 
         self.debug = debug
         if debug:
@@ -106,9 +109,11 @@ class Beeline(object):
         else:
             self.tracer_impl = SynchronousTracer(self.client)
         self.tracer_impl.register_hooks(
-            presend=presend_hook, sampler=sampler_hook)
+            presend=presend_hook, sampler=sampler_hook, http_trace_parser=http_trace_parser_hook, http_trace_propagation=http_trace_propagation_hook)
         self.sampler_hook = sampler_hook
         self.presend_hook = presend_hook
+        self.http_trace_parser_hook = http_trace_parser_hook
+        self.http_trace_propagation_hook = http_trace_propagation_hook
 
     def send_now(self, data):
         ''' DEPRECATED - to be removed in a future release
@@ -563,6 +568,42 @@ def finish_span(span):
 
     if bl:
         bl.tracer_impl.finish_span(span=span)
+
+
+def propagate_and_start_trace(context, headers):
+    '''
+    Given headers, calls the header_parse hooks to propagate information from the
+    incoming http (or similar) request context, returning a new trace using that
+    information if it exists.
+    '''
+    bl = get_beeline()
+
+    if bl:
+        bl.tracer_impl.propagate_and_start_trace(context, headers)
+
+
+def http_trace_parser_hook(headers):
+    '''
+    Given headers, calls the header_parse hooks to propagate information from the
+    incoming http (or similar) request context, returning a new trace using that
+    information if it exists.
+    '''
+    bl = get_beeline()
+
+    if bl:
+        return bl.tracer_impl.http_trace_parser_hook(headers)
+
+
+def http_trace_propagation_hook():
+    '''
+    Given headers, calls the header_parse hooks to propagate information from the
+    incoming http (or similar) request context, returning a new trace using that
+    information if it exists.
+    '''
+    bl = get_beeline()
+
+    if bl:
+        return bl.tracer_impl.http_trace_propagation_hook(bl.tracer_impl.propagation_context)
 
 
 def marshal_trace_context():

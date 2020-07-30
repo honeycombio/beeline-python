@@ -15,6 +15,8 @@ from contextlib import contextmanager
 
 from beeline.internal import log, stringify_exception
 
+import beeline.propagation
+
 MAX_INT32 = math.pow(2, 32) - 1
 SPAN_ID_BYTES = 8
 TRACE_ID_BYTES = 16
@@ -28,12 +30,16 @@ class Trace(object):
         self.stack = []
         self.fields = {}
         self.rollup_fields = defaultdict(float)
+        self.http_trace_parser_hook = beeline.propagation.honeycomb_http_trace_parser_hook
+        self.http_trace_propagation_hook = beeline.propagation.honeycomb_http_trace_propagation_hook
+        self.propagation_context = None
 
     def copy(self):
         '''Copy the trace state for use in another thread or context.'''
         result = Trace(self.id)
         result.stack = copy.copy(self.stack)
         result.fields = copy.copy(self.fields)
+        # FIXME: Copy propagation context? What about rollup_fields?
         return result
 
 
@@ -173,6 +179,22 @@ class Tracer(object):
         self.finish_span(span)
         self._trace = None
 
+    def parse_http_trace_headers(self, headers):
+        if not self.http_trace_parser_hook:
+            return None
+        return self.http_trace_parser_hook(headers)
+
+    def propagate_and_start_trace(self, context, headers):
+        propagation_context = self.parse_http_trace_headers(headers)
+        if propagation_context:
+            new_context = propagation_context.mergeContext(context)
+            return self.start_trace(context=new_context, trace_id=propagation_context.trace_id,
+                                    parent_span_id=propagation_context.span_id)
+        else:
+            # Initialize a new trace from scratch
+            return self.start_trace(context, trace_id=None, parent_span_id=None)
+        pass
+
     def get_active_trace_id(self):
         if self._trace:
             return self._trace.id
@@ -247,9 +269,11 @@ class Tracer(object):
             self._trace.fields
         )
 
-    def register_hooks(self, presend=None, sampler=None):
+    def register_hooks(self, presend=None, sampler=None, http_trace_parser=None, http_trace_propagation=None):
         self.presend_hook = presend
         self.sampler_hook = sampler
+        self.http_trace_parser_hook = http_trace_parser
+        self.http_trace_propagation_hook = http_trace_propagation
 
     def _run_hooks_and_send(self, span):
         ''' internal - run any defined hooks on the event and send
@@ -334,6 +358,7 @@ def _should_sample(trace_id, sample_rate):
 
 
 def marshal_trace_context(trace_id, parent_id, context):
+    """Deprecated: Use beeline.propagation.honeycomb_marshal_trace_context instead"""
     version = 1
     trace_fields = base64.b64encode(json.dumps(context).encode()).decode()
     trace_context = "{};trace_id={},parent_id={},context={}".format(
@@ -343,33 +368,11 @@ def marshal_trace_context(trace_id, parent_id, context):
     return trace_context
 
 
-def unmarshal_trace_context(trace_context):
-    # the first value is the trace payload version
-    # at this time there is only one version, but we should warn
-    # if another version comes through
-    version, data = trace_context.split(';', 1)
-    if version != "1":
-        log('warning: trace_context version %s is unsupported', version)
-        return None, None, None
-
-    kv_pairs = data.split(',')
-
-    trace_id, parent_id, context = None, None, None
-    # Some beelines send "dataset" but we do not handle that yet
-    for pair in kv_pairs:
-        k, v = pair.split('=', 1)
-        if k == 'trace_id':
-            trace_id = v
-        elif k == 'parent_id':
-            parent_id = v
-        elif k == 'context':
-            context = json.loads(base64.b64decode(v.encode()).decode())
-
-    # context should be a dict
-    if context is None:
-        context = {}
-
-    return trace_id, parent_id, context
+def unmarshal_trace_context(trace_header):
+    """
+    Deprecated: Use beeline.propagation.honeycomb_unmarshal_trace_context instead
+    """
+    return beeline.propagation.honeycomb_unmarshal_trace_context(trace_header)
 
 
 def traced_impl(tracer_fn, name, trace_id, parent_id):

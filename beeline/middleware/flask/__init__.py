@@ -4,26 +4,18 @@ import threading
 import beeline
 import flask  # to avoid namespace collision with request vs Request
 from beeline.trace import unmarshal_trace_context
+from beeline.propagation import PropagationHeaders
 from flask import current_app, signals
 # needed to build a request object from environ in the middleware
 from werkzeug.wrappers import Request
 
 
-def _get_trace_context(environ):
-    ''' returns trace_id, parent_id, context '''
-    # http://werkzeug.pocoo.org/docs/0.14/wrappers/#base-wrappers
-    req = Request(environ, shallow=True)
+class WerkzeugHeaders(PropagationHeaders):
+    def __init__(self, request_headers):
+        self._headers = request_headers
 
-    trace_context = req.headers.get('x-honeycomb-trace')
-    beeline.internal.log("got trace context: %s", trace_context)
-    if trace_context:
-        try:
-            return unmarshal_trace_context(trace_context)
-        except Exception as e:
-            beeline.internal.log(
-                'error attempting to extract trace context: %s', beeline.internal.stringify_exception(e))
-
-    return None, None, None
+    def get(self, key):
+        return self.headers.get(key)
 
 
 class HoneyMiddleware(object):
@@ -54,16 +46,11 @@ class HoneyWSGIMiddleware(object):
         self.app = app
 
     def __call__(self, environ, start_response):
-        trace_id, parent_id, context = _get_trace_context(environ)
+        req = Request(environ, shallow=True)
+        headers = WerkzeugHeaders(req.headers)
 
-        root_span = beeline.start_trace(
-            context=self.get_context_from_environ(environ),
-            trace_id=trace_id, parent_span_id=parent_id)
-
-        # populate any propagated custom context
-        if isinstance(context, dict):
-            for k, v in context.items():
-                beeline.add_trace_field(k, v)
+        root_span = beeline.propagate_and_start_trace(
+            context=self.get_context_from_environ, headers=headers)
 
         def _start_response(status, headers, *args):
             status_code = int(status[0:4])
