@@ -9,6 +9,7 @@ from libhoney import Client
 from beeline.trace import SynchronousTracer
 from beeline.version import VERSION
 from beeline import internal
+from beeline.propagation import honeycomb_http_trace_parser_hook, honeycomb_http_trace_propagation_hook
 # pyflakes
 assert internal
 
@@ -57,7 +58,7 @@ class Beeline(object):
                  max_concurrent_batches=10, max_batch_size=100, send_frequency=0.25,
                  block_on_send=False, block_on_response=False,
                  transmission_impl=None, sampler_hook=None, presend_hook=None,
-                 http_trace_parser_hook=None, http_trace_propagation_hook=None,
+                 http_trace_parser_hook=honeycomb_http_trace_parser_hook, http_trace_propagation_hook=honeycomb_http_trace_propagation_hook,
                  debug=False):
 
         self.client = None
@@ -603,7 +604,7 @@ def http_trace_propagation_hook():
     bl = get_beeline()
 
     if bl:
-        return bl.tracer_impl.http_trace_propagation_hook(bl.tracer_impl.propagation_context)
+        return bl.tracer_impl.http_trace_propagation_hook(bl.tracer_impl.get_propagation_context())
 
 
 def marshal_trace_context():

@@ -32,14 +32,12 @@ class Trace(object):
         self.rollup_fields = defaultdict(float)
         self.http_trace_parser_hook = beeline.propagation.honeycomb_http_trace_parser_hook
         self.http_trace_propagation_hook = beeline.propagation.honeycomb_http_trace_propagation_hook
-        self.propagation_context = None
 
     def copy(self):
         '''Copy the trace state for use in another thread or context.'''
         result = Trace(self.id)
         result.stack = copy.copy(self.stack)
         result.fields = copy.copy(self.fields)
-        # FIXME: Copy propagation context? What about rollup_fields?
         return result
 
 
@@ -194,6 +192,12 @@ class Tracer(object):
             # Initialize a new trace from scratch
             return self.start_trace(context, trace_id=None, parent_span_id=None)
         pass
+
+    def get_propagation_context(self):
+        return beeline.propagation.PropagationContext(
+            self.get_active_trace_id(),
+            self.get_active_span().id,
+            self._trace.fields)
 
     def get_active_trace_id(self):
         if self._trace:

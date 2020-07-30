@@ -3,7 +3,6 @@ import threading
 
 import beeline
 import flask  # to avoid namespace collision with request vs Request
-from beeline.trace import unmarshal_trace_context
 from beeline.propagation import PropagationHeaders
 from flask import current_app, signals
 # needed to build a request object from environ in the middleware

@@ -14,13 +14,12 @@ def _urllibopen(_urlopen, instance, args, kwargs):
     span = beeline.start_span(context={"meta.type": "http_client"})
 
     b = beeline.get_beeline()
-    if b and b.propagation_hook != None:
+    if b and b.http_trace_propagation_hook != None:
         new_headers = beeline.http_trace_propagation_hook()
         if new_headers:
             # Merge the new headers into the existing headers for the outbound request
             b.log(
                 "urllib lib - adding trace context to outbound request: %s", new_headers)
-            print(new_headers)
             args[0].headers.update(new_headers)
 
     try:

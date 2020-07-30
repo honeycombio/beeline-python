@@ -9,11 +9,12 @@ def request(_request, instance, args, kwargs):
     span = beeline.start_span(context={"meta.type": "http_client"})
 
     b = beeline.get_beeline()
-    if b:
-        context = b.tracer_impl.marshal_trace_context()
-        if context:
-            b.log("requests lib - adding trace context to outbound request: %s", context)
-            instance.headers['X-Honeycomb-Trace'] = context
+    if b and b.http_trace_propagation_hook != None:
+        new_headers = beeline.http_trace_propagation_hook()
+        if new_headers:
+            b.log(
+                "requests lib - adding trace context to outbound request: %s", new_headers)
+            instance.headers.update(new_headers)
         else:
             b.log("requests lib - no trace context found")
 

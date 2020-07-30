@@ -1,5 +1,5 @@
 import beeline
-from beeline.trace import unmarshal_trace_context
+from beeline.propagation import honeycomb_unmarshal_trace_context
 
 # In Lambda, a cold start is when Lambda has to spin up a new instance of a
 # function to satisfy a request, rather than re-use an existing instance.
@@ -18,12 +18,12 @@ def _get_trace_data_from_message_attributes(attributes):
         if 'x-honeycomb-trace' in keymap:
             if 'Value' in attributes[keymap['x-honeycomb-trace']]:
                 # SNS
-                trace_id, parent_id, context = unmarshal_trace_context(
+                trace_id, parent_id, context = honeycomb_unmarshal_trace_context(
                     attributes[keymap['x-honeycomb-trace']]['Value']
                 )
             elif 'stringValue' in attributes[keymap['x-honeycomb-trace']]:
                 # SQS
-                trace_id, parent_id, context = unmarshal_trace_context(
+                trace_id, parent_id, context = honeycomb_unmarshal_trace_context(
                     attributes[keymap['x-honeycomb-trace']]['stringValue']
                 )
 
@@ -45,7 +45,7 @@ def _get_trace_data(event):
                 # deal with possible case issues
                 keymap = {k.lower(): k for k in event['headers'].keys()}
                 if 'x-honeycomb-trace' in keymap:
-                    trace_id, parent_id, context = unmarshal_trace_context(
+                    trace_id, parent_id, context = honeycomb_unmarshal_trace_context(
                         event['headers'][keymap['x-honeycomb-trace']]
                     )
 

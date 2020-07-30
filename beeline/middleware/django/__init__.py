@@ -1,7 +1,7 @@
 import contextlib
 import datetime
 import beeline
-from beeline.trace import unmarshal_trace_context
+from beeline.propagation import honeycomb_unmarshal_trace_context
 from django.db import connections
 
 
@@ -10,7 +10,7 @@ def _get_trace_context(request):
     beeline.internal.log("got trace context: %s", trace_context)
     if trace_context:
         try:
-            return unmarshal_trace_context(trace_context)
+            return honeycomb_unmarshal_trace_context(trace_context)
         except Exception as e:
             beeline.internal.log(
                 'error attempting to extract trace context: %s', beeline.internal.stringify_exception(e))
