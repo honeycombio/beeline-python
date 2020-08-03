@@ -1,21 +1,17 @@
 import contextlib
 import datetime
 import beeline
-from beeline.propagation import honeycomb_unmarshal_trace_context
+from beeline.propagation import PropagationHeaders
 from django.db import connections
 
 
-def _get_trace_context(request):
-    trace_context = request.META.get('HTTP_X_HONEYCOMB_TRACE')
-    beeline.internal.log("got trace context: %s", trace_context)
-    if trace_context:
-        try:
-            return honeycomb_unmarshal_trace_context(trace_context)
-        except Exception as e:
-            beeline.internal.log(
-                'error attempting to extract trace context: %s', beeline.internal.stringify_exception(e))
+class DjangoHeaders(PropagationHeaders):
+    def __init__(self, request):
+        self._META = request.META
 
-    return None, None, None
+    def get(self, key):
+        lookup_key = key.upper().replace('-', '_')
+        return self._META.get(lookup_key)
 
 
 class HoneyDBWrapper(object):
@@ -85,17 +81,10 @@ class HoneyMiddlewareBase(object):
     def create_http_event(self, request):
         # Code to be executed for each request before
         # the view (and later middleware) are called.
-
-        trace_id, parent_id, parent_context = _get_trace_context(request)
+        headers = DjangoHeaders(request)
 
         request_context = self.get_context_from_request(request)
-
-        trace = beeline.start_trace(
-            context=request_context, trace_id=trace_id, parent_span_id=parent_id)
-
-        if isinstance(parent_context, dict):
-            for k, v in parent_context.items():
-                beeline.add_trace_field(k, v)
+        root_span = beeline.propagate_and_start_trace(request_context, headers)
 
         response = self.get_response(request)
 
@@ -103,7 +92,7 @@ class HoneyMiddlewareBase(object):
         # the view is called.
         response_context = self.get_context_from_response(request, response)
         beeline.add_context(response_context)
-        beeline.finish_trace(trace)
+        beeline.finish_trace(root_span)
 
         return response
 

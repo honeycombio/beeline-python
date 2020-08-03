@@ -204,7 +204,7 @@ class TestBeeline(unittest.TestCase):
         if "thread_exception" in closure_dict:
             raise closure_dict["thread_exception"]
 
-    def test_treaded_trace(self):
+    def test_threaded_trace(self):
         _beeline = beeline.Beeline()
 
         with patch('beeline.get_beeline') as m_gbl:

@@ -49,7 +49,7 @@ class HoneyWSGIMiddleware(object):
         headers = WerkzeugHeaders(req.headers)
 
         root_span = beeline.propagate_and_start_trace(
-            context=self.get_context_from_environ, headers=headers)
+            self.get_context_from_environ, headers)
 
         def _start_response(status, headers, *args):
             status_code = int(status[0:4])

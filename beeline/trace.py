@@ -16,6 +16,7 @@ from contextlib import contextmanager
 from beeline.internal import log, stringify_exception
 
 import beeline.propagation
+import beeline.propagation.honeycomb
 
 MAX_INT32 = math.pow(2, 32) - 1
 SPAN_ID_BYTES = 8
@@ -30,8 +31,8 @@ class Trace(object):
         self.stack = []
         self.fields = {}
         self.rollup_fields = defaultdict(float)
-        self.http_trace_parser_hook = beeline.propagation.honeycomb_http_trace_parser_hook
-        self.http_trace_propagation_hook = beeline.propagation.honeycomb_http_trace_propagation_hook
+        self.http_trace_parser_hook = beeline.propagation.honeycomb.http_trace_parser_hook
+        self.http_trace_propagation_hook = beeline.propagation.honeycomb.http_trace_propagation_hook
 
     def copy(self):
         '''Copy the trace state for use in another thread or context.'''
@@ -185,9 +186,10 @@ class Tracer(object):
     def propagate_and_start_trace(self, context, headers):
         propagation_context = self.parse_http_trace_headers(headers)
         if propagation_context:
-            new_context = propagation_context.mergeContext(context)
-            return self.start_trace(context=new_context, trace_id=propagation_context.trace_id,
+            return self.start_trace(context=context, trace_id=propagation_context.trace_id,
                                     parent_span_id=propagation_context.span_id)
+            for k, v in propagation_context.trace_fields:
+                self.add_trace_field(k, v)
         else:
             # Initialize a new trace from scratch
             return self.start_trace(context, trace_id=None, parent_span_id=None)
@@ -362,7 +364,7 @@ def _should_sample(trace_id, sample_rate):
 
 
 def marshal_trace_context(trace_id, parent_id, context):
-    """Deprecated: Use beeline.propagation.honeycomb_marshal_trace_context instead"""
+    """Deprecated: Use beeline.propagation.honeycomb.marshal_trace_context instead"""
     version = 1
     trace_fields = base64.b64encode(json.dumps(context).encode()).decode()
     trace_context = "{};trace_id={},parent_id={},context={}".format(
@@ -374,9 +376,9 @@ def marshal_trace_context(trace_id, parent_id, context):
 
 def unmarshal_trace_context(trace_header):
     """
-    Deprecated: Use beeline.propagation.honeycomb_unmarshal_trace_context instead
+    Deprecated: Use beeline.propagation.honeycomb.unmarshal_trace_context instead
     """
-    return beeline.propagation.honeycomb_unmarshal_trace_context(trace_header)
+    return beeline.propagation.honeycomb.unmarshal_propagation_context(trace_header)
 
 
 def traced_impl(tracer_fn, name, trace_id, parent_id):

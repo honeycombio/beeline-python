@@ -9,7 +9,7 @@ from libhoney import Client
 from beeline.trace import SynchronousTracer
 from beeline.version import VERSION
 from beeline import internal
-from beeline.propagation import honeycomb_http_trace_parser_hook, honeycomb_http_trace_propagation_hook
+from beeline.propagation.honeycomb import http_trace_parser_hook, http_trace_propagation_hook
 # pyflakes
 assert internal
 
@@ -58,7 +58,7 @@ class Beeline(object):
                  max_concurrent_batches=10, max_batch_size=100, send_frequency=0.25,
                  block_on_send=False, block_on_response=False,
                  transmission_impl=None, sampler_hook=None, presend_hook=None,
-                 http_trace_parser_hook=honeycomb_http_trace_parser_hook, http_trace_propagation_hook=honeycomb_http_trace_propagation_hook,
+                 http_trace_parser_hook=http_trace_parser_hook, http_trace_propagation_hook=http_trace_propagation_hook,
                  debug=False):
 
         self.client = None
@@ -496,9 +496,11 @@ def tracer(name, trace_id=None, parent_id=None):
 def start_trace(context=None, trace_id=None, parent_span_id=None):
     '''
     Start a trace, returning the root span. To finish the trace, pass the span
-    to `finish_trace`. If you are using the beeline middleware plugins, such as for
-    django, flask, or AWS lambda, you will want to use `start_span` instead, as
-    `start_trace` is called at the start of the request.
+    to `finish_trace`. `start_trace` does not propagate contexts - if you wish
+    to propagate contexts from sources such as HTTP headers, use `propagate_and_start_trace`
+    instead. If you are using the beeline middleware plugins, such as fordjango,
+    flask, or AWS lambda, you will want to use `start_span` instead, as `start_trace`
+    is called at the start of the request.
 
     Args:
     - `context`: optional dictionary of event fields to populate the root span with
