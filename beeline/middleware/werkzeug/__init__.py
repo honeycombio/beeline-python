@@ -1,15 +1,33 @@
 import beeline
-from beeline.propagation import PropagationHeaders
+from beeline.propagation import Request
 
 
-class WerkzeugHeaders(PropagationHeaders):
+class WerkzeugRequest(Request):
     def __init__(self, environ):
         self._environ = environ
 
-    def get(self, key):
+    def header(self, key):
         # FIXME: Is this .upper strictly necessary? Does environ already do it for us?
         lookup_key = key.upper().replace('-', '_')
         return self._environ.get(lookup_key)
+
+    def method(self):
+        return self._environ.get('REQUEST_METHOD')
+
+    def scheme(self):
+        return self._environ.get('wsgi.url_scheme')
+
+    def host(self):
+        return self._environ.get('HTTP_HOST')
+
+    def path(self):
+        return self._environ.get('PATH_INFO')
+
+    def query(self):
+        return self._environ.get('QUERY_STRING')
+
+    def middleware_request(self):
+        return self._environ
 
 
 class HoneyWSGIMiddleware(object):
@@ -18,10 +36,10 @@ class HoneyWSGIMiddleware(object):
         self.app = app
 
     def __call__(self, environ, start_response):
-        headers = WerkzeugHeaders(environ)
+        wr = WerkzeugRequest(environ)
 
         request_context = self.get_context_from_environ(environ)
-        root_span = beeline.propagate_and_start_trace(request_context, headers)
+        root_span = beeline.propagate_and_start_trace(request_context, wr)
 
         def _start_response(status, headers, *args):
             beeline.add_context_field("response.status_code", status)

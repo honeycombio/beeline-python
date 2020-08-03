@@ -1,17 +1,36 @@
 import contextlib
 import datetime
 import beeline
-from beeline.propagation import PropagationHeaders
+from beeline.propagation import Request
 from django.db import connections
 
 
-class DjangoHeaders(PropagationHeaders):
+class DjangoRequest(Request):
     def __init__(self, request):
+        self._request = request
         self._META = request.META
 
-    def get(self, key):
+    def header(self, key):
         lookup_key = key.upper().replace('-', '_')
-        return self._META.get(lookup_key)
+        return self._request.META.get(lookup_key)
+
+    def method(self):
+        return self._request.method
+
+    def scheme(self):
+        return self._request.scheme
+
+    def host(self):
+        return self._request.get_host()
+
+    def path(self):
+        return self._request.path
+
+    def query(self):
+        return self._request.META.get('QUERY_STRING')
+
+    def middleware_request(self):
+        return self._request
 
 
 class HoneyDBWrapper(object):
@@ -81,10 +100,10 @@ class HoneyMiddlewareBase(object):
     def create_http_event(self, request):
         # Code to be executed for each request before
         # the view (and later middleware) are called.
-        headers = DjangoHeaders(request)
+        dr = DjangoRequest(request)
 
         request_context = self.get_context_from_request(request)
-        root_span = beeline.propagate_and_start_trace(request_context, headers)
+        root_span = beeline.propagate_and_start_trace(request_context, dr)
 
         response = self.get_response(request)
 

@@ -3,18 +3,11 @@ import threading
 
 import beeline
 import flask  # to avoid namespace collision with request vs Request
-from beeline.propagation import PropagationHeaders
+from beeline.propagation import Request
 from flask import current_app, signals
 # needed to build a request object from environ in the middleware
 from werkzeug.wrappers import Request
-
-
-class WerkzeugHeaders(PropagationHeaders):
-    def __init__(self, request_headers):
-        self._headers = request_headers
-
-    def get(self, key):
-        return self.headers.get(key)
+from beeline.middleware.werkzeug import WerkzeugRequest
 
 
 class HoneyMiddleware(object):
@@ -46,10 +39,10 @@ class HoneyWSGIMiddleware(object):
 
     def __call__(self, environ, start_response):
         req = Request(environ, shallow=True)
-        headers = WerkzeugHeaders(req.headers)
+        wr = WerkzeugRequest(environ)
 
         root_span = beeline.propagate_and_start_trace(
-            self.get_context_from_environ, headers)
+            self.get_context_from_environ, wr)
 
         def _start_response(status, headers, *args):
             status_code = int(status[0:4])

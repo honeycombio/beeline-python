@@ -3,12 +3,12 @@ import base64
 import json
 
 
-def http_trace_parser_hook(headers):
+def http_trace_parser_hook(request):
     '''
-    Retrieves the honeycomb trace context out of the headers.
-    headers must implement the beeline.propagation.Headers abstract base class
+    Retrieves the honeycomb trace context out of the request.
+    request must implement the beeline.propagation.Request abstract base class
     '''
-    trace_header = headers.Get('X-Honeycomb-Trace')
+    trace_header = request.header('X-Honeycomb-Trace')
     if trace_header:
         try:
             trace_id, parent_id, context = unmarshal_propagation_context(

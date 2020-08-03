@@ -1,15 +1,6 @@
 import beeline
-from beeline.propagation import PropagationHeaders
-
-
-class BottleHeaders(PropagationHeaders):
-    def __init__(self, environ):
-        self._environ = environ
-
-    def get(self, key):
-        # FIXME: Is this .upper strictly necessary? Does environ already do it for us?
-        lookup_key = key.upper().replace('-', '_')
-        return self._environ.get(lookup_key)
+from beeline.propagation import Request
+from beeline.middleware.werkzeug import WerkzeugRequest
 
 
 class HoneyWSGIMiddleware(object):
@@ -18,9 +9,9 @@ class HoneyWSGIMiddleware(object):
         self.app = app
 
     def __call__(self, environ, start_response):
-        headers = BottleHeaders(environ)
+        wr = WerkzeugRequest(environ)
         request_context = self.get_context_from_environ(environ)
-        root_span = beeline.propagate_and_start_trace(request_context, headers)
+        root_span = beeline.propagate_and_start_trace(request_context, wr)
 
         def _start_response(status, headers, *args):
             beeline.add_context_field("response.status_code", status)

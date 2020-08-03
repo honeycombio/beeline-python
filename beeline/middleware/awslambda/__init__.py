@@ -1,5 +1,5 @@
 import beeline
-from beeline.propagation import PropagationHeaders
+from beeline.propagation import Request
 # In Lambda, a cold start is when Lambda has to spin up a new instance of a
 # function to satisfy a request, rather than re-use an existing instance.
 # This usually has a non-trivial effect on latency for the request and is
@@ -7,7 +7,7 @@ from beeline.propagation import PropagationHeaders
 COLD_START = True
 
 
-class LambdaHeaders(PropagationHeaders):
+class LambdaRequest(Request):
     '''
     Look for header values in SNS/SQS Message Attributes
     '''
@@ -15,6 +15,7 @@ class LambdaHeaders(PropagationHeaders):
     def __init__(self, event):
         # Look for headers (or equivalents) in common places
         self._type = None
+        self._event = event
         if isinstance(event, dict):
             # If API gateway is triggering the Lambda, the event will have headers
             # and we can look for our trace headers
@@ -46,7 +47,7 @@ class LambdaHeaders(PropagationHeaders):
             if self._type:
                 self._keymap = {k.lower(): k for k in self._attributes.keys()}
 
-    def get(self, key):
+    def header(self, key):
         if not self._type:
             return None
         lookup_key = key.lower()
@@ -60,6 +61,39 @@ class LambdaHeaders(PropagationHeaders):
         elif self._type == 'sqs':
             return self._attributes[lookup_key]['stringValue']
         return None
+
+    def method(self):
+        '''
+        For a lambda request, method is an irrelevant parameter.
+        '''
+        return None
+
+    def scheme(self):
+        '''
+        For a lambda request, scheme is an irrelevant parameter.
+        '''
+        return None
+
+    def host(self):
+        '''
+        For a lambda request, host is an irrelevant parameter.
+        '''
+        return None
+
+    def path(self):
+        '''
+        For a lambda request, path is an irrelevant parameter.
+        '''
+        return None
+
+    def query(self):
+        '''
+        For a lambda request, query is an irrelevant parameter.
+        '''
+        return None
+
+    def middleware_request(self):
+        return self._event
 
 
 def beeline_wrapper(handler):
@@ -97,9 +131,8 @@ def beeline_wrapper(handler):
                 "name": handler.__name__
             }
 
-            headers = LambdaHeaders(event)
-            root_span = beeline.propagate_and_start_trace(
-                request_context, headers)
+            lr = LambdaRequest(event)
+            root_span = beeline.propagate_and_start_trace(request_context, lr)
 
             # Actually run the handler
             resp = handler(event, context)

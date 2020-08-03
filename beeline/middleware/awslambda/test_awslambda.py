@@ -17,9 +17,9 @@ class TestGetTraceIds(unittest.TestCase):
             },
         }
 
-        headers = awslambda.LambdaHeaders(event)
-        self.assertIsNotNone(headers)
-        self.assertEqual(headers.get('X-Honeycomb-Trace'), header_value)
+        lr = awslambda.LambdaRequest(event)
+        self.assertIsNotNone(lr)
+        self.assertEqual(lr.header('X-Honeycomb-Trace'), header_value)
 
     def test_get_trace_ids_no_header(self):
         ''' ensure that we handle events with no header key '''
@@ -27,9 +27,9 @@ class TestGetTraceIds(unittest.TestCase):
             'foo': 1,
         }
 
-        headers = awslambda.LambdaHeaders(event)
-        self.assertIsNotNone(headers)
-        self.assertIsNone(headers.get('X-Honeycomb-Trace'))
+        lr = awslambda.LambdaRequest(event)
+        self.assertIsNotNone(lr)
+        self.assertIsNone(lr.header('X-Honeycomb-Trace'))
 
     def test_get_trace_ids_sns_none(self):
         ''' ensure that we handle SNS events with no honeycomb key '''
@@ -46,9 +46,9 @@ class TestGetTraceIds(unittest.TestCase):
             ],
         }
 
-        headers = awslambda.LambdaHeaders(event)
-        self.assertIsNotNone(headers)
-        self.assertIsNone(headers.get('X-Honeycomb-Trace'))
+        lr = awslambda.LambdaRequest(event)
+        self.assertIsNotNone(lr)
+        self.assertIsNone(lr.header('X-Honeycomb-Trace'))
 
     def test_get_trace_ids_sns_attribute(self):
         ''' ensure that we extract SNS data from message attributes'''
@@ -70,9 +70,9 @@ class TestGetTraceIds(unittest.TestCase):
             ],
         }
 
-        headers = awslambda.LambdaHeaders(event)
-        self.assertIsNotNone(headers)
-        self.assertEqual(headers.get('X-Honeycomb-Trace'), header_value)
+        lr = awslambda.LambdaRequest(event)
+        self.assertIsNotNone(lr)
+        self.assertEqual(lr.header('X-Honeycomb-Trace'), header_value)
 
     def test_get_trace_ids_sqs_none(self):
         ''' ensure that we handle SQS events with no honeycomb key '''
@@ -87,9 +87,9 @@ class TestGetTraceIds(unittest.TestCase):
             ],
         }
 
-        headers = awslambda.LambdaHeaders(event)
-        self.assertIsNotNone(headers)
-        self.assertIsNone(headers.get('X-Honeycomb-Trace'))
+        lr = awslambda.LambdaRequest(event)
+        self.assertIsNotNone(lr)
+        self.assertIsNone(lr.header('X-Honeycomb-Trace'))
 
     def test_get_trace_ids_sqs_attributes(self):
         ''' ensure that we extract SQS data from message attributes'''
@@ -113,9 +113,9 @@ class TestGetTraceIds(unittest.TestCase):
             ],
         }
 
-        headers = awslambda.LambdaHeaders(event)
-        self.assertIsNotNone(headers)
-        self.assertEqual(headers.get('X-Honeycomb-Trace'), header_value)
+        lr = awslambda.LambdaRequest(event)
+        self.assertIsNotNone(lr)
+        self.assertEqual(lr.header('X-Honeycomb-Trace'), header_value)
 
     def test_message_batch_is_ignored(self):
         ''' ensure that we don't process batches'''
@@ -153,9 +153,9 @@ class TestGetTraceIds(unittest.TestCase):
             ],
         }
 
-        headers = awslambda.LambdaHeaders(event)
-        self.assertIsNotNone(headers)
-        self.assertIsNone(headers.get('X-Honeycomb-Trace'))
+        lr = awslambda.LambdaRequest(event)
+        self.assertIsNotNone(lr)
+        self.assertIsNone(lr.header('X-Honeycomb-Trace'))
 
 
 class TestLambdaWrapper(unittest.TestCase):
