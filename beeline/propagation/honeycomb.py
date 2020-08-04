@@ -1,4 +1,5 @@
-
+import beeline
+from beeline.propagation import PropagationContext
 import base64
 import json
 
@@ -51,7 +52,8 @@ def unmarshal_propagation_context(trace_header):
     # if another version comes through
     version, data = trace_header.split(';', 1)
     if version != "1":
-        log('warning: trace_header version %s is unsupported', version)
+        beeline.internal.log(
+            'warning: trace_header version %s is unsupported', version)
         return None, None, None
 
     kv_pairs = data.split(',')
