@@ -1,4 +1,4 @@
-from abc import ABC, abstractmethod
+from abc import ABCMeta, abstractmethod
 import beeline
 
 
@@ -10,7 +10,9 @@ class PropagationContext(object):
         self.trace_fields = trace_fields
 
 
-class Request(ABC):
+class Request(object):
+    __metaclass__ = ABCMeta
+
     @abstractmethod
     def header(self, key):
         """
