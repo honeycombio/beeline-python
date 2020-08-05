@@ -51,7 +51,7 @@ class LambdaRequest(Request):
         if not self._type:
             return None
         lookup_key = key.lower()
-        if not lookup_key in self._keymap:
+        if lookup_key not in self._keymap:
             return None
         lookup_key = self._keymap[lookup_key]
         if self._type == 'headers':
