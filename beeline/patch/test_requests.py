@@ -14,8 +14,6 @@ class TestRequestsPatch(unittest.TestCase):
 
             trace_context = "1;trace_id=foo,parent_id=bar,context=base64value=="
 
-            # FIXME: Not sure that this is a great test, although it matches the previous
-            # test.
             bl.tracer_impl.http_trace_propagation_hook.return_value = {
                 'X-Honeycomb-Trace': trace_context
             }
