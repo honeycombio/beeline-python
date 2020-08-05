@@ -14,7 +14,7 @@ def _urllibopen(_urlopen, instance, args, kwargs):
     span = beeline.start_span(context={"meta.type": "http_client"})
 
     b = beeline.get_beeline()
-    if b and b.http_trace_propagation_hook != None:
+    if b and b.http_trace_propagation_hook is not None:
         new_headers = beeline.http_trace_propagation_hook()
         if new_headers:
             # Merge the new headers into the existing headers for the outbound request

@@ -111,7 +111,10 @@ class Beeline(object):
         else:
             self.tracer_impl = SynchronousTracer(self.client)
         self.tracer_impl.register_hooks(
-            presend=presend_hook, sampler=sampler_hook, http_trace_parser=http_trace_parser_hook, http_trace_propagation=http_trace_propagation_hook)
+            presend=presend_hook,
+            sampler=sampler_hook,
+            http_trace_parser=http_trace_parser_hook,
+            http_trace_propagation=http_trace_propagation_hook)
         self.sampler_hook = sampler_hook
         self.presend_hook = presend_hook
         self.http_trace_parser_hook = http_trace_parser_hook
