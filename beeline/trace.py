@@ -178,13 +178,13 @@ class Tracer(object):
         self.finish_span(span)
         self._trace = None
 
-    def parse_http_trace_headers(self, headers):
+    def parse_http_trace(self, request):
         if not self.http_trace_parser_hook:
             return None
-        return self.http_trace_parser_hook(headers)
+        return self.http_trace_parser_hook(request)
 
-    def propagate_and_start_trace(self, context, headers):
-        propagation_context = self.parse_http_trace_headers(headers)
+    def propagate_and_start_trace(self, context, request):
+        propagation_context = self.parse_http_trace(request)
         if propagation_context:
             return self.start_trace(context=context, trace_id=propagation_context.trace_id,
                                     parent_span_id=propagation_context.span_id)
