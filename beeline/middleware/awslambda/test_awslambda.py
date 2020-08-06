@@ -6,10 +6,11 @@ from beeline.middleware import awslambda
 header_value = '1;trace_id=bloop,parent_id=scoop,context=e30K'
 
 
-class TestGetTraceIds(unittest.TestCase):
-
-    def test_get_trace_ids_from_header(self):
-        ''' test that trace_id and parent_id are extracted regardless of case '''
+class TestLambdaRequest(unittest.TestCase):
+    def test_get_header_from_headers(self):
+        '''
+        Test that if headers is set, we have case-insensitive match.
+        '''
         event = {
             'headers': {
                 # case shouldn't matter
@@ -21,7 +22,7 @@ class TestGetTraceIds(unittest.TestCase):
         self.assertIsNotNone(lr)
         self.assertEqual(lr.header('X-Honeycomb-Trace'), header_value)
 
-    def test_get_trace_ids_no_header(self):
+    def test_handle_no_headers(self):
         ''' ensure that we handle events with no header key '''
         event = {
             'foo': 1,
@@ -31,7 +32,7 @@ class TestGetTraceIds(unittest.TestCase):
         self.assertIsNotNone(lr)
         self.assertIsNone(lr.header('X-Honeycomb-Trace'))
 
-    def test_get_trace_ids_sns_none(self):
+    def test_handle_sns_none(self):
         ''' ensure that we handle SNS events with no honeycomb key '''
         event = {
             "Records":
@@ -50,7 +51,7 @@ class TestGetTraceIds(unittest.TestCase):
         self.assertIsNotNone(lr)
         self.assertIsNone(lr.header('X-Honeycomb-Trace'))
 
-    def test_get_trace_ids_sns_attribute(self):
+    def test_handle_sns_attribute(self):
         ''' ensure that we extract SNS data from message attributes'''
         event = {
             "Records":
@@ -74,7 +75,7 @@ class TestGetTraceIds(unittest.TestCase):
         self.assertIsNotNone(lr)
         self.assertEqual(lr.header('X-Honeycomb-Trace'), header_value)
 
-    def test_get_trace_ids_sqs_none(self):
+    def test_handle_sqs_none(self):
         ''' ensure that we handle SQS events with no honeycomb key '''
         event = {
             "Records":
@@ -91,7 +92,7 @@ class TestGetTraceIds(unittest.TestCase):
         self.assertIsNotNone(lr)
         self.assertIsNone(lr.header('X-Honeycomb-Trace'))
 
-    def test_get_trace_ids_sqs_attributes(self):
+    def test_handle_sqs_attributes(self):
         ''' ensure that we extract SQS data from message attributes'''
         event = {
             "Records":

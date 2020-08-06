@@ -577,16 +577,16 @@ def finish_span(span):
         bl.tracer_impl.finish_span(span=span)
 
 
-def propagate_and_start_trace(context, headers):
+def propagate_and_start_trace(context, request):
     '''
-    Given headers, calls the header_parse hooks to propagate information from the
-    incoming http (or similar) request context, returning a new trace using that
-    information if it exists.
+    Given context and a beeline.propagation.Request subclass, calls the header_parse hooks
+    to propagate information from the incoming http (or similar) request context,
+    returning a new trace using that information if it exists.
     '''
     bl = get_beeline()
 
     if bl:
-        return bl.tracer_impl.propagate_and_start_trace(context, headers)
+        return bl.tracer_impl.propagate_and_start_trace(context, request)
     return None
 
 

@@ -184,7 +184,14 @@ class Tracer(object):
         return self.http_trace_parser_hook(request)
 
     def propagate_and_start_trace(self, context, request):
-        propagation_context = self.parse_http_trace(request)
+        err = None
+        try:
+            propagation_context = self.parse_http_trace(request)
+        except:
+            err = sys.exc_info()[0]
+            log('error: http_trace_parser_hook returned exception: %s',
+                sys.exc_info()[0])
+
         if propagation_context:
             return self.start_trace(context=context, trace_id=propagation_context.trace_id,
                                     parent_span_id=propagation_context.span_id)
@@ -192,6 +199,8 @@ class Tracer(object):
                 self.add_trace_field(k, v)
         else:
             # Initialize a new trace from scratch
+            if err is not None:
+                context['parser_hook_error'] = repr(err)
             return self.start_trace(context, trace_id=None, parent_span_id=None)
         pass
 
