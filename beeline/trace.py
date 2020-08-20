@@ -7,6 +7,7 @@ import json
 import math
 import random
 import struct
+import sys
 import threading
 import inspect
 from collections import defaultdict
@@ -31,8 +32,6 @@ class Trace(object):
         self.stack = []
         self.fields = {}
         self.rollup_fields = defaultdict(float)
-        self.http_trace_parser_hook = beeline.propagation.honeycomb.http_trace_parser_hook
-        self.http_trace_propagation_hook = beeline.propagation.honeycomb.http_trace_propagation_hook
 
     def copy(self):
         '''Copy the trace state for use in another thread or context.'''
@@ -48,6 +47,8 @@ class Tracer(object):
 
         self.presend_hook = None
         self.sampler_hook = None
+        self.http_trace_parser_hook = beeline.propagation.honeycomb.http_trace_parser_hook
+        self.http_trace_propagation_hook = beeline.propagation.honeycomb.http_trace_propagation_hook
 
     @contextmanager
     def __call__(self, name, trace_id=None, parent_id=None):
@@ -185,6 +186,7 @@ class Tracer(object):
 
     def propagate_and_start_trace(self, context, request):
         err = None
+        propagation_context = None
         try:
             propagation_context = self.parse_http_trace(request)
         except:
@@ -205,6 +207,9 @@ class Tracer(object):
         pass
 
     def get_propagation_context(self):
+        if not self._trace:
+            return None
+
         return beeline.propagation.PropagationContext(
             self.get_active_trace_id(),
             self.get_active_span().id,

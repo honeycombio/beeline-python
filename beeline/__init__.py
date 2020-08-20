@@ -10,6 +10,7 @@ from beeline.trace import SynchronousTracer
 from beeline.version import VERSION
 from beeline import internal
 import beeline.propagation.honeycomb
+import sys
 # pyflakes
 assert internal
 
@@ -612,7 +613,11 @@ def http_trace_propagation_hook():
     bl = get_beeline()
 
     if bl:
-        return bl.tracer_impl.http_trace_propagation_hook(bl.tracer_impl.get_propagation_context())
+        try:
+            return bl.tracer_impl.http_trace_propagation_hook(bl.tracer_impl.get_propagation_context())
+        except:
+            err = sys.exc_info()
+            bl.log('error: http_trace_propagation_hook returned exception: %s', err)
     return None
 
 

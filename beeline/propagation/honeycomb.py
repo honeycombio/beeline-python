@@ -26,6 +26,9 @@ def http_trace_propagation_hook(propagation_context):
     Given a propagation context, returns a dictionary of key value pairs that should be
     added to outbound requests (usually HTTP headers)
     '''
+    if not propagation_context:
+        return None
+
     return {"X-Honeycomb-Trace": marshal_propagation_context(propagation_context)}
 
 
@@ -34,6 +37,9 @@ def marshal_propagation_context(propagation_context):
     Given a propagation context, returns the contents of a trace header to be
     injected by middleware.
     '''
+    if not propagation_context:
+        return None
+
     # FIXME: Since ALL trace fields are in propagation_context, we may want to strip
     # some automatically added trace fields that we DON'T want to propagate - e.g. request.*
     version = 1

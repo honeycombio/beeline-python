@@ -13,6 +13,8 @@ from beeline.trace import (
     unmarshal_trace_context, Span, generate_span_id, generate_trace_id
 )
 
+from beeline.propagation import DictRequest
+
 
 class TestIDGeneration(unittest.TestCase):
     def test_span_id(self):
@@ -592,3 +594,59 @@ class TestSpan(unittest.TestCase):
         self.assertDictEqual({
             "some": "value",
         }, ev.fields())
+
+
+class TestPropagationHooks(unittest.TestCase):
+    def test_propagate_and_start_trace(self):
+        # FIXME: Test basics, including error handling and custom hooks
+
+        # implicitly tests finish_span
+        m_client = Mock()
+        # these values are used before sending
+        m_client.new_event.return_value.start_time = datetime.datetime.now()
+        m_client.new_event.return_value.sample_rate = 1
+        tracer = SynchronousTracer(m_client)
+
+        header_value = '1;trace_id=bloop,parent_id=scoop,context=e30K'
+        req = DictRequest({
+            # case shouldn't matter
+            'X-HoNEyComb-TrACE': header_value,
+        })
+
+        span = tracer.propagate_and_start_trace(
+            context={'big': 'important_stuff'}, request=req)
+        self.assertEqual(tracer._trace.stack[0], span)
+        self.assertEqual(span.trace_id, "bloop")
+        self.assertEqual(span.span_id, "scoop")
+
+        tracer.finish_trace(span)
+        # ensure the event is sent
+        span.event.send_presampled.assert_called_once_with()
+        # ensure that there is no current trace
+        self.assertIsNone(tracer._trace)
+
+    def test_error_handling(self):
+        class TestException(Exception):
+            pass
+
+        def error_parser(propagation_context):
+            raise TestException()
+
+        # implicitly tests finish_span
+        m_client = Mock()
+        # these values are used before sending
+        m_client.new_event.return_value.start_time = datetime.datetime.now()
+        m_client.new_event.return_value.sample_rate = 1
+        tracer = SynchronousTracer(m_client)
+        tracer.register_hooks(http_trace_parser=error_parser)
+
+        header_value = '1;trace_id=bloop,parent_id=scoop,context=e30K'
+        req = DictRequest({
+            # case shouldn't matter
+            'X-HoNEyComb-TrACE': header_value,
+        })
+
+        span = tracer.propagate_and_start_trace(
+            context={'big': 'important_stuff'}, request=req)
+        self.assertEqual(tracer._trace.stack[0], span)
+        self.assertEqual(span.event, "")
