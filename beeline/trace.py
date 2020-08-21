@@ -196,7 +196,7 @@ class Tracer(object):
 
         if propagation_context:
             return self.start_trace(context=context, trace_id=propagation_context.trace_id,
-                                    parent_span_id=propagation_context.span_id)
+                                    parent_span_id=propagation_context.parent_id)
             for k, v in propagation_context.trace_fields:
                 self.add_trace_field(k, v)
         else:

@@ -9,9 +9,10 @@ class DjangoRequest(Request):
     def __init__(self, request):
         self._request = request
         self._META = request.META
+        beeline.get_beeline().log(request.META)
 
     def header(self, key):
-        lookup_key = key.upper().replace('-', '_')
+        lookup_key = "HTTP_" + key.upper().replace('-', '_')
         return self._request.META.get(lookup_key)
 
     def method(self):
