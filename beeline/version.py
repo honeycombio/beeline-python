@@ -1,1 +1,1 @@
-VERSION = '2.12.2'  # Update using bump2version
+VERSION = '2.13.0-dev0'  # Update using bump2version
