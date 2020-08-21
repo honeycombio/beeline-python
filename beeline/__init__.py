@@ -615,7 +615,7 @@ def http_trace_propagation_hook():
     if bl:
         try:
             return bl.tracer_impl.http_trace_propagation_hook(bl.tracer_impl.get_propagation_context())
-        except:
+        except Exception:
             err = sys.exc_info()
             bl.log('error: http_trace_propagation_hook returned exception: %s', err)
     return None

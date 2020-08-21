@@ -189,7 +189,7 @@ class Tracer(object):
         propagation_context = None
         try:
             propagation_context = self.parse_http_trace(request)
-        except:
+        except Exception:
             err = sys.exc_info()[0]
             log('error: http_trace_parser_hook returned exception: %s',
                 sys.exc_info()[0])
