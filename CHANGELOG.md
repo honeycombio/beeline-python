@@ -1,5 +1,24 @@
 # beeline-python changelog
 
+## 2.13.0
+
+### Features
+
+We have added new functionality for `http_trace_parse_hook` and `http_trace_propagation_hook`. These features allow beeline users to process incoming tracing-related headers, allowing for eventual interoperability between beelines, OpenTelemetry and AWS tracing.
+
+- New `beeline` configuration parameters for `http_trace_parse_hook` and `http_trace_propagation_hook`
+- New `propagate_and_start_trace` function for use by middleware to invoke the `http_trace_parse_hook`
+- New `beeline.propagation` package to centralize propagation-related classes and functions.
+- Implemented `beeline.propagation.Request` classes for middleware to aid in support of header and propagation hooks.
+- Migrateed existing middleware to use new `beeline.propagation` classes and functions so that they support `http_trace_parse_hooks`.
+- Centralized duplicated code for WSGI variants (Flask, Bottle, Werkzeug) into a single place.
+- Added `http_trace_propagation_hook` support to requests and urllib.
+- Deprecate the existing, misnamed `trace_context` related functions, and migrate all internal usage to the new `beeline.propagation.honeycomb` functions. These will be removed when the next major version of the beeline is released.
+
+### Fixes
+
+- Fixed a bug where `urllib.request.urlopen` would fail if given a string URL as an argument.
+
 ## 2.12.2
 
 Improvements
