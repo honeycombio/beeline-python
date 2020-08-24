@@ -24,17 +24,16 @@ class TestUrllibPatch(unittest.TestCase):
             m_urlopen = Mock()
             m_urlopen.return_value = Mock(
                 headers={'content-type': 'application/json', 'content-length': 23}, status_code=500)
-            args = ['https://example.com']
+            args = ('https://example.com',)
             kwargs = {}
             ret = _urllibopen(m_urlopen, None, args, kwargs)
 
             # ensure our arg gets modified and header set before the real function is called
-            self.assertEqual(type(args[0]), urllib.request.Request)
             self.assertEqual(
-                args[0].full_url, 'https://example.com')  # pylint: disable=no-member
-            self.assertEqual(args[0].headers['X-Honeycomb-Trace'],   # pylint: disable=no-member
-                             trace_context)
-            m_urlopen.assert_called_once_with(*args, **kwargs)
+                type(m_urlopen.call_args.args[0]), urllib.request.Request)
+            self.assertEqual(
+                m_urlopen.call_args.args[0].headers['X-Honeycomb-Trace'], trace_context)
+            m_urlopen.asset_called_once()
             m_urlopen.reset_mock()
 
             # ensure we return a response

@@ -617,7 +617,7 @@ class TestPropagationHooks(unittest.TestCase):
             context={'big': 'important_stuff'}, request=req)
         self.assertEqual(tracer._trace.stack[0], span)
         self.assertEqual(span.trace_id, "bloop")
-        self.assertEqual(span.span_id, "scoop")
+        self.assertEqual(span.parent_id, "scoop")
 
         tracer.finish_trace(span)
         # ensure the event is sent
@@ -636,7 +636,7 @@ class TestPropagationHooks(unittest.TestCase):
         m_client = Mock()
         # these values are used before sending
         m_client.new_event.return_value.start_time = datetime.datetime.now()
-        m_client.new_event.return_value.sample_rate = 1
+        m_client.new_event.return_value.sample_rate = 99
         tracer = SynchronousTracer(m_client)
         tracer.register_hooks(http_trace_parser=error_parser)
 
@@ -648,5 +648,8 @@ class TestPropagationHooks(unittest.TestCase):
 
         span = tracer.propagate_and_start_trace(
             context={'big': 'important_stuff'}, request=req)
+
+        # Verify that our new span is at the top of the stack
         self.assertEqual(tracer._trace.stack[0], span)
-        self.assertEqual(span.event, "")
+        # Verify that we got the event in the mock.
+        self.assertEqual(span.event.sample_rate, 99)
