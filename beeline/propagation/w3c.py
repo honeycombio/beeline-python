@@ -43,8 +43,18 @@ def http_trace_propagation_hook(propagation_context):
     if not propagation_context:
         return None
 
-    return {"traceparent": marshal_traceparent(propagation_context),
-            "tracestate": marshal_tracestate(propagation_context)}
+    traceparent_header = marshal_traceparent(propagation_context)
+    if not traceparent_header:
+        return {}
+
+    headers = {}
+    headers["traceparent"] = traceparent_header
+
+    tracestate_header = marshal_tracestate(propagation_context)
+
+    if tracestate_header:
+        headers['tracestate'] = tracestate_header
+    return headers
 
 
 def marshal_traceparent(propagation_context):
@@ -55,7 +65,9 @@ def marshal_traceparent(propagation_context):
     if not propagation_context:
         return None
 
-    trace_flags = propagation_context.trace_fields['traceflags']
+    trace_flags = propagation_context.trace_fields.get('traceflags')
+    if not trace_flags:
+        trace_flags = "00"
 
     # FIXME: Validate that trace id and parent id are of the
     # correct length and value?
@@ -74,7 +86,7 @@ def marshal_tracestate(propagation_context):
     if not propagation_context:
         return None
 
-    tracestate_header = propagation_context.trace_fields['tracestate']
+    tracestate_header = propagation_context.trace_fields.get('tracestate')
     return tracestate_header
 
 
