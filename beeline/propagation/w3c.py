@@ -2,6 +2,7 @@ import beeline
 from beeline.propagation import PropagationContext
 import re
 
+# Cribbed from OpenTelemetry python implementation.
 _TRACEPARENT_HEADER_FORMAT = (
     "^[ \t]*([0-9a-f]{2})-([0-9a-f]{32})-([0-9a-f]{16})-([0-9a-f]{2})"
     + "(-.*)?[ \t]*$"
