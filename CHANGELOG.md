@@ -4,7 +4,7 @@
 
 ### Features
 
-We have added new functionality for `http_trace_parse_hook` and `http_trace_propagation_hook`. These features allow beeline users to process incoming tracing-related headers, allowing for eventual interoperability between beelines, OpenTelemetry and AWS tracing.
+We have added new functionality for `http_trace_parse_hook` and `http_trace_propagation_hook`. These features allow beeline users to process incoming tracing-related headers, allowing for eventual interoperability between Honeycomb, OpenTelemetry (W3C) and other tracing formats.
 
 - New `beeline` configuration parameters for `http_trace_parse_hook` and `http_trace_propagation_hook`
 - New `propagate_and_start_trace` function for use by middleware to invoke the `http_trace_parse_hook`
