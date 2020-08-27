@@ -8,6 +8,8 @@ _TRACEPARENT_HEADER_FORMAT = (
     + "(-.*)?[ \t]*$"
 )
 _TRACEPARENT_HEADER_FORMAT_RE = re.compile(_TRACEPARENT_HEADER_FORMAT)
+_EMPTY_TRACE_ID = "0" * 32
+_EMPTY_PARENT_ID = "0" * 16
 
 
 def http_trace_parser_hook(request):
@@ -70,8 +72,6 @@ def marshal_traceparent(propagation_context):
     if not trace_flags:
         trace_flags = "00"
 
-    # FIXME: Validate that trace id and parent id are of the
-    # correct length and value?
     traceparent_header = "00-{}-{}-{}".format(
         propagation_context.trace_id,
         propagation_context.parent_id,
@@ -101,16 +101,13 @@ def unmarshal_traceparent(header):
     parent_id = match.group(3)
     trace_flags = match.group(4)
 
-    if trace_id == "0" * 32 or parent_id == "0" * 16:
-        # Raise exception?
+    if trace_id == _EMPTY_TRACE_ID or parent_id == _EMPTY_PARENT_ID:
         return None
 
     if version == "00":
         if match.group(5):
-            # Raise exception?
             return None
     if version == "ff":
-        # Raise exception?
         return None
 
     return trace_id, parent_id, trace_flags
