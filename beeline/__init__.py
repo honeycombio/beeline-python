@@ -623,9 +623,11 @@ def http_trace_propagation_hook():
 
 def marshal_trace_context():
     '''
-    Returns a serialized form of the current trace context (including the trace
+    DEPRECATED: Returns a serialized form of the current trace context (including the trace
     id and the current span), encoded as a string. You can use this to propagate
     trace context to other services.
+
+    Use `beeline.propagation.honeycomb` functions to work with honeycomb trace context instead.
 
     Example:
 

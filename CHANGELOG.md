@@ -4,16 +4,27 @@
 
 ### Features
 
-We have added new functionality for `http_trace_parse_hook` and `http_trace_propagation_hook`. These features allow beeline users to process incoming tracing-related headers, allowing for eventual interoperability between Honeycomb, OpenTelemetry (W3C) and other tracing formats.
+We have added new functionality for `http_trace_parse_hook` and `http_trace_propagation_hook`. These hooks allow beeline users
+to parse incoming headers, as well as add outgoing headers, allowing for interoperability between Honeycomb,
+OpenTelemetry (W3C) and other tracing formats.
 
 - New `beeline` configuration parameters for `http_trace_parse_hook` and `http_trace_propagation_hook`
 - New `propagate_and_start_trace` function for use by middleware to invoke the `http_trace_parse_hook`
 - New `beeline.propagation` package to centralize propagation-related classes and functions.
+- `beeline.propagation.honeycomb` package contains hooks to support parsing and propagation using honeycomb headers.
+- `beeline.propagation.w3c` package contains hooks to support parsing and propagation using w3c headers.
+
+### Deprecation Notice
+
+- Deprecated the existing `beeline.marshal_trace_context`, and migrated all usage to new
+  `beeline.propagation.honeycomb` functions. `beeline.marshal_trace_context` will be removed when the next major version of the beeline is released.
+
+### Implementation details
+
 - Implemented `beeline.propagation.Request` classes for middleware to aid in support of header and propagation hooks.
-- Migrateed existing middleware to use new `beeline.propagation` classes and functions so that they support `http_trace_parse_hooks`.
-- Centralized duplicated code for WSGI variants (Flask, Bottle, Werkzeug) into a single place.
+- Migrateed existing middleware to use new `beeline.propagation` classes and functions to support `http_trace_parse_hooks`.
+- Centralized duplicated code for WSGI variants (Flask, Bottle, Werkzeug) into a single location.
 - Added `http_trace_propagation_hook` support to requests and urllib.
-- Deprecate the existing, misnamed `trace_context` related functions, and migrate all internal usage to the new `beeline.propagation.honeycomb` functions. These will be removed when the next major version of the beeline is released.
 
 ### Fixes
 
