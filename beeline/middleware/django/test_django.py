@@ -14,11 +14,11 @@ class SimpleWSGITest(unittest.TestCase):
         mock_req = Mock()
         mock_resp = Mock()
         mock_trace = Mock()
-        self.m_gbl.start_trace.return_value = mock_trace
+        self.m_gbl.propagate_and_start_trace.return_value = mock_trace
 
         mw = HoneyMiddlewareBase(mock_resp)
         resp = mw(mock_req)
-        self.m_gbl.start_trace.assert_called_once()
+        self.m_gbl.propagate_and_start_trace.assert_called_once()
 
         mock_resp.assert_called_once_with(mock_req)
 

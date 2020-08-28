@@ -1,4 +1,6 @@
 import beeline
+from beeline.propagation import Request
+from beeline.middleware.wsgi import WSGIRequest
 
 
 class HoneyWSGIMiddleware(object):
@@ -7,34 +9,14 @@ class HoneyWSGIMiddleware(object):
         self.app = app
 
     def __call__(self, environ, start_response):
+        wr = WSGIRequest("werkzeug", environ)
 
-        trace = beeline.start_trace(
-            context=self.get_context_from_environ(environ))
+        root_span = beeline.propagate_and_start_trace(wr.request_context(), wr)
 
         def _start_response(status, headers, *args):
             beeline.add_context_field("response.status_code", status)
-            beeline.finish_trace(trace)
+            beeline.finish_trace(root_span)
 
             return start_response(status, headers, *args)
 
         return self.app(environ, _start_response)
-
-    def get_context_from_environ(self, environ):
-        request_method = environ.get('REQUEST_METHOD')
-        if request_method:
-            trace_name = "werkzeug_http_%s" % request_method.lower()
-        else:
-            trace_name = "werkzeug_http"
-
-        return {
-            "name": trace_name,
-            "type": "http_server",
-            "request.host": environ.get('HTTP_HOST'),
-            "request.method": request_method,
-            "request.path": environ.get('PATH_INFO'),
-            "request.remote_addr": environ.get('REMOTE_ADDR'),
-            "request.content_length": environ.get('CONTENT_LENGTH', 0),
-            "request.user_agent": environ.get('HTTP_USER_AGENT'),
-            "request.scheme": environ.get('wsgi.url_scheme'),
-            "request.query": environ.get('QUERY_STRING')
-        }

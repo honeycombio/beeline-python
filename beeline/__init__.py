@@ -9,6 +9,8 @@ from libhoney import Client
 from beeline.trace import SynchronousTracer
 from beeline.version import VERSION
 from beeline import internal
+import beeline.propagation.honeycomb
+import sys
 # pyflakes
 assert internal
 
@@ -57,12 +59,16 @@ class Beeline(object):
                  max_concurrent_batches=10, max_batch_size=100, send_frequency=0.25,
                  block_on_send=False, block_on_response=False,
                  transmission_impl=None, sampler_hook=None, presend_hook=None,
+                 http_trace_parser_hook=beeline.propagation.honeycomb.http_trace_parser_hook,
+                 http_trace_propagation_hook=beeline.propagation.honeycomb.http_trace_propagation_hook,
                  debug=False):
 
         self.client = None
         self.tracer_impl = None
         self.presend_hook = None
         self.sampler_hook = None
+        self.http_trace_parser_hook = None
+        self.http_trace_propagation_hook = None
 
         self.debug = debug
         if debug:
@@ -106,9 +112,14 @@ class Beeline(object):
         else:
             self.tracer_impl = SynchronousTracer(self.client)
         self.tracer_impl.register_hooks(
-            presend=presend_hook, sampler=sampler_hook)
+            presend=presend_hook,
+            sampler=sampler_hook,
+            http_trace_parser=http_trace_parser_hook,
+            http_trace_propagation=http_trace_propagation_hook)
         self.sampler_hook = sampler_hook
         self.presend_hook = presend_hook
+        self.http_trace_parser_hook = http_trace_parser_hook
+        self.http_trace_propagation_hook = http_trace_propagation_hook
 
     def send_now(self, data):
         ''' DEPRECATED - to be removed in a future release
@@ -490,9 +501,11 @@ def tracer(name, trace_id=None, parent_id=None):
 def start_trace(context=None, trace_id=None, parent_span_id=None):
     '''
     Start a trace, returning the root span. To finish the trace, pass the span
-    to `finish_trace`. If you are using the beeline middleware plugins, such as for
-    django, flask, or AWS lambda, you will want to use `start_span` instead, as
-    `start_trace` is called at the start of the request.
+    to `finish_trace`. `start_trace` does not propagate contexts - if you wish
+    to propagate contexts from sources such as HTTP headers, use `propagate_and_start_trace`
+    instead. If you are using the beeline middleware plugins, such as fordjango,
+    flask, or AWS lambda, you will want to use `start_span` instead, as `start_trace`
+    is called at the start of the request.
 
     Args:
     - `context`: optional dictionary of event fields to populate the root span with
@@ -565,6 +578,49 @@ def finish_span(span):
         bl.tracer_impl.finish_span(span=span)
 
 
+def propagate_and_start_trace(context, request):
+    '''
+    Given context and a beeline.propagation.Request subclass, calls the header_parse hooks
+    to propagate information from the incoming http (or similar) request context,
+    returning a new trace using that information if it exists.
+    '''
+    bl = get_beeline()
+
+    if bl:
+        return bl.tracer_impl.propagate_and_start_trace(context, request)
+    return None
+
+
+def http_trace_parser_hook(headers):
+    '''
+    Given headers, calls the header_parse hooks to propagate information from the
+    incoming http (or similar) request context, returning a new trace using that
+    information if it exists.
+    '''
+    bl = get_beeline()
+
+    if bl:
+        return bl.tracer_impl.http_trace_parser_hook(headers)
+    return None
+
+
+def http_trace_propagation_hook():
+    '''
+    Given headers, calls the header_parse hooks to propagate information from the
+    incoming http (or similar) request context, returning a new trace using that
+    information if it exists.
+    '''
+    bl = get_beeline()
+
+    if bl:
+        try:
+            return bl.tracer_impl.http_trace_propagation_hook(bl.tracer_impl.get_propagation_context())
+        except Exception:
+            err = sys.exc_info()
+            bl.log('error: http_trace_propagation_hook returned exception: %s', err)
+    return None
+
+
 def marshal_trace_context():
     '''
     Returns a serialized form of the current trace context (including the trace
@@ -583,6 +639,7 @@ def marshal_trace_context():
 
     if bl:
         return bl.tracer_impl.marshal_trace_context()
+    return None
 
 
 def new_event(data=None, trace_name=''):

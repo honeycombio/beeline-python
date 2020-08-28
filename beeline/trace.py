@@ -7,6 +7,7 @@ import json
 import math
 import random
 import struct
+import sys
 import threading
 import inspect
 from collections import defaultdict
@@ -14,6 +15,9 @@ from collections import defaultdict
 from contextlib import contextmanager
 
 from beeline.internal import log, stringify_exception
+
+import beeline.propagation
+import beeline.propagation.honeycomb
 
 MAX_INT32 = math.pow(2, 32) - 1
 SPAN_ID_BYTES = 8
@@ -43,6 +47,8 @@ class Tracer(object):
 
         self.presend_hook = None
         self.sampler_hook = None
+        self.http_trace_parser_hook = beeline.propagation.honeycomb.http_trace_parser_hook
+        self.http_trace_propagation_hook = beeline.propagation.honeycomb.http_trace_propagation_hook
 
     @contextmanager
     def __call__(self, name, trace_id=None, parent_id=None):
@@ -173,6 +179,42 @@ class Tracer(object):
         self.finish_span(span)
         self._trace = None
 
+    def parse_http_trace(self, request):
+        if not self.http_trace_parser_hook:
+            return None
+        return self.http_trace_parser_hook(request)
+
+    def propagate_and_start_trace(self, context, request):
+        err = None
+        propagation_context = None
+        try:
+            propagation_context = self.parse_http_trace(request)
+        except Exception:
+            err = sys.exc_info()[0]
+            log('error: http_trace_parser_hook returned exception: %s',
+                sys.exc_info()[0])
+
+        if propagation_context:
+            return self.start_trace(context=context, trace_id=propagation_context.trace_id,
+                                    parent_span_id=propagation_context.parent_id)
+            for k, v in propagation_context.trace_fields:
+                self.add_trace_field(k, v)
+        else:
+            # Initialize a new trace from scratch
+            if err is not None:
+                context['parser_hook_error'] = repr(err)
+            return self.start_trace(context, trace_id=None, parent_span_id=None)
+        pass
+
+    def get_propagation_context(self):
+        if not self._trace:
+            return None
+
+        return beeline.propagation.PropagationContext(
+            self.get_active_trace_id(),
+            self.get_active_span().id,
+            self._trace.fields)
+
     def get_active_trace_id(self):
         if self._trace:
             return self._trace.id
@@ -247,9 +289,11 @@ class Tracer(object):
             self._trace.fields
         )
 
-    def register_hooks(self, presend=None, sampler=None):
+    def register_hooks(self, presend=None, sampler=None, http_trace_parser=None, http_trace_propagation=None):
         self.presend_hook = presend
         self.sampler_hook = sampler
+        self.http_trace_parser_hook = http_trace_parser
+        self.http_trace_propagation_hook = http_trace_propagation
 
     def _run_hooks_and_send(self, span):
         ''' internal - run any defined hooks on the event and send
@@ -334,6 +378,7 @@ def _should_sample(trace_id, sample_rate):
 
 
 def marshal_trace_context(trace_id, parent_id, context):
+    """Deprecated: Use beeline.propagation.honeycomb.marshal_trace_context instead"""
     version = 1
     trace_fields = base64.b64encode(json.dumps(context).encode()).decode()
     trace_context = "{};trace_id={},parent_id={},context={}".format(
@@ -343,33 +388,11 @@ def marshal_trace_context(trace_id, parent_id, context):
     return trace_context
 
 
-def unmarshal_trace_context(trace_context):
-    # the first value is the trace payload version
-    # at this time there is only one version, but we should warn
-    # if another version comes through
-    version, data = trace_context.split(';', 1)
-    if version != "1":
-        log('warning: trace_context version %s is unsupported', version)
-        return None, None, None
-
-    kv_pairs = data.split(',')
-
-    trace_id, parent_id, context = None, None, None
-    # Some beelines send "dataset" but we do not handle that yet
-    for pair in kv_pairs:
-        k, v = pair.split('=', 1)
-        if k == 'trace_id':
-            trace_id = v
-        elif k == 'parent_id':
-            parent_id = v
-        elif k == 'context':
-            context = json.loads(base64.b64decode(v.encode()).decode())
-
-    # context should be a dict
-    if context is None:
-        context = {}
-
-    return trace_id, parent_id, context
+def unmarshal_trace_context(trace_header):
+    """
+    Deprecated: Use beeline.propagation.honeycomb.unmarshal_trace_context instead
+    """
+    return beeline.propagation.honeycomb.unmarshal_propagation_context(trace_header)
 
 
 def traced_impl(tracer_fn, name, trace_id, parent_id):

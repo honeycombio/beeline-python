@@ -1,36 +1,38 @@
 import unittest
-from mock import Mock, patch
+from mock import Mock, patch, ANY
 
 from beeline.middleware import awslambda
 
+header_value = '1;trace_id=bloop,parent_id=scoop,context=e30K'
 
-class TestGetTraceIds(unittest.TestCase):
-    def test_get_trace_ids_from_header(self):
-        ''' test that trace_id and parent_id are extracted regardless of case '''
+
+class TestLambdaRequest(unittest.TestCase):
+    def test_get_header_from_headers(self):
+        '''
+        Test that if headers is set, we have case-insensitive match.
+        '''
         event = {
             'headers': {
                 # case shouldn't matter
-                'X-HoNEyComb-TrACE': '1;trace_id=bloop,parent_id=scoop,context=e30K',
+                'X-HoNEyComb-TrACE': header_value,
             },
         }
 
-        trace_id, parent_id, context = awslambda._get_trace_data(event)
-        self.assertEqual(trace_id, 'bloop')
-        self.assertEqual(parent_id, 'scoop')
-        self.assertEqual(context, {})
+        lr = awslambda.LambdaRequest(event)
+        self.assertIsNotNone(lr)
+        self.assertEqual(lr.header('X-Honeycomb-Trace'), header_value)
 
-    def test_get_trace_ids_no_header(self):
+    def test_handle_no_headers(self):
         ''' ensure that we handle events with no header key '''
         event = {
             'foo': 1,
         }
 
-        trace_id, parent_id, context = awslambda._get_trace_data(event)
-        self.assertIsNone(trace_id)
-        self.assertIsNone(parent_id)
-        self.assertIsNone(context)
+        lr = awslambda.LambdaRequest(event)
+        self.assertIsNotNone(lr)
+        self.assertIsNone(lr.header('X-Honeycomb-Trace'))
 
-    def test_get_trace_ids_sns_none(self):
+    def test_handle_sns_none(self):
         ''' ensure that we handle SNS events with no honeycomb key '''
         event = {
             "Records":
@@ -45,12 +47,11 @@ class TestGetTraceIds(unittest.TestCase):
             ],
         }
 
-        trace_id, parent_id, context = awslambda._get_trace_data(event)
-        self.assertIsNone(trace_id)
-        self.assertIsNone(parent_id)
-        self.assertIsNone(context)
+        lr = awslambda.LambdaRequest(event)
+        self.assertIsNotNone(lr)
+        self.assertIsNone(lr.header('X-Honeycomb-Trace'))
 
-    def test_get_trace_ids_sns_attribute(self):
+    def test_handle_sns_attribute(self):
         ''' ensure that we extract SNS data from message attributes'''
         event = {
             "Records":
@@ -62,7 +63,7 @@ class TestGetTraceIds(unittest.TestCase):
                         "MessageAttributes": {
                             'X-HoNEyComb-TrACE': {
                                 "Type": "String",
-                                "Value": "1;trace_id=bloop,parent_id=scoop,context=e30K",
+                                "Value": header_value,
                             }
                         }
                     }
@@ -70,12 +71,11 @@ class TestGetTraceIds(unittest.TestCase):
             ],
         }
 
-        trace_id, parent_id, context = awslambda._get_trace_data(event)
-        self.assertEqual(trace_id, 'bloop')
-        self.assertEqual(parent_id, 'scoop')
-        self.assertEqual(context, {})
+        lr = awslambda.LambdaRequest(event)
+        self.assertIsNotNone(lr)
+        self.assertEqual(lr.header('X-Honeycomb-Trace'), header_value)
 
-    def test_get_trace_ids_sqs_none(self):
+    def test_handle_sqs_none(self):
         ''' ensure that we handle SQS events with no honeycomb key '''
         event = {
             "Records":
@@ -88,12 +88,11 @@ class TestGetTraceIds(unittest.TestCase):
             ],
         }
 
-        trace_id, parent_id, context = awslambda._get_trace_data(event)
-        self.assertIsNone(trace_id)
-        self.assertIsNone(parent_id)
-        self.assertIsNone(context)
+        lr = awslambda.LambdaRequest(event)
+        self.assertIsNotNone(lr)
+        self.assertIsNone(lr.header('X-Honeycomb-Trace'))
 
-    def test_get_trace_ids_sqs_attributes(self):
+    def test_handle_sqs_attributes(self):
         ''' ensure that we extract SQS data from message attributes'''
         event = {
             "Records":
@@ -103,7 +102,7 @@ class TestGetTraceIds(unittest.TestCase):
                     "messageAttributes": {
                         'X-HoNEyComb-TrACE': {
                             "Type": "String",
-                            "stringValue": "1;trace_id=bloop,parent_id=scoop,context=e30K",
+                            "stringValue": header_value,
                         },
                         'foo': {
                             "Type": "String",
@@ -115,10 +114,9 @@ class TestGetTraceIds(unittest.TestCase):
             ],
         }
 
-        trace_id, parent_id, context = awslambda._get_trace_data(event)
-        self.assertEqual(trace_id, 'bloop')
-        self.assertEqual(parent_id, 'scoop')
-        self.assertEqual(context, {})
+        lr = awslambda.LambdaRequest(event)
+        self.assertIsNotNone(lr)
+        self.assertEqual(lr.header('X-Honeycomb-Trace'), header_value)
 
     def test_message_batch_is_ignored(self):
         ''' ensure that we don't process batches'''
@@ -156,10 +154,9 @@ class TestGetTraceIds(unittest.TestCase):
             ],
         }
 
-        trace_id, parent_id, context = awslambda._get_trace_data(event)
-        self.assertIsNone(trace_id)
-        self.assertIsNone(parent_id)
-        self.assertIsNone(context)
+        lr = awslambda.LambdaRequest(event)
+        self.assertIsNotNone(lr)
+        self.assertIsNone(lr.header('X-Honeycomb-Trace'))
 
 
 class TestLambdaWrapper(unittest.TestCase):
@@ -178,7 +175,7 @@ class TestLambdaWrapper(unittest.TestCase):
 
     def test_basic_instrumentation(self):
         ''' ensure basic event fields get instrumented '''
-        with patch('beeline.middleware.awslambda.beeline.add_context') as m_add,\
+        with patch('beeline.propagate_and_start_trace') as m_propagate,\
                 patch('beeline.middleware.awslambda.beeline._GBL'),\
                 patch('beeline.middleware.awslambda.COLD_START') as m_cold_start:
             m_event = Mock()
@@ -190,10 +187,10 @@ class TestLambdaWrapper(unittest.TestCase):
                 return 1
 
             self.assertEqual(handler(m_event, m_context), 1)
-            m_add.assert_called_once_with({
-                "app.function_name": m_context.function_name,
-                "app.function_version": m_context.function_version,
-                "app.request_id": m_context.aws_request_id,
-                "app.event": m_event,
-                "meta.cold_start": m_cold_start,
-            })
+            m_propagate.assert_called_once_with({
+                'app.function_name': 'fn',
+                'app.function_version': '1.1.1',
+                'app.request_id': '12345',
+                'app.event': ANY,
+                'meta.cold_start': ANY,
+                'name': 'handler'}, ANY)
