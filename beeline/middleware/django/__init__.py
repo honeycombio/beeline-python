@@ -10,7 +10,7 @@ class DjangoRequest(Request):
         self._request = request
         self._META = request.META
 
-		# only write log if beeline has been initalised
+        # only write log if beeline has been initalised
         if beeline.get_beeline():
             beeline.get_beeline().log(request.META)
 
