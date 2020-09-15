@@ -9,7 +9,10 @@ class DjangoRequest(Request):
     def __init__(self, request):
         self._request = request
         self._META = request.META
-        beeline.get_beeline().log(request.META)
+
+		# only write log if beeline has been initalised
+        if beeline.get_beeline():
+            beeline.get_beeline().log(request.META)
 
     def header(self, key):
         lookup_key = "HTTP_" + key.upper().replace('-', '_')
@@ -37,6 +40,10 @@ class DjangoRequest(Request):
 class HoneyDBWrapper(object):
 
     def __call__(self, execute, sql, params, many, context):
+        # if beeline has not been initialised, just execute query
+        if not beeline.get_beeline():
+            return execute(sql, params, many, context)
+
         vendor = context['connection'].vendor
         trace_name = "django_%s_query" % vendor
 
@@ -99,6 +106,10 @@ class HoneyMiddlewareBase(object):
         }
 
     def create_http_event(self, request):
+        # if beeline has not been initialised, just execute request
+        if not beeline.get_beeline():
+            return self.get_response(request)
+
         # Code to be executed for each request before
         # the view (and later middleware) are called.
         dr = DjangoRequest(request)
@@ -117,14 +128,16 @@ class HoneyMiddlewareBase(object):
         return response
 
     def process_exception(self, request, exception):
-        beeline.add_context_field(
-            "request.error_detail", beeline.internal.stringify_exception(exception))
+        if beeline.get_beeline():
+            beeline.add_context_field(
+                "request.error_detail", beeline.internal.stringify_exception(exception))
 
     def process_view(self, request, view_func, view_args, view_kwargs):
-        try:
-            beeline.add_context_field("django.view_func", view_func.__name__)
-        except AttributeError:
-            pass
+        if beeline.get_beeline():
+            try:
+                beeline.add_context_field("django.view_func", view_func.__name__)
+            except AttributeError:
+                pass
 
 
 class HoneyMiddlewareHttp(HoneyMiddlewareBase):
