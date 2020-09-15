@@ -1,6 +1,6 @@
 root = true
 
-[*{.py}]
+[*.{py}]
 indent_style = space
 indent_size = 4
 charset = utf-8
