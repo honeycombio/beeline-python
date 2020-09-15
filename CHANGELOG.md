@@ -1,5 +1,13 @@
 # beeline-python changelog
 
+## 2.13.1
+
+This is a maintenace release to fix a bug in the django middleware that can happen in testing environments when a beeling has
+not been initialised.
+
+- Don't attempt to use a non-initialised beeline instance in django middleware #126.
+- Adds a .editorconfig to help apply consistent styling across IDEs #127.
+
 ## 2.13.0
 
 ### Features
