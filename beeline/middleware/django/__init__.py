@@ -139,6 +139,9 @@ class HoneyMiddlewareBase(object):
             except AttributeError:
                 pass
 
+            if hasattr(request, "resolver_match"):
+                beeline.add_context_field("request.route", request.resolver_match.route)
+
 
 class HoneyMiddlewareHttp(HoneyMiddlewareBase):
     pass
