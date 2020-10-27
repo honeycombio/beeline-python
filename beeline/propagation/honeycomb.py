@@ -60,6 +60,7 @@ def unmarshal_propagation_context(trace_header):
 
     return trace_id, parent_id, context
 
+
 def unmarshal_propagation_context_with_dataset(trace_header):
     '''
     Given the body of the `X-Honeycomb-Trace` header, returns the trace_id,

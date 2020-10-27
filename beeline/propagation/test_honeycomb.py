@@ -34,6 +34,7 @@ class TestMarshalUnmarshal(unittest.TestCase):
         self.assertEquals(parent_id, new_parent_id)
         self.assertEquals(trace_fields, new_trace_fields)
 
+
 class TestHoneycombHTTPTraceParserHook(unittest.TestCase):
     def test_has_header(self):
         '''Test that the hook properly parses honeycomb trace headers'''
