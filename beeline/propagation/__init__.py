@@ -12,10 +12,11 @@ class PropagationContext(object):
     outbound HTTP requests.
     '''
 
-    def __init__(self, trace_id, parent_id, trace_fields={}):
+    def __init__(self, trace_id, parent_id, trace_fields={}, dataset=None):
         self.trace_id = trace_id
         self.parent_id = parent_id
         self.trace_fields = trace_fields
+        self.dataset = dataset
 
 
 @six.add_metaclass(ABCMeta)
