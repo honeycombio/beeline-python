@@ -2,7 +2,7 @@ import beeline
 from beeline.propagation import PropagationContext
 import base64
 import json
-import urllib.parse
+from six.moves.urllib.parse import quote, unquote
 
 
 def http_trace_parser_hook(request):
@@ -46,7 +46,7 @@ def marshal_propagation_context(propagation_context):
     version = 1
     dataset = None
     if propagation_context.dataset:
-        dataset = urllib.parse.quote(propagation_context.dataset)
+        dataset = quote(propagation_context.dataset)
     trace_fields = base64.b64encode(json.dumps(
         propagation_context.trace_fields).encode()).decode()
     trace_header = "{};dataset={},trace_id={},parent_id={},context={}".format(
@@ -92,7 +92,7 @@ def unmarshal_propagation_context_with_dataset(trace_header):
         elif k == 'context':
             context = json.loads(base64.b64decode(v.encode()).decode())
         elif k == 'dataset':
-            dataset = urllib.parse.unquote(v)
+            dataset = unquote(v)
 
     # context should be a dict
     if context is None:
