@@ -27,8 +27,9 @@ TRACE_ID_BYTES = 16
 class Trace(object):
     '''Object encapsulating all state of an ongoing trace.'''
 
-    def __init__(self, trace_id):
+    def __init__(self, trace_id, dataset=None):
         self.id = trace_id
+        self.dataset = dataset
         self.stack = []
         self.fields = {}
         self.rollup_fields = defaultdict(float)
@@ -87,14 +88,14 @@ class Tracer(object):
             else:
                 log('tracer context manager span for %s was unexpectedly None', name)
 
-    def start_trace(self, context=None, trace_id=None, parent_span_id=None):
+    def start_trace(self, context=None, trace_id=None, parent_span_id=None, dataset=None):
         if trace_id:
             if self._trace:
                 log('warning: start_trace got explicit trace_id but we are already in a trace. '
                     'starting new trace with id = %s', trace_id)
-            self._trace = Trace(trace_id)
+            self._trace = Trace(trace_id, dataset)
         else:
-            self._trace = Trace(generate_trace_id())
+            self._trace = Trace(generate_trace_id(), dataset)
 
         # start the root span
         return self.start_span(context=context, parent_id=parent_span_id)
@@ -134,6 +135,9 @@ class Tracer(object):
         # it's probably better to send event data than not
         if span.event:
             if self._trace:
+                if self._trace.dataset:
+                    span.event.dataset = self._trace.dataset
+
                 # add the trace's rollup fields to the root span
                 if span.is_root():
                     for k, v in self._trace.rollup_fields.items():
@@ -196,7 +200,8 @@ class Tracer(object):
 
         if propagation_context:
             return self.start_trace(context=context, trace_id=propagation_context.trace_id,
-                                    parent_span_id=propagation_context.parent_id)
+                                    parent_span_id=propagation_context.parent_id,
+                                    dataset=propagation_context.dataset)
             for k, v in propagation_context.trace_fields:
                 self.add_trace_field(k, v)
         else:
