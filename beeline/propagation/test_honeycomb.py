@@ -21,7 +21,7 @@ class TestMarshalUnmarshal(unittest.TestCase):
 
     def test_roundtrip_with_dataset(self):
         '''Verify that we can successfully roundtrip (marshal and unmarshal)'''
-        dataset = "blorp"
+        dataset = "blorp blorp"
         trace_id = "bloop"
         parent_id = "scoop"
         trace_fields = {"key": "value"}
@@ -55,7 +55,7 @@ class TestHoneycombHTTPTraceParserHook(unittest.TestCase):
 
 class TestHoneycombHTTPTracePropagationHook(unittest.TestCase):
     def test_generates_correct_header(self):
-        dataset = "blorp"
+        dataset = "blorp blorp"
         trace_id = "bloop"
         parent_id = "scoop"
         trace_fields = {"key": "value"}
@@ -64,4 +64,4 @@ class TestHoneycombHTTPTracePropagationHook(unittest.TestCase):
         headers = hc.http_trace_propagation_hook(pc)
         self.assertIn('X-Honeycomb-Trace', headers)
         self.assertEquals(headers['X-Honeycomb-Trace'],
-                          "1;dataset=blorp,trace_id=bloop,parent_id=scoop,context=eyJrZXkiOiAidmFsdWUifQ==")
+                          "1;dataset=blorp%20blorp,trace_id=bloop,parent_id=scoop,context=eyJrZXkiOiAidmFsdWUifQ==")

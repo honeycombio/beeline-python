@@ -2,6 +2,7 @@ import beeline
 from beeline.propagation import PropagationContext
 import base64
 import json
+import urllib.parse
 
 
 def http_trace_parser_hook(request):
@@ -43,10 +44,13 @@ def marshal_propagation_context(propagation_context):
     # FIXME: Since ALL trace fields are in propagation_context, we may want to strip
     # some automatically added trace fields that we DON'T want to propagate - e.g. request.*
     version = 1
+    dataset = None
+    if propagation_context.dataset:
+        dataset = urllib.parse.quote(propagation_context.dataset)
     trace_fields = base64.b64encode(json.dumps(
         propagation_context.trace_fields).encode()).decode()
     trace_header = "{};dataset={},trace_id={},parent_id={},context={}".format(
-        version, propagation_context.dataset, propagation_context.trace_id, propagation_context.parent_id, trace_fields
+        version, dataset, propagation_context.trace_id, propagation_context.parent_id, trace_fields
     )
 
     return trace_header
@@ -88,7 +92,7 @@ def unmarshal_propagation_context_with_dataset(trace_header):
         elif k == 'context':
             context = json.loads(base64.b64decode(v.encode()).decode())
         elif k == 'dataset':
-            dataset = v
+            dataset = urllib.parse.unquote(v)
 
     # context should be a dict
     if context is None:
