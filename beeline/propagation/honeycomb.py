@@ -44,14 +44,17 @@ def marshal_propagation_context(propagation_context):
     # FIXME: Since ALL trace fields are in propagation_context, we may want to strip
     # some automatically added trace fields that we DON'T want to propagate - e.g. request.*
     version = 1
-    dataset = None
-    if propagation_context.dataset:
-        dataset = quote(propagation_context.dataset)
     trace_fields = base64.b64encode(json.dumps(
         propagation_context.trace_fields).encode()).decode()
-    trace_header = "{};dataset={},trace_id={},parent_id={},context={}".format(
-        version, dataset, propagation_context.trace_id, propagation_context.parent_id, trace_fields
-    )
+
+    components = ["trace_id={}".format(propagation_context.trace_id),
+        "parent_id={}".format(propagation_context.parent_id),
+        "context={}".format(trace_fields)]
+
+    if propagation_context.dataset:
+        components.insert(0, "dataset={}".format(quote(propagation_context.dataset)))
+
+    trace_header = "{};{}".format(version, ",".join(components))
 
     return trace_header
 
