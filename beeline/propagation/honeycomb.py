@@ -48,8 +48,8 @@ def marshal_propagation_context(propagation_context):
         propagation_context.trace_fields).encode()).decode()
 
     components = ["trace_id={}".format(propagation_context.trace_id),
-        "parent_id={}".format(propagation_context.parent_id),
-        "context={}".format(trace_fields)]
+                  "parent_id={}".format(propagation_context.parent_id),
+                  "context={}".format(trace_fields)]
 
     if propagation_context.dataset:
         components.insert(0, "dataset={}".format(quote(propagation_context.dataset)))
