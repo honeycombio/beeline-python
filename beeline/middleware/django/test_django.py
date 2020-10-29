@@ -39,8 +39,8 @@ class FullViewTestCase(unittest.TestCase):
         # top-level import, the test discovery procedure checks if `settings`
         # is a subclass of `TestCase`, causing the settings to be initialized,
         # which isn't possible.
-        from django.conf import settings
-        from django.utils.functional import empty
+        from django.conf import settings  # pylint: disable=import-outside-toplevel
+        from django.utils.functional import empty  # pylint: disable=import-outside-toplevel
         assert not settings.configured
         # On shutdown:
         self.addCleanup(lambda: setattr(settings, "_wrapped", empty))
