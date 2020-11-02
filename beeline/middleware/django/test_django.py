@@ -3,7 +3,7 @@ from mock import Mock, call, patch
 
 from django.http import HttpResponse
 from django.test.client import Client
-from django.urls import path
+from django.conf.urls import url
 
 from beeline.middleware.django import HoneyMiddlewareBase
 
@@ -48,7 +48,7 @@ class FullViewTestCase(unittest.TestCase):
             MIDDLEWARE=['beeline.middleware.django.HoneyMiddlewareHttp'],
             ALLOWED_HOSTS=['testserver'],
             ROOT_URLCONF=(
-                path("hello/<str:greetee>/", self._view, name="greet"),
+                url("^hello/(?P<greetee>[^/]+)/$", self._view, name="greet"),
             ),
         )
 
@@ -64,6 +64,6 @@ class FullViewTestCase(unittest.TestCase):
 
         self.m_gbl.add_context_field.assert_has_calls([
             call("django.view_func", "_view"),
-            call("request.route", "hello/<str:greetee>/"),
-            ])
+            call("request.route", "^hello/(?P<greetee>[^/]+)/$"),
+        ])
         self.m_gbl.finish_trace.assert_called_once_with(mock_trace)
