@@ -1,6 +1,7 @@
 import unittest
 from mock import Mock, call, patch
 
+import django
 from django.http import HttpResponse
 from django.test.client import Client
 from django.conf.urls import url
@@ -30,6 +31,7 @@ class SimpleWSGITest(unittest.TestCase):
         self.assertEqual(resp, mock_resp.return_value)
 
 
+@unittest.skipIf(django.VERSION < (2, 2), "Routes are only supported on Django 2.2 and higher")
 class FullViewTestCase(unittest.TestCase):
     def setUp(self):
         self.addCleanup(patch.stopall)
