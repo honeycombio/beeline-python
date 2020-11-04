@@ -1,220 +1,31 @@
 version: 2.1
 
-executors:
-  python2-7:
-    docker:
-      - image: circleci/python:2.7
-  python3-5:
-    docker:
-      - image: circleci/python:3.5
-  python3-6:
-    docker:
-      - image: circleci/python:3.6
-  python3-7:
-    docker:
-      - image: circleci/python:3.7
-  python3-8:
-    docker:
-      - image: circleci/python:3.8
-  github:
-    docker:
-      - image: cibuilds/github:0.13.0
-
-commands:
-  setup:
-    steps:
-      - checkout
-      - run: poetry install --no-root
-  run_lint_python2:
-    steps:
-      - run: poetry run pylint --ignore=aiotrace.py,test_async.py,urllib.py,test_urllib.py --rcfile=pylint.rc beeline
-      - run: poetry run pycodestyle beeline --max-line-length=140
-  run_lint:
-    steps:
-      - run: poetry run pylint --rcfile=pylint.rc beeline
-      - run: poetry run pycodestyle beeline --max-line-length=140
-  run_tests:
-    steps:
-      - run: poetry run coverage run -m beeline.test_suite
-  run_coverage:
-    steps:
-      - run: poetry run coverage report --include="beeline/*"
-      - run: poetry run coverage html --include="beeline/*"
-
-  runtests-py2:
-    steps:
-      - setup
-      - run_lint_python2
-      - run_tests
-      - run_coverage
-      - store_artifacts:
-          path: htmlcov
-  runtests-py3:
-    steps:
-      - setup
-      - run_lint
-      - run_tests
-      - run_coverage
-      - store_artifacts:
-          path: htmlcov
-  build:
-    steps:
-      - setup
-      - run: mkdir -p ~/artifacts
-      - run: poetry build
-      - run: cp dist/* ~/artifacts
-      - persist_to_workspace:
-          root: ~/
-          paths:
-            - artifacts
-      - store_artifacts:
-          path: ~/artifacts
-
-  publish_github:
-    steps:
-      - attach_workspace:
-          at: ~/
-      - run:
-          name: "Artifacts being published"
-          command: |
-            echo "about to publish to tag ${CIRCLE_TAG}"
-            ls -l ~/artifacts/*
-      - run: ghr -draft -n ${CIRCLE_TAG} -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} ${CIRCLE_TAG} ~/artifacts
-
-  publish_pypi:
-    steps:
-      - setup
-      - run: poetry publish --build -u honeycomb -p ${PYPI_PASSWORD}
-
-# required as all of the jobs need to have a tag filter for some reason
-tag_filters: &tag_filters
-  filters:
-    tags:
-      only: /.*/
+orbs:
+  python: circleci/python@1.2.1
 
 jobs:
-  test_python2-7:
-    executor: python2-7
+  test:
+    parameters:
+      python-version:
+        type: string
+    executor: python/default
     steps:
-      - runtests-py2
-  test_python3-5:
-    executor: python3-5
-    steps:
-      - runtests-py3
-  test_python3-6:
-    executor: python3-6
-    steps:
-      - runtests-py3
-  test_python3-7:
-    executor: python3-7
-    steps:
-      - runtests-py3
-  test_python3-8:
-    executor: python3-8
-    steps:
-      - runtests-py3
-  build:
-    executor: python3-8
-    steps:
-      - build
-  publish_github:
-    executor: github
-    steps:
-      - publish_github
-  publish_pypi:
-    executor: python3-8
-    steps:
-      - publish_pypi
+      - checkout
+      - python/install-packages:
+          pkg-manager: poetry
+      - python/test:
+          pkg-manager: poetry
+          version: << parameters.python-version >>
 
 workflows:
-  version: 2
-  nightly:
-    triggers:
-      - schedule:
-          cron: "0 0 * * *"
-          filters:
-            branches:
-              only:
-                - main
+  main:
     jobs:
-      - test_python2-7:
-          filters:
-            tags:
-              only: /.*/
-      - test_python3-5:
-          filters:
-            tags:
-              only: /.*/
-      - test_python3-6:
-          filters:
-            tags:
-              only: /.*/
-      - test_python3-7:
-          filters:
-            tags:
-              only: /.*/
-      - test_python3-8:
-          filters:
-            tags:
-              only: /.*/
-      - build:
-          filters:
-            tags:
-              only: /.*/
-          requires:
-            - test_python2-7
-            - test_python3-5
-            - test_python3-6
-            - test_python3-7
-            - test_python3-8
-
-  build_beeline:
-    jobs:
-      - test_python2-7:
-          filters:
-            tags:
-              only: /.*/
-      - test_python3-5:
-          filters:
-            tags:
-              only: /.*/
-      - test_python3-6:
-          filters:
-            tags:
-              only: /.*/
-      - test_python3-7:
-          filters:
-            tags:
-              only: /.*/
-      - test_python3-8:
-          filters:
-            tags:
-              only: /.*/
-      - build:
-          filters:
-            tags:
-              only: /.*/
-          requires:
-            - test_python2-7
-            - test_python3-5
-            - test_python3-6
-            - test_python3-7
-            - test_python3-8
-      - publish_github:
-          context: Honeycomb Secrets
-          requires:
-            - build
-          filters:
-            tags:
-              only: /v[0-9].*/
-            branches:
-              ignore: /.*/
-      - publish_pypi:
-          context: Honeycomb Secrets
-          requires:
-            - build
-          filters:
-            tags:
-              only: /v[0-9].*/
-            branches:
-              ignore: /.*/
+      - test:
+          matrix:
+            parameters:
+              python-version:
+                - "2.7"
+                - "3.5"
+                - "3.6"
+                - "3.7"
+                - "3.8"
