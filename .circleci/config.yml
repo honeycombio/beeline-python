@@ -98,11 +98,8 @@ workflows:
                 branches:
                   only:
                     - main
-    jobs: &jobs
-      - lint:
-          filters:
-              tags:
-                only: /.*/
+    jobs:
+      - lint: &lint
           matrix:
             parameters:
               python-version:
@@ -111,10 +108,7 @@ workflows:
                 - "3.6"
                 - "3.7"
                 - "3.8"
-      - test:
-          filters:
-              tags:
-                only: /.*/
+      - test: &test
           matrix:
             parameters:
               python-version:
@@ -123,17 +117,28 @@ workflows:
                 - "3.6"
                 - "3.7"
                 - "3.8"
-      - build:
-          filters:
-              tags:
-                only: /.*/
+      - build: &test
           requires:
             - lint
             - test
 
   build_beeline:
     jobs:
-      <<: *jobs
+      - lint:
+          <<: *lint
+          filters:
+              tags:
+                only: /.*/
+      - test:
+          <<: *test
+          filters:
+              tags:
+                only: /.*/
+      - build:
+          <<: *build
+          filters:
+              tags:
+                only: /.*/
       - publish_pypi:
           context: Honeycomb Secrets
           requires:
