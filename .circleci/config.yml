@@ -100,7 +100,7 @@ workflows:
                     - main
     jobs:
       - lint: &lint
-          matrix:
+          matrix: &matrix
             parameters:
               python-version:
                 - "2.7"
@@ -109,14 +109,7 @@ workflows:
                 - "3.7"
                 - "3.8"
       - test: &test
-          matrix:
-            parameters:
-              python-version:
-                - "2.7"
-                - "3.5"
-                - "3.6"
-                - "3.7"
-                - "3.8"
+          matrix: *matrix
       - build: &build
           requires:
             - lint
