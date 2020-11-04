@@ -90,8 +90,15 @@ jobs:
             ls -l ~/artifacts/*
       - run: ghr -draft -n ${CIRCLE_TAG} -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} ${CIRCLE_TAG} ~/artifacts
 workflows:
-  main:
-    jobs:
+  nightly:
+    triggers:
+          - schedule:
+              cron: "0 0 * * *"
+              filters:
+                branches:
+                  only:
+                    - main
+    jobs: &jobs
       - lint:
           filters:
               tags:
@@ -123,6 +130,10 @@ workflows:
           requires:
             - lint
             - test
+
+  build_beeline:
+    jobs:
+      <<: *jobs
       - publish_pypi:
           context: Honeycomb Secrets
           requires:
