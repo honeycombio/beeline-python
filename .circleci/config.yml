@@ -70,3 +70,23 @@ workflows:
                 - "3.6"
                 - "3.7"
                 - "3.8"
+      - build:
+          executor:
+            name: python/default
+            tag: "3.8"
+          requires:
+            - lint
+            - test
+          steps:
+            - checkout
+            - python/install-packages:
+                pkg-manager: poetry
+            - run: mkdir -p ~/artifacts
+            - run: poetry build
+            - run: cp dist/* ~/artifacts
+            - persist_to_workspace:
+                root: ~/
+                paths:
+                  - artifacts
+            - store_artifacts:
+                path: ~/artifacts
