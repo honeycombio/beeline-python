@@ -8,14 +8,13 @@ jobs:
     parameters:
       python-version:
         type: string
-    executor: python/default
+    executor:
+      name: python/default
+      tag: << parameters.python-version >>
     steps:
       - checkout
       - python/install-packages:
           pkg-manager: poetry
-      - python/test:
-          pkg-manager: poetry
-          version: << parameters.python-version >>
 
 workflows:
   main:
