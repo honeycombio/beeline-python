@@ -67,10 +67,23 @@ jobs:
       - store_artifacts:
           path: ~/artifacts
 
+  publish_pypi:
+    executor:
+      name: python/default
+      tag: "3.8"
+    steps:
+      - checkout
+      - python/install-packages:
+          pkg-manager: poetry
+      - run: poetry publish --build -u honeycomb -p ${PYPI_PASSWORD}
+
 workflows:
   main:
     jobs:
       - lint:
+          filters:
+              tags:
+                only: /.*/
           matrix:
             parameters:
               python-version:
@@ -80,6 +93,9 @@ workflows:
                 - "3.7"
                 - "3.8"
       - test:
+          filters:
+              tags:
+                only: /.*/
           matrix:
             parameters:
               python-version:
@@ -89,6 +105,18 @@ workflows:
                 - "3.7"
                 - "3.8"
       - build:
+          filters:
+              tags:
+                only: /.*/
           requires:
             - lint
             - test
+      - publish_pypi:
+          context: Honeycomb Secrets
+          requires:
+            - build
+          filters:
+            tags:
+              only: /v[0-9].*/
+            branches:
+              ignore: /.*/
