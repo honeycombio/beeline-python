@@ -44,20 +44,10 @@ jobs:
       - python/install-packages:
           pkg-manager: poetry
       - run: poetry run coverage run -m beeline.test_suite
-
-  coverage:
-    parameters:
-      python-version:
-        type: string
-    executor:
-      name: python/default
-      tag: << parameters.python-version >>
-    steps:
-      - checkout
-      - python/install-packages:
-          pkg-manager: poetry
       - run: poetry run coverage report --include="beeline/*"
       - run: poetry run coverage html --include="beeline/*"
+      - store_artifacts:
+          path: htmlcov
 
 workflows:
   main:
@@ -72,15 +62,6 @@ workflows:
                 - "3.7"
                 - "3.8"
       - test:
-          matrix:
-            parameters:
-              python-version:
-                - "2.7"
-                - "3.5"
-                - "3.6"
-                - "3.7"
-                - "3.8"
-      - coverage:
           matrix:
             parameters:
               python-version:
