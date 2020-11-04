@@ -1,8 +1,5 @@
 version: 2.1
 
-orbs:
-  buildevents: honeycombio/buildevents@0.2.6
-
 executors:
   python2-7:
     docker:
@@ -27,38 +24,22 @@ commands:
   setup:
     steps:
       - checkout
-      - buildevents/berun:
-          bename: poetry_install
-          becommand: poetry install --no-root
+      - run: poetry install --no-root
   run_lint_python2:
     steps:
-      - buildevents/berun:
-          bename: run_lint_python2
-          becommand: poetry run pylint --ignore=aiotrace.py,test_async.py,urllib.py,test_urllib.py --rcfile=pylint.rc beeline
-      - buildevents/berun:
-          bename: run_pycodestyle
-          becommand: poetry run pycodestyle beeline --max-line-length=140
+      - run: poetry run pylint --ignore=aiotrace.py,test_async.py,urllib.py,test_urllib.py --rcfile=pylint.rc beeline
+      - run: poetry run pycodestyle beeline --max-line-length=140
   run_lint:
     steps:
-      - buildevents/berun:
-          bename: run_lint
-          becommand: poetry run pylint --rcfile=pylint.rc beeline
-      - buildevents/berun:
-          bename: run_pycodestyle
-          becommand: poetry run pycodestyle beeline --max-line-length=140
+      - run: poetry run pylint --rcfile=pylint.rc beeline
+      - run: poetry run pycodestyle beeline --max-line-length=140
   run_tests:
     steps:
-      - buildevents/berun:
-          bename: run_tests
-          becommand: poetry run coverage run -m beeline.test_suite
+      - run: poetry run coverage run -m beeline.test_suite
   run_coverage:
     steps:
-      - buildevents/berun:
-          bename: coverage_report
-          becommand: poetry run coverage report --include="beeline/*"
-      - buildevents/berun:
-          bename: coverage_html
-          becommand: poetry run coverage html --include="beeline/*"
+      - run: poetry run coverage report --include="beeline/*"
+      - run: poetry run coverage html --include="beeline/*"
 
   runtests-py2:
     steps:
@@ -80,12 +61,8 @@ commands:
     steps:
       - setup
       - run: mkdir -p ~/artifacts
-      - buildevents/berun:
-          bename: poetry_build
-          becommand: poetry build
-      - buildevents/berun:
-          bename: copy_binaries
-          becommand: cp dist/* ~/artifacts
+      - run: poetry build
+      - run: cp dist/* ~/artifacts
       - persist_to_workspace:
           root: ~/
           paths:
@@ -102,16 +79,12 @@ commands:
           command: |
             echo "about to publish to tag ${CIRCLE_TAG}"
             ls -l ~/artifacts/*
-      - buildevents/berun:
-          bename: ghr_draft
-          becommand: ghr -draft -n ${CIRCLE_TAG} -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} ${CIRCLE_TAG} ~/artifacts
+      - run: ghr -draft -n ${CIRCLE_TAG} -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} ${CIRCLE_TAG} ~/artifacts
 
   publish_pypi:
     steps:
       - setup
-      - buildevents/berun:
-          bename: poetry_publish
-          becommand: poetry publish --build -u honeycomb -p ${PYPI_PASSWORD}
+      - run: poetry publish --build -u honeycomb -p ${PYPI_PASSWORD}
 
 # required as all of the jobs need to have a tag filter for some reason
 tag_filters: &tag_filters
@@ -120,62 +93,38 @@ tag_filters: &tag_filters
       only: /.*/
 
 jobs:
-  setup_trace:
-    executor: python3-8
-    steps:
-      - buildevents/start_trace
-  watch:
-    executor: python3-8
-    steps:
-      - buildevents/watch_build_and_finish
   test_python2-7:
     executor: python2-7
     steps:
-      - buildevents/with_job_span:
-          steps:
-            - runtests-py2
+      - runtests-py2
   test_python3-5:
     executor: python3-5
     steps:
-      - buildevents/with_job_span:
-          steps:
-            - runtests-py3
+      - runtests-py3
   test_python3-6:
     executor: python3-6
     steps:
-      - buildevents/with_job_span:
-          steps:
-            - runtests-py3
+      - runtests-py3
   test_python3-7:
     executor: python3-7
     steps:
-      - buildevents/with_job_span:
-          steps:
-            - runtests-py3
+      - runtests-py3
   test_python3-8:
     executor: python3-8
     steps:
-      - buildevents/with_job_span:
-          steps:
-            - runtests-py3
+      - runtests-py3
   build:
     executor: python3-8
     steps:
-      - buildevents/with_job_span:
-          steps:
-            - build
+      - build
   publish_github:
     executor: github
     steps:
-      - buildevents/with_job_span:
-          steps:
-            - publish_github
+      - publish_github
   publish_pypi:
     executor: python3-8
     steps:
-      - buildevents/with_job_span:
-          steps:
-            - publish_pypi
+      - publish_pypi
 
 workflows:
   version: 2
@@ -188,46 +137,26 @@ workflows:
               only:
                 - main
     jobs:
-      - setup_trace:
-          filters:
-            tags:
-              only: /.*/
-      - watch:
-          filters:
-            tags:
-              only: /.*/
-          requires:
-            - setup_trace
       - test_python2-7:
           filters:
             tags:
               only: /.*/
-          requires:
-            - setup_trace
       - test_python3-5:
           filters:
             tags:
               only: /.*/
-          requires:
-            - setup_trace
       - test_python3-6:
           filters:
             tags:
               only: /.*/
-          requires:
-            - setup_trace
       - test_python3-7:
           filters:
             tags:
               only: /.*/
-          requires:
-            - setup_trace
       - test_python3-8:
           filters:
             tags:
               only: /.*/
-          requires:
-            - setup_trace
       - build:
           filters:
             tags:
@@ -241,46 +170,26 @@ workflows:
 
   build_beeline:
     jobs:
-      - setup_trace:
-          filters:
-            tags:
-              only: /.*/
-      - watch:
-          filters:
-            tags:
-              only: /.*/
-          requires:
-            - setup_trace
       - test_python2-7:
           filters:
             tags:
               only: /.*/
-          requires:
-            - setup_trace
       - test_python3-5:
           filters:
             tags:
               only: /.*/
-          requires:
-            - setup_trace
       - test_python3-6:
           filters:
             tags:
               only: /.*/
-          requires:
-            - setup_trace
       - test_python3-7:
           filters:
             tags:
               only: /.*/
-          requires:
-            - setup_trace
       - test_python3-8:
           filters:
             tags:
               only: /.*/
-          requires:
-            - setup_trace
       - build:
           filters:
             tags:
