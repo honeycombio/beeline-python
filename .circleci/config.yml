@@ -77,6 +77,18 @@ jobs:
           pkg-manager: poetry
       - run: poetry publish --build -u honeycomb -p ${PYPI_PASSWORD}
 
+  publish_github:
+    docker:
+      - image: cibuilds/github:0.13.0
+    steps:
+      - attach_workspace:
+          at: ~/
+      - run:
+          name: "Artifacts being published"
+          command: |
+            echo "about to publish to tag ${CIRCLE_TAG}"
+            ls -l ~/artifacts/*
+      - run: ghr -draft -n ${CIRCLE_TAG} -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} ${CIRCLE_TAG} ~/artifacts
 workflows:
   main:
     jobs:
@@ -112,6 +124,15 @@ workflows:
             - lint
             - test
       - publish_pypi:
+          context: Honeycomb Secrets
+          requires:
+            - build
+          filters:
+            tags:
+              only: /v[0-9].*/
+            branches:
+              ignore: /.*/
+      - publish_github:
           context: Honeycomb Secrets
           requires:
             - build
