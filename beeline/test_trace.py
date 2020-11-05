@@ -524,6 +524,23 @@ class TestSynchronousTracer(unittest.TestCase):
         tracer.start_span.assert_called_once_with(
             context={'name': 'foo'}, parent_id=None)
 
+    def test_trace_with_custom_dataset(self):
+        dataset = 'flibble'
+        m_client = Mock()
+        tracer = SynchronousTracer(m_client)
+        tracer.start_trace(dataset=dataset)
+        self.assertEqual(tracer._trace.dataset, dataset)
+
+    def test_custom_dataset_propagates_to_event(self):
+        dataset = 'flibble'
+        m_client = Mock()
+        tracer = SynchronousTracer(m_client)
+        tracer._run_hooks_and_send = Mock()
+        span = tracer.start_trace(dataset=dataset)
+        event = m_client.new_event.return_value
+        tracer.finish_span(span)
+        self.assertEqual(event.dataset, dataset)
+
 
 class TestTraceContext(unittest.TestCase):
     def test_marshal_trace_context(self):
@@ -607,7 +624,7 @@ class TestPropagationHooks(unittest.TestCase):
         m_client.new_event.return_value.sample_rate = 1
         tracer = SynchronousTracer(m_client)
 
-        header_value = '1;trace_id=bloop,parent_id=scoop,context=e30K'
+        header_value = '1;dataset=flibble,trace_id=bloop,parent_id=scoop,context=e30K'
         req = DictRequest({
             # case shouldn't matter
             'X-HoNEyComb-TrACE': header_value,
@@ -620,6 +637,8 @@ class TestPropagationHooks(unittest.TestCase):
         self.assertEqual(span.parent_id, "scoop")
 
         tracer.finish_trace(span)
+        self.assertEqual(span.event.dataset, 'flibble')
+
         # ensure the event is sent
         span.event.send_presampled.assert_called_once_with()
         # ensure that there is no current trace
