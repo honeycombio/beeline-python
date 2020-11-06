@@ -174,10 +174,10 @@ class TestLambdaWrapper(unittest.TestCase):
             self.assertEqual(foo(None, None), 1)
 
             @awslambda.beeline_wrapper()
-            def foo(event, context):
+            def bar(event, context):
                 return 1
 
-            self.assertEqual(foo(None, None), 1)
+            self.assertEqual(bar(None, None), 1)
 
     def test_basic_instrumentation(self):
         ''' ensure basic event fields get instrumented '''
