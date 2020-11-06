@@ -1,5 +1,11 @@
 # beeline-python changelog
 
+## 2.14.0
+
+Improvements:
+
+- Adds support for dataset when parsing honeycomb propagation headers #133
+
 ## 2.13.1
 
 This is a maintenace release to fix a bug in the django middleware that can happen in testing environments when a beeling has
