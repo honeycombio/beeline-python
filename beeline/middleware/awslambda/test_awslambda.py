@@ -198,7 +198,7 @@ class TestLambdaWrapper(unittest.TestCase):
                 'app.function_name': 'fn',
                 'app.function_version': '1.1.1',
                 'app.request_id': '12345',
-                'app.event': ANY, # 'app.event' is included by default
+                'app.event': ANY,  # 'app.event' is included by default
                 'meta.cold_start': ANY,
                 'name': 'handler'}, ANY)
             m_add_context_field.assert_called_once_with('app.response', 1)
@@ -225,7 +225,6 @@ class TestLambdaWrapper(unittest.TestCase):
                 'meta.cold_start': ANY,
                 'name': 'handler'}, ANY)  # note the lack of an 'app.event' field
             m_add_context_field.assert_called_once_with('app.response', 1)
-
 
     def test_can_omit_output(self):
         ''' ensure output event fields can be omitted '''
