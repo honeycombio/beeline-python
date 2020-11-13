@@ -96,7 +96,7 @@ class LambdaRequest(Request):
         return self._event
 
 
-def beeline_wrapper(handler):
+def beeline_wrapper(handler=None, record_input=True, record_output=True):
     ''' Honeycomb Beeline decorator for Lambda functions. Expects a handler
     function with the signature:
 
@@ -107,6 +107,10 @@ def beeline_wrapper(handler):
     ```
     @beeline_wrapper
     def my_handler(event, context):
+        # ...
+
+    @beeline_wrapper(record_input=False, record_output=False)
+    def my_handler_with_large_inputs_and_outputs(event, context):
         # ...
     ```
 
@@ -126,10 +130,11 @@ def beeline_wrapper(handler):
                 "app.function_name": getattr(context, 'function_name', ""),
                 "app.function_version": getattr(context, 'function_version', ""),
                 "app.request_id": getattr(context, 'aws_request_id', ""),
-                "app.event": event,
                 "meta.cold_start": COLD_START,
                 "name": handler.__name__
             }
+            if record_input:
+                request_context["app.event"] = event
 
             lr = LambdaRequest(event)
             root_span = beeline.propagate_and_start_trace(request_context, lr)
@@ -137,7 +142,7 @@ def beeline_wrapper(handler):
             # Actually run the handler
             resp = handler(event, context)
 
-            if resp is not None:
+            if resp is not None and record_output:
                 beeline.add_context_field('app.response', resp)
 
             return resp
@@ -148,4 +153,9 @@ def beeline_wrapper(handler):
             # we have to flush events before the lambda returns
             beeline.get_beeline().client.flush()
 
-    return _beeline_wrapper
+    def outer_wrapper(*args, **kwargs):
+        return beeline_wrapper(*args, record_input=record_input, record_output=record_output, **kwargs)
+
+    if handler:
+        return _beeline_wrapper
+    return outer_wrapper
