@@ -1,5 +1,10 @@
 # beeline-python changelog
 
+## 2.15.0
+
+- Update Lambda wrapper to allow omission of input/output fields #130 (thank you, @fitzoh!)
+- Add "request.route" field for Django middleware (thank you, @sjoerdjob!)
+
 ## 2.14.0
 
 Improvements:
