@@ -507,9 +507,12 @@ class TestSynchronousTracer(unittest.TestCase):
             tracer.add_trace_field('c', 3)
             tracer.finish_span(m_span)
 
-        # ensure we only added fields b and c and did not try to overwrite a
-        self.assertDictContainsSubset(
-            {'app.a': 1, 'app.b': 2, 'app.c': 3}, m_span.event.fields())
+        # Check that the new, unique fields were successfully added
+        self.assertIn("app.b", m_span.event.fields())
+        self.assertIn("app.c", m_span.event.fields())
+
+        # Check that a was not overwritten with the new value of 0.
+        self.assertEqual(m_span.event.fields()["app.a"], 1)
 
     def test_trace_context_manager_does_not_crash_if_span_is_none(self):
         m_client = Mock()
