@@ -20,9 +20,14 @@ def request(_request, instance, args, kwargs):
 
     try:
         resp = None
+
+        # Required as Python treats the `or` keyword differently in string
+        # interpolation vs. when assigning a variable.
+        method = kwargs.get('method') or args[0]
+
         beeline.add_context({
-            "name": "requests_%s" % kwargs.get('method') or args[0],
-            "request.method": kwargs.get('method') or args[0],
+            "name": "requests_%s" % method,
+            "request.method": method,
             "request.url": kwargs.get('url') or args[1],
         })
         resp = _request(*args, **kwargs)
