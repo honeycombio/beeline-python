@@ -74,7 +74,7 @@ class Tracer(object):
                 span.add_context({
                     "app.exception_type": str(type(e)),
                     "app.exception_string": stringify_exception(e),
-                    "app.exception_traceback": traceback.format_exc(),
+                    "app.exception_stacktrace": traceback.format_exc(),
                 })
             raise
         finally:
