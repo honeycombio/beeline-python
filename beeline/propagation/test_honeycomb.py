@@ -15,9 +15,9 @@ class TestMarshalUnmarshal(unittest.TestCase):
         header = hc.marshal_propagation_context(pc)
         new_trace_id, new_parent_id, new_trace_fields = hc.unmarshal_propagation_context(
             header)
-        self.assertEquals(trace_id, new_trace_id)
-        self.assertEquals(parent_id, new_parent_id)
-        self.assertEquals(trace_fields, new_trace_fields)
+        self.assertEqual(trace_id, new_trace_id)
+        self.assertEqual(parent_id, new_parent_id)
+        self.assertEqual(trace_fields, new_trace_fields)
 
     def test_roundtrip_with_dataset(self):
         '''Verify that we can successfully roundtrip (marshal and unmarshal)'''
@@ -29,10 +29,10 @@ class TestMarshalUnmarshal(unittest.TestCase):
         header = hc.marshal_propagation_context(pc)
         new_trace_id, new_parent_id, new_trace_fields, new_dataset = hc.unmarshal_propagation_context_with_dataset(
             header)
-        self.assertEquals(dataset, new_dataset)
-        self.assertEquals(trace_id, new_trace_id)
-        self.assertEquals(parent_id, new_parent_id)
-        self.assertEquals(trace_fields, new_trace_fields)
+        self.assertEqual(dataset, new_dataset)
+        self.assertEqual(trace_id, new_trace_id)
+        self.assertEqual(parent_id, new_parent_id)
+        self.assertEqual(trace_fields, new_trace_fields)
 
 
 class TestHoneycombHTTPTraceParserHook(unittest.TestCase):
@@ -43,8 +43,8 @@ class TestHoneycombHTTPTraceParserHook(unittest.TestCase):
             'X-HoNEyComb-TrACE': header_value,
         })
         pc = hc.http_trace_parser_hook(req)
-        self.assertEquals(pc.trace_id, "bloop")
-        self.assertEquals(pc.parent_id, "scoop")
+        self.assertEqual(pc.trace_id, "bloop")
+        self.assertEqual(pc.parent_id, "scoop")
         # FIXME: We should have a legitimate header with trace_field and dataset_id set
 
     def test_no_header(self):
@@ -63,5 +63,5 @@ class TestHoneycombHTTPTracePropagationHook(unittest.TestCase):
             trace_id, parent_id, trace_fields, dataset)
         headers = hc.http_trace_propagation_hook(pc)
         self.assertIn('X-Honeycomb-Trace', headers)
-        self.assertEquals(headers['X-Honeycomb-Trace'],
-                          "1;dataset=blorp%20blorp,trace_id=bloop,parent_id=scoop,context=eyJrZXkiOiAidmFsdWUifQ==")
+        self.assertEqual(headers['X-Honeycomb-Trace'],
+                         "1;dataset=blorp%20blorp,trace_id=bloop,parent_id=scoop,context=eyJrZXkiOiAidmFsdWUifQ==")
