@@ -64,4 +64,4 @@ class TestHoneycombHTTPTracePropagationHook(unittest.TestCase):
         headers = hc.http_trace_propagation_hook(pc)
         self.assertIn('X-Honeycomb-Trace', headers)
         self.assertEqual(headers['X-Honeycomb-Trace'],
-                          "1;dataset=blorp%20blorp,trace_id=bloop,parent_id=scoop,context=eyJrZXkiOiAidmFsdWUifQ==")
+                         "1;dataset=blorp%20blorp,trace_id=bloop,parent_id=scoop,context=eyJrZXkiOiAidmFsdWUifQ==")
