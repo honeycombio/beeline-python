@@ -72,4 +72,4 @@ class TestW3CHTTPTracePropagationHook(unittest.TestCase):
         self.assertEqual(headers['traceparent'],
                          _TEST_TRACEPARENT_HEADER)
         self.assertEqual(headers['tracestate'],
-                          _TEST_TRACESTATE_HEADER)
+                         _TEST_TRACESTATE_HEADER)
