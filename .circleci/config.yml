@@ -133,7 +133,7 @@ workflows:
               tags:
                 only: /.*/
       - publish_pypi:
-          context: Honeycomb Secrets
+          context: Honeycomb Secrets for Public Repos
           requires:
             - build
           filters:
@@ -142,7 +142,7 @@ workflows:
             branches:
               ignore: /.*/
       - publish_github:
-          context: Honeycomb Secrets
+          context: Honeycomb Secrets for Public Repos
           requires:
             - build
           filters:
