@@ -39,7 +39,7 @@ def request(_request, instance, args, kwargs):
         })
         raise
     finally:
-        if resp:
+        if resp is not None:
             content_type = resp.headers.get('content-type')
             if content_type:
                 beeline.add_context_field(
