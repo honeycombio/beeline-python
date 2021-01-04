@@ -516,6 +516,14 @@ optional = false
 python-versions = "*"
 version = "1.12.1"
 
+[[package]]
+category = "dev"
+description = "The little ASGI library that shines."
+name = "starlette"
+optional = false
+python-versions = ">=3.6"
+version = "0.14.1"
+
 [metadata]
 content-hash = "af0cb6ba14e425d6852f1b11bcdb2aa846a4f01d1bde133305e39052bf2676f9"
 lock-version = "1.0"
