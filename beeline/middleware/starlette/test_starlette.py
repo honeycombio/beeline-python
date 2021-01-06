@@ -1,7 +1,7 @@
 import unittest
 from mock import Mock, call, patch
 
-from beeline.middleware.starlette import HoneyMiddlewareBase
+from beeline.middleware.starlette import HoneyMiddleware
 
 
 class SimpleWSGITest(unittest.TestCase):
@@ -16,7 +16,7 @@ class SimpleWSGITest(unittest.TestCase):
         mock_trace = Mock()
         self.m_gbl.propagate_and_start_trace.return_value = mock_trace
 
-        mw = HoneyMiddlewareBase(mock_resp)
+        mw = HoneyMiddleware(mock_resp)
         resp = mw(mock_req)
         self.m_gbl.propagate_and_start_trace.assert_called_once()
 
