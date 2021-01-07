@@ -1,5 +1,10 @@
 # beeline-python changelog
 
+## 2.16.1 2021-01-08
+
+### Fixed
+- Fix missing content_type, content_length, and status_code in spans from error responses (#145) [@vbarua](https://github.com/vbarua)
+
 ## 2.16.0
 
 ### Improvements:
