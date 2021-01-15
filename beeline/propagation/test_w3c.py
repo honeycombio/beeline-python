@@ -4,6 +4,7 @@ import beeline.propagation.honeycomb as hc
 import beeline.propagation.w3c as w3c
 
 _TEST_TRACEPARENT_HEADER = "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-00"
+_TEST_TRACEPARENT_HEADER_DEFAULT_TRACEFLAGS = "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
 _TEST_TRACESTATE_HEADER = "foo=bar,bar=baz"
 
 _TEST_HEADERS = {
@@ -73,3 +74,12 @@ class TestW3CHTTPTracePropagationHook(unittest.TestCase):
                          _TEST_TRACEPARENT_HEADER)
         self.assertEqual(headers['tracestate'],
                          _TEST_TRACESTATE_HEADER)
+
+    def test_defaults_trace_flags_to_sampled(self):
+        pc = PropagationContext(
+            _TEST_TRACE_ID, _TEST_PARENT_ID
+        )
+        headers = w3c.http_trace_propagation_hook(pc)
+        self.assertIn('traceparent', headers)
+        self.assertEqual(headers['traceparent'],
+                         _TEST_TRACEPARENT_HEADER_DEFAULT_TRACEFLAGS)
