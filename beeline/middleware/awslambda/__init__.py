@@ -1,3 +1,5 @@
+import traceback
+
 import beeline
 from beeline.propagation import Request
 # In Lambda, a cold start is when Lambda has to spin up a new instance of a
@@ -146,6 +148,13 @@ def beeline_wrapper(handler=None, record_input=True, record_output=True):
                 beeline.add_context_field('app.response', resp)
 
             return resp
+        except Exception as e:
+            beeline.add_context({
+                "app.exception_type": str(type(e)),
+                "app.exception_string": beeline.internal.stringify_exception(e),
+                "app.exception_stacktrace": traceback.format_exc(),
+            })
+            raise e
         finally:
             # This remains false for the lifetime of the module
             COLD_START = False

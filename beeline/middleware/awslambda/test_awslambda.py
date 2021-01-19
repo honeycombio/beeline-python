@@ -203,6 +203,37 @@ class TestLambdaWrapper(unittest.TestCase):
                 'name': 'handler'}, ANY)
             m_add_context_field.assert_called_once_with('app.response', 1)
 
+    def test_handle_exceptions(self):
+        ''' ensure instrumentation occurs when the handler raises an exception '''
+        with patch('beeline.propagate_and_start_trace') as m_propagate, \
+                patch('beeline.add_context_field') as m_add_context_field, \
+                patch('beeline.add_context') as m_add_context, \
+                patch('beeline.middleware.awslambda.beeline._GBL'), \
+                patch('beeline.middleware.awslambda.COLD_START') as m_cold_start:
+            m_event = Mock()
+            m_context = Mock(function_name='fn', function_version="1.1.1",
+                             aws_request_id='12345')
+
+            @awslambda.beeline_wrapper
+            def handler(event, context):
+                raise ValueError('something went wrong')
+
+            with self.assertRaises(ValueError):
+                handler(m_event, m_context)
+
+            m_propagate.assert_called_once_with({
+                'app.function_name': 'fn',
+                'app.function_version': '1.1.1',
+                'app.request_id': '12345',
+                'app.event': ANY,  # 'app.event' is included by default
+                'meta.cold_start': ANY,
+                'name': 'handler'}, ANY)
+            m_add_context.assert_called_once_with({
+                'app.exception_type': "<class 'ValueError'>",
+                'app.exception_string': 'something went wrong',
+                'app.exception_stacktrace': ANY
+            })
+
     def test_can_omit_input(self):
         ''' ensure input event field can be omitted '''
         with patch('beeline.propagate_and_start_trace') as m_propagate, \
