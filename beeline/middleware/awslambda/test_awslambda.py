@@ -229,7 +229,7 @@ class TestLambdaWrapper(unittest.TestCase):
                 'meta.cold_start': ANY,
                 'name': 'handler'}, ANY)
             m_add_context.assert_called_once_with({
-                'app.exception_type': "<class 'ValueError'>",
+                'app.exception_type': ANY,  # representation changes between 2.7 and 3.x
                 'app.exception_string': 'something went wrong',
                 'app.exception_stacktrace': ANY
             })
