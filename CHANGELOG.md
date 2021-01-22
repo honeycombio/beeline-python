@@ -1,5 +1,12 @@
 # beeline-python changelog
 
+## 2.16.2 2021-01-22
+
+### Fixes
+
+- Capture exception details in AWS Lambda middleware (#154)
+- Default w3c sampled flag to 01 (#152)
+
 ## 2.16.1 2021-01-08
 
 ### Fixed
