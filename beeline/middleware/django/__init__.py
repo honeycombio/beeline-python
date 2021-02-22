@@ -97,7 +97,7 @@ class HoneyMiddlewareBase(object):
             "request.scheme": request.scheme,
             "request.secure": request.is_secure(),
             "request.query": request.GET.dict(),
-            "request.xhr": request.is_ajax(),
+            "request.xhr": request.headers.get('x-requested-with') == 'XMLHttpRequest',
         }
 
     def get_context_from_response(self, request, response):
@@ -183,6 +183,6 @@ class HoneyMiddlewareWithPOST(HoneyMiddleware):
             "request.scheme": request.scheme,
             "request.secure": request.is_secure(),
             "request.query": request.GET.dict(),
-            "request.xhr": request.is_ajax(),
+            "request.xhr": request.headers.get('x-requested-with') == 'XMLHttpRequest',
             "request.post": request.POST.dict(),
         }
