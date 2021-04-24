@@ -2,7 +2,7 @@ import unittest
 from mock import Mock, call, patch
 
 import django
-from django.http import HttpResponse
+from django.http import HttpResponse, StreamingHttpResponse
 from django.test.client import Client
 from django.conf.urls import url
 
@@ -18,6 +18,7 @@ class SimpleWSGITest(unittest.TestCase):
         ''' Just call the middleware and ensure that the code runs '''
         mock_req = Mock()
         mock_resp = Mock()
+        mock_resp.return_value.streaming = False
         mock_trace = Mock()
         self.m_gbl.propagate_and_start_trace.return_value = mock_trace
 
@@ -51,11 +52,18 @@ class FullViewTestCase(unittest.TestCase):
             ALLOWED_HOSTS=['testserver'],
             ROOT_URLCONF=(
                 url("^hello/(?P<greetee>[^/]+)/$", self._view, name="greet"),
+                url("^stream/hello/(?P<greetee>[^/]+)/$", self._streaming_view, name="stream_greet"),
             ),
         )
 
     def _view(self, request, *args, **kwargs):
         return HttpResponse(kwargs["greetee"], status=200)
+
+    def _streaming_view(self, request, *args, **kwargs):
+        def stream():
+            yield b"hello "
+            yield kwargs["greetee"]
+        return StreamingHttpResponse(stream(), status=200)
 
     def test_middleware(self):
         mock_trace = Mock()
@@ -69,3 +77,13 @@ class FullViewTestCase(unittest.TestCase):
             call("request.route", "^hello/(?P<greetee>[^/]+)/$"),
         ])
         self.m_gbl.finish_trace.assert_called_once_with(mock_trace)
+
+    def test_streaming_middleware(self):
+        mock_trace = Mock()
+        self.m_gbl.propagate_and_start_trace.return_value = mock_trace
+
+        response = Client().get('/stream/hello/world/')
+        self.m_gbl.finish_trace.assert_not_called()
+        content = b"".join(response.streaming_content)
+        self.m_gbl.finish_trace.assert_called_once_with(mock_trace)
+        self.assertEqual(content, b"hello world")

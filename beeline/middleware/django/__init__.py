@@ -123,7 +123,21 @@ class HoneyMiddlewareBase(object):
         # the view is called.
         response_context = self.get_context_from_response(request, response)
         beeline.add_context(response_context)
-        beeline.finish_trace(root_span)
+
+        # Streaming responses return immediately, but iterate over
+        # their `streaming_content` until it's empty; only close the
+        # trace then, not now.
+        def wrap_streaming_content(content):
+            for chunk in content:
+                yield chunk
+            beeline.finish_trace(root_span)
+
+        if response.streaming:
+            response.streaming_content = wrap_streaming_content(
+                response.streaming_content
+            )
+        else:
+            beeline.finish_trace(root_span)
 
         return response
 
@@ -158,6 +172,21 @@ class HoneyMiddleware(HoneyMiddlewareBase):
                 for connection in connections.all():
                     stack.enter_context(connection.execute_wrapper(db_wrapper))
                 response = self.create_http_event(request)
+
+                # Is the response is streaming, then _this_ context
+                # will exit now, but we want to set up the same sort
+                # context stack when that streaming content gets
+                # iterated over.
+                def wrap_streaming_content(content):
+                    with contextlib.ExitStack() as stack:
+                        for connection in connections.all():
+                            stack.enter_context(connection.execute_wrapper(db_wrapper))
+                        for chunk in content:
+                            yield chunk
+                if response.streaming:
+                    response.streaming_content = wrap_streaming_content(
+                        response.streaming_content
+                    )
         except AttributeError:
             response = self.create_http_event(request)
 
