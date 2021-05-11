@@ -1,8 +1,11 @@
 import beeline
-from starlette.exceptions import HTTPException
-
-from starlette.datastructures import Headers
-
+from beeline.internal import log
+try:
+    # Starlette only supports Python 3.6+
+    from starlette.exceptions import HTTPException
+    from starlette.datastructures import Headers
+except ImportError:
+    log("warning: starlette only supports Python 3.6+")
 
 __all__ = ("HoneyMiddleware",)
 
