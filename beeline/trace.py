@@ -333,7 +333,7 @@ class Tracer(object):
 
 class SynchronousTracer(Tracer):
     def __init__(self, client):
-        Tracer.__init__(client)  # noqa
+        Tracer.__init__(self, client)  # noqa
         self._state = threading.local()
 
     @property
