@@ -21,7 +21,7 @@ jobs:
               - "2.7"
               - << parameters.python-version >>
           steps:
-            - run: poetry run pylint --ignore=aiotrace.py,test_async.py,urllib.py,test_urllib.py --rcfile=pylint.rc beeline
+            - run: poetry run pylint --ignore=starlette,aiotrace.py,test_async.py,urllib.py,test_urllib.py --rcfile=pylint.rc beeline
       - when:
           condition:
             not:
