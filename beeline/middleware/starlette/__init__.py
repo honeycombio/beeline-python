@@ -68,7 +68,7 @@ class HoneyMiddleware:
         """Get a trace context from the current scope"""
         request_method = scope.get('method')
         if request_method:
-            trace_name = f"starlette_http_{request_method.lower()}"
+            trace_name = "starlette_http_{}".format(request_method.lower())
         else:
             trace_name = "starlette_http"
 
