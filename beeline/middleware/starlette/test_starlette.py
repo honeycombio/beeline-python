@@ -1,4 +1,6 @@
+import asyncio
 import unittest
+from unittest.mock import AsyncMock
 from mock import Mock, call, patch
 
 from beeline.middleware.starlette import HoneyMiddleware
@@ -12,15 +14,20 @@ class SimpleWSGITest(unittest.TestCase):
     def test_call_middleware(self):
         ''' Just call the middleware and ensure that the code runs '''
         mock_req = Mock()
-        mock_resp = Mock()
-        mock_trace = Mock()
-        self.m_gbl.propagate_and_start_trace.return_value = mock_trace
+        mock_resp = AsyncMock()
 
         mw = HoneyMiddleware(mock_resp)
-        resp = mw(mock_req)
-        self.m_gbl.propagate_and_start_trace.assert_called_once()
+        scope = {
+            'type': 'http',
+            'method': 'GET',
+            'path': '/',
+            'scheme': 'https',
+            'query_string': b'foo=bar',
+            'headers': [],
+        }
+        resp = asyncio.run(mw(scope, mock_req, mock_resp))
+        self.m_gbl.start_trace.assert_called_once()
 
-        mock_resp.assert_called_once_with(mock_req)
+        mock_resp.assert_called_once()
 
-        self.m_gbl.finish_trace.assert_called_once_with(mock_trace)
-        self.assertEqual(resp, mock_resp.return_value)
+        self.m_gbl.finish_trace.assert_called_once()
