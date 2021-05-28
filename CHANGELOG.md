@@ -1,5 +1,15 @@
 # beeline-python changelog
 
+## 2.17.0 2021-05-28
+
+## Improvements:
+
+- Added support for Django streaming responses (#166)
+
+## Fixes:
+
+- Avoid using deprecated Django request.is_ajax() (#160)
+
 ## 2.16.2 2021-01-22
 
 ### Fixes
