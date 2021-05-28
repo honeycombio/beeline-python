@@ -15,6 +15,7 @@ repository = "https://github.com/honeycombio/beeline-python"
 python = ">=2.7"
 libhoney = ">=1.7.0"
 wrapt = "^1.12.1"
+starlette = {version = "^0.14.2", python = ">=3.6"}
 [tool.poetry.dev-dependencies]
 mock = {version = "3.0.5", python = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"}
 coverage = [{version = "^5", python = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, <4"}]
