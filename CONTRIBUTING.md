@@ -1,4 +1,6 @@
-# Contributing to honeycomb-beeline
+# Contributing Guide
+
+Please see our [general guide for OSS lifecycle and practices.](https://github.com/honeycombio/home/blob/main/honeycomb-oss-lifecycle-and-practices.md)
 
 Features, bug fixes and other changes to this project are gladly accepted.
 Please open issues or a pull request with your change. Remember to add your name
