@@ -1,7 +1,7 @@
 import unittest
 from mock import Mock, patch, ANY
 
-from beeline.middleware.flask import HoneyWSGIMiddleware
+from beeline.middleware.flask import HoneyWSGIMiddleware, HoneyDBMiddleware
 
 
 class SimpleWSGITest(unittest.TestCase):
@@ -31,3 +31,26 @@ class SimpleWSGITest(unittest.TestCase):
 
         mock_resp.assert_called_once_with("200", 2)
         self.m_gbl.finish_trace.assert_called_once_with(mock_trace)
+
+
+class HoneyDBMiddlewareTest(unittest.TestCase):
+    @patch("beeline.middleware.flask.current_app")
+    def test_before_cursor_execute(self, current_app):
+        with patch("beeline.middleware.flask.beeline") as beeline:
+            mw = HoneyDBMiddleware(current_app)
+            mw.before_cursor_execute(
+                conn=Mock(name="conn"),
+                cursor=Mock(name="cursor"),
+                statement="SELECT * FROM widgets WHERE ID IN :widget_ids",
+                parameters={'widget_ids': (1, 2)},
+                context=Mock(name="context"),
+                executemany=False
+            )
+            beeline.start_span.assert_called_with(
+                context={
+                    'name': 'flask_db_query',
+                    'type': 'db',
+                    'db.query': 'SELECT * FROM widgets WHERE ID IN :widget_ids',
+                    'db.query_args': ['widget_ids=(1, 2)']
+                }
+            )

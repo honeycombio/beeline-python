@@ -94,7 +94,7 @@ class HoneyDBMiddleware(object):
                 param = "%s=" % k
                 if type(v) == datetime.datetime:
                     v = v.isoformat()
-                param += "%s" % v
+                param += str(v)
                 params.append(param)
 
         self.state.span = beeline.start_span(context={
