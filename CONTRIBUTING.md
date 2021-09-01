@@ -14,12 +14,6 @@ beeline-python uses [poetry](https://python-poetry.org/) for packaging and depen
 
 If you haven't used pyenv or poetry before, see https://blog.jayway.com/2019/12/28/pyenv-poetry-saviours-in-the-python-chaos/ for a quick guide to getting started using them both.
 
-## Pushing a new release
-
-- Update the `version` field in `pyproject.toml`. If this is a pre-release package, use a `.devN` suffix. If it's ready to deploy, update using [PEP-0440](https://www.python.org/dev/peps/pep-0440/) semantic versioning.
-- Submit a pull request.
-- Follow standard directions for publishing, and updating on Github. Packages should be automatically uploaded to PyPI.
-
 ### Setting up on Mac
 
 - Install [pyenv](https://github.com/pyenv/pyenv) to install python version management
@@ -40,3 +34,19 @@ If you haven't used pyenv or poetry before, see https://blog.jayway.com/2019/12/
 * Switch python version by using the PYENV_VERSION environment variable to toggle between multiple python versions for testing
   - `export PYENV_VERSION=2.7.18` to set the Python virtualenv to 2.7.18
   - It is generally a good idea to test in both Python 2.7.18 as well as the latest released 3.x version. Our CircleCI configuration tests in 2.7 and all currently supported versions of Python 3.x.
+
+## Releasing
+
+- Use `bump2version`, available in the installed project dependencies, to update the version number. For example, to bump from v1.1.1 to the next patch version:
+
+```shell
+> bump2version patch                  # 1.1.1 -> 1.1.2-dev0
+> bump2version --allow-dirty release  # 1.1.2-dev0 -> 1.1.2
+```
+
+- Confirm the version number update appears in the project files defined in `.bumpversion.cfg`.
+- Update `CHANGELOG.md` with the changes since the last release.
+- Commit changes, push, and open a release preparation pull request for review.
+- Once the pull request is merged, fetch the updated `main` branch.
+- Apply a tag for the new version on the merged commit: vX.Y.Z, for example v1.1.2.
+- Push the new version tag up to the project repository to kick off build and artifact publishing to GitHub and PyPI.
