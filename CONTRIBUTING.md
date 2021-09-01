@@ -14,12 +14,6 @@ beeline-python uses [poetry](https://python-poetry.org/) for packaging and depen
 
 If you haven't used pyenv or poetry before, see https://blog.jayway.com/2019/12/28/pyenv-poetry-saviours-in-the-python-chaos/ for a quick guide to getting started using them both.
 
-## Pushing a new release
-
-- Update the `version` field in `pyproject.toml`. If this is a pre-release package, use a `.devN` suffix. If it's ready to deploy, update using [PEP-0440](https://www.python.org/dev/peps/pep-0440/) semantic versioning.
-- Submit a pull request.
-- Follow standard directions for publishing, and updating on Github. Packages should be automatically uploaded to PyPI.
-
 ### Setting up on Mac
 
 - Install [pyenv](https://github.com/pyenv/pyenv) to install python version management
