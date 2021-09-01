@@ -1,5 +1,11 @@
 # beeline-python changelog
 
+## 2.17.1 2021-09-01
+
+### Fixes:
+
+- Fix stringifying tuple parameters in flask DB middleware (#177) [@anselm-helbig](https://github.com/anselm-helbig) & [@mnemonikk](https://github.com/mnemonikk)
+
 ## 2.17.0 2021-05-28
 
 ## Improvements:
