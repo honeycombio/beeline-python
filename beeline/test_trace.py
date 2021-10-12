@@ -5,6 +5,8 @@ import datetime
 import json
 import unittest
 import re
+import os
+import binascii
 
 from libhoney import Event
 
@@ -120,6 +122,10 @@ class TestTraceSampling(unittest.TestCase):
 
             self.assertLessEqual(sampled, acceptable_upper_bound)
             self.assertGreaterEqual(sampled, acceptable_lower_bound)
+
+    def should_sample_always_returns_true_when_sample_rate_is_1(self):
+        for _ in range(1000):
+            self.assertTrue(_should_sample(binascii.b2a_hex(os.urandom(16)), 1))
 
 
 class TestSynchronousTracer(unittest.TestCase):
