@@ -373,6 +373,10 @@ class Span(object):
 
 
 def _should_sample(trace_id, sample_rate):
+    # Always return True if sample rate is 1
+    if sample_rate == 1:
+        return True
+
     sample_upper_bound = MAX_INT32 / sample_rate
     # compute a sha1
     sha1 = hashlib.sha1()
