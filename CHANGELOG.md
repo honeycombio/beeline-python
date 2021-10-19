@@ -1,5 +1,16 @@
 # beeline-python changelog
 
+## 2.17.2 2021-10-19
+
+### Fixes
+
+- Always return True for sampling when sample rate is 1 (#185) | [@MikeGoldsmith](https://github.com/MikeGoldsmith)
+
+### Maintenance
+
+- Change maintenance badge to maintained (#182) | [@JamieDanielson](https://github.com/JamieDanielson)
+- Add Stalebot (#183) | [@JamieDanielson](https://github.com/JamieDanielson)
+
 ## 2.17.1 2021-09-01
 
 ### Fixes:
