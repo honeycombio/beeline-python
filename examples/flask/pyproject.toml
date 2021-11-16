@@ -1,0 +1,12 @@
+[tool.poetry]
+name = "beeline-flask-example"
+version = "0.1.0"
+description = "flask example app using beeline-python"
+authors = ["honeycombio"]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+# honeycomb-beeline = "^2.17.2"
+honeycomb-beeline = { path = "../../../beeline-python" }
+flask = "^1.1.2"
+python-dotenv = "^0.14.0"
