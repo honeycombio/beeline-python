@@ -1,8 +1,15 @@
 # example flask app
 
+This simple Flask app uses auto-instrumentation and adds a manual span with trace context including the message of "Hello World".
+
+## Getting Started
+
+First set an environment variable `HONEYCOMB_API_KEY`, available from your account page.
+This will configure the server to send instrumentation events to Honeycomb in a dataset called my-flask-app.
+
 ## Download or Build
 
-First, [create and activate a virtual environment](https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/#creating-a-virtual-environment):
+[Create and activate a virtual environment](https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/#creating-a-virtual-environment):
 
 ```bash
 python3 -m venv env
