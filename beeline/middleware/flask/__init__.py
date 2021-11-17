@@ -29,7 +29,7 @@ class HoneyMiddleware(object):
             beeline.add_field('request.error_detail',
                               beeline.internal.stringify_exception(exception))
             beeline.add_field('request.error', str(type(exception)))
-        
+
         beeline.internal.send_event()
 
 
