@@ -9,7 +9,7 @@ This will configure the server to send instrumentation events to Honeycomb in a 
 
 You'll also need [Poetry](https://python-poetry.org/) installed to run the example. Poetry automatically creates a virtual environment to run the example in so you don't need to manage one yourself.
 
-## Runing the example
+## Running the example
 
 Install the dependencies:
 
@@ -23,7 +23,7 @@ Run the application:
 poetry run flask run
 ```
 
-The server will start listening on port 5000:
+Now you can `curl` the app:
 
 ```bash
 $ curl localhost:5000
