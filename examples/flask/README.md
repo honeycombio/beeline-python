@@ -11,7 +11,7 @@ You'll also need [Poetry](https://python-poetry.org/) installed to run the examp
 
 ## Runing the example
 
-Then install the dependencies:
+Install the dependencies:
 
 ```bash
 poetry install
