@@ -6,6 +6,6 @@ authors = ["honeycombio"]
 
 [tool.poetry.dependencies]
 python = "^3.8"
-# honeycomb-beeline = "^2.17.2" # uncomment if not using local beeline
+honeycomb-beeline = {path = "../..", develop = true}
 flask = "^1.1.2"
 python-dotenv = "^0.14.0"
