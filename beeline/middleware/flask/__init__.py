@@ -47,9 +47,7 @@ class HoneyWSGIMiddleware(object):
         def _start_response(status, headers, *args):
             status_code = int(status[0:4])
             beeline.add_context_field("response.status_code", status_code)
-            if status_code != 500:
-                beeline.finish_trace(root_span)
-            elif status_code == 500 and not signals.signals_available:
+            if not signals.signals_available:
                 beeline.finish_trace(root_span)
 
             return start_response(status, headers, *args)
