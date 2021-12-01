@@ -1,5 +1,19 @@
 # beeline-python changelog
 
+## 2.17.3 2021-12-01
+
+### Fixes
+
+- Remove condition on status code (#191) | [@JamieDanielson](https://github.com/JamieDanielson)
+- Close trace regardless of exception (#190) | [@vreynolds](https://github.com/vreynolds)
+
+### Maintenance
+
+- Update dependabot to monthly (#194) | [@vreynolds](https://github.com/vreynolds)
+- Add python 3.9 and 3.10 to test matrix (#192) | [@vreynolds](https://github.com/vreynolds)
+- Add example app using Flask (#189) | [@JamieDanielson](https://github.com/JamieDanielson)
+- Empower apply-labels action to apply labels (#187) | [robbkidd](https://github.com/robbkidd)
+
 ## 2.17.2 2021-10-19
 
 ### Fixes
