@@ -21,7 +21,6 @@ def get_test_suite():
             else:
                 ts.addTest(inner_test_group)
         filtered_test_suite.addTest(ts)
-
     return filtered_test_suite
 
 

@@ -15,6 +15,8 @@ from collections import defaultdict
 
 from contextlib import contextmanager
 
+import wrapt
+
 from beeline.internal import log, stringify_exception
 
 import beeline.propagation
@@ -410,19 +412,19 @@ def traced_impl(tracer_fn, name, trace_id, parent_id):
     """Implementation of the traced decorator without async support."""
     def wrapped(fn):
         if inspect.isgeneratorfunction(fn):
-            @functools.wraps(fn)
-            def inner(*args, **kwargs):
+            @wrapt.decorator
+            def inner(fn, instance, args, kwargs):
                 inner_generator = fn(*args, **kwargs)
                 with tracer_fn(name=name, trace_id=trace_id, parent_id=parent_id):
                     for value in inner_generator:
                         yield value
-            return inner
+            return inner(fn)
         else:
-            @functools.wraps(fn)
-            def inner(*args, **kwargs):
+            @wrapt.decorator
+            def inner(fn, instance, args, kwargs):
                 with tracer_fn(name=name, trace_id=trace_id, parent_id=parent_id):
                     return fn(*args, **kwargs)
-            return inner
+            return inner(fn)
     return wrapped
 
 

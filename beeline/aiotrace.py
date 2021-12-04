@@ -8,6 +8,8 @@ import contextvars  # pylint: disable=import-error
 import functools
 import inspect
 
+import wrapt
+
 from beeline.trace import Tracer
 
 current_trace_var = contextvars.ContextVar("current_trace")
@@ -72,27 +74,24 @@ def traced_impl(tracer_fn, name, trace_id, parent_id):
     """
     def wrapped(fn):
         if asyncio.iscoroutinefunction(fn):
-            @functools.wraps(fn)
-            async def async_inner(*args, **kwargs):
+            @wrapt.decorator
+            async def async_inner(fn, instance, args, kwargs):
                 with tracer_fn(name=name, trace_id=trace_id, parent_id=parent_id):
                     return await fn(*args, **kwargs)
-
-            return async_inner
+            return async_inner(fn)
         elif inspect.isgeneratorfunction(fn):
-            @functools.wraps(fn)
-            def inner(*args, **kwargs):
+            @wrapt.decorator
+            def inner(fn, instance, args, kwargs):
                 inner_generator = fn(*args, **kwargs)
                 with tracer_fn(name=name, trace_id=trace_id, parent_id=parent_id):
                     yield from inner_generator
-
-            return inner
+            return inner(fn)
         else:
-            @functools.wraps(fn)
-            def inner(*args, **kwargs):
+            @wrapt.decorator
+            def inner(fn, instance, args, kwargs):
                 with tracer_fn(name=name, trace_id=trace_id, parent_id=parent_id):
                     return fn(*args, **kwargs)
-
-            return inner
+            return inner(fn)
 
     return wrapped
 
@@ -108,10 +107,10 @@ def untraced(fn):
 
     # Both synchronous and asynchronous functions may create tasks.
     if asyncio.iscoroutinefunction(fn):
-        @functools.wraps(fn)
-        async def wrapped(*args, **kwargs):
+        @wrapt.decorator
+        async def wrapped(fn, instance, args, kwargs):
+            token = None
             try:
-                token = None
                 current_trace = current_trace_var.get(None)
                 if current_trace is not None:
                     token = current_trace_var.set(None)
@@ -121,13 +120,13 @@ def untraced(fn):
                 if token is not None:
                     current_trace_var.reset(token)
 
-        return wrapped
+        return wrapped(fn)
 
     else:
-        @functools.wraps(fn)
-        def wrapped(*args, **kwargs):
+        @wrapt.decorator
+        def wrapped(fn, instance, args, kwargs):
+            token = None
             try:
-                token = None
                 current_trace = current_trace_var.get(None)
                 if current_trace is not None:
                     token = current_trace_var.set(None)
@@ -137,4 +136,4 @@ def untraced(fn):
                 if token is not None:
                     current_trace_var.reset(token)
 
-        return wrapped
+        return wrapped(fn)

@@ -1,3 +1,4 @@
+import inspect
 import unittest
 try:
     # The async functionality uses the contextvars module, added in
@@ -240,6 +241,25 @@ class TestAsynchronousTracer(unittest.TestCase):
         # Check that the task spans are both children of the root span
         self.assertEqual(root_span["span"].id, task0_span["span"].parent_id)
         self.assertEqual(root_span["span"].id, task1_span["span"].parent_id)
+
+    @async_test
+    async def test_async_decorator_preserves_signature(self):
+        @self.beeline.traced("task0")
+        async def task0(a, b, c=1):
+            await asyncio.sleep(0.2)
+
+        @beeline.traced(name="output_integers")
+        def output_integers(n):
+            for i in range(n):
+                yield i
+
+        def task1(a, b, c=1):
+            pass
+
+        self.assertEqual(inspect.getfullargspec(task0).args, ["a", "b", "c"])
+        self.assertEqual(inspect.getfullargspec(output_integers).args, ["n"])
+        self.assertEqual(inspect.getfullargspec(task1).args, ["a", "b", "c"])
+        self.assertEqual(inspect.getfullargspec(task1).args, ["a", "b", "c"])
 
     @async_test
     async def test_traceless_spans_in_other_tasks_should_be_ignored(self):
