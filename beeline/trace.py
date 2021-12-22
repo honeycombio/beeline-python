@@ -18,6 +18,7 @@ from contextlib import contextmanager
 from beeline.internal import log, stringify_exception
 
 import beeline.propagation
+import beeline.propagation.default
 import beeline.propagation.honeycomb
 
 MAX_INT32 = math.pow(2, 32) - 1
@@ -49,8 +50,8 @@ class Tracer(object):
 
         self.presend_hook = None
         self.sampler_hook = None
-        self.http_trace_parser_hook = beeline.propagation.honeycomb.http_trace_parser_hook
-        self.http_trace_propagation_hook = beeline.propagation.honeycomb.http_trace_propagation_hook
+        self.http_trace_parser_hook = beeline.propagation.default.http_trace_parser_hook
+        self.http_trace_propagation_hook = beeline.propagation.default.http_trace_propagation_hook
 
     @contextmanager
     def __call__(self, name, trace_id=None, parent_id=None):
