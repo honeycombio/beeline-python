@@ -1,5 +1,11 @@
 # beeline-python changelog
 
+## 2.18.0 2021-12-23
+
+### Improvements
+
+- accept both w3c and honeycomb propagation headers by default (#199) | [@vreynolds](https://github.com/vreynolds)
+
 ## 2.17.3 2021-12-01
 
 ### Fixes
