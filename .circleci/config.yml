@@ -15,21 +15,7 @@ jobs:
       - checkout
       - python/install-packages:
           pkg-manager: poetry
-      - when:
-          condition:
-            equal:
-              - "2.7"
-              - << parameters.python-version >>
-          steps:
-            - run: poetry run pylint --ignore=aiotrace.py,test_async.py,urllib.py,test_urllib.py --rcfile=pylint.rc beeline
-      - when:
-          condition:
-            not:
-              equal:
-                - "2.7"
-                - << parameters.python-version >>
-          steps:
-            - run: poetry run pylint --rcfile=pylint.rc beeline
+      - run: poetry run pylint --rcfile=pylint.rc beeline
       - run: poetry run pycodestyle beeline --max-line-length=140
 
   test:
@@ -103,7 +89,6 @@ workflows:
           matrix: &matrix
             parameters:
               python-version:
-                - "2.7"
                 - "3.5"
                 - "3.6"
                 - "3.7"
