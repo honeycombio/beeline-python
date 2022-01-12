@@ -10,9 +10,9 @@ This package makes it easy to instrument your Python web application to send use
 
 ## Compatible with
 
-Currently supports Django (>1.10), Flask, Bottle, and Tornado.
+Currently, supports Django (>2), Flask, Bottle, and Tornado.
 
-Compatible with both Python 2.7 and Python 3.
+Compatible with Python 3.
 
 ## Get in touch
 

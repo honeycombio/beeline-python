@@ -12,15 +12,15 @@ homepage = "https://github.com/honeycombio/beeline-python"
 repository = "https://github.com/honeycombio/beeline-python"
 
 [tool.poetry.dependencies]
-python = ">=2.7"
+python = ">=3.5, <4"
 libhoney = ">=1.7.0"
 wrapt = "^1.12.1"
 [tool.poetry.dev-dependencies]
 mock = {version = "3.0.5", python = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"}
 coverage = [{version = "^5", python = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, <4"}]
-pylint = [{version = "^1.9", python = "<3.0"},{version = "^2", python = ">=3.5"}]
+pylint = [{version = "^2", python = ">=3.5"}]
 flask = "^1.1.2"
-django = [{version = "^1", python = "<3.0"},{version = "2.*", python = ">= 3.5"}]
+django = [{version = "2.*", python = ">= 3.5"}]
 tornado = [{version = "^6.0.4", python = ">=3.5"}]
 pycodestyle = "^2.6.0"
 bump2version = {version="^1.0.0", python = ">=3.5"}

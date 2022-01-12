@@ -32,5 +32,4 @@ If you haven't used pyenv or poetry before, see https://blog.jayway.com/2019/12/
   - `poetry shell` will get you a shell with the current virtualenv.
 
 * Switch python version by using the PYENV_VERSION environment variable to toggle between multiple python versions for testing
-  - `export PYENV_VERSION=2.7.18` to set the Python virtualenv to 2.7.18
-  - It is generally a good idea to test in both Python 2.7.18 as well as the latest released 3.x version. Our CircleCI configuration tests in 2.7 and all currently supported versions of Python 3.x.
+  - `export PYENV_VERSION=3.10.1` to set the Python virtualenv to 3.10.1
