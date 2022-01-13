@@ -1,5 +1,16 @@
 # beeline-python changelog
 
+## 3.0.0 2022-01-13
+
+### !!! Breaking Changes !!!
+
+Minimum supported Python version is now 3.5
+
+### Maintenance
+
+- drop python < 3.5 support, update vulnerable deps (#202) | | [@vreynolds](https://github.com/vreynolds)
+- gh: add re-triage workflow (#201) | | [@vreynolds](https://github.com/vreynolds)
+
 ## 2.18.0 2021-12-23
 
 ### Improvements
