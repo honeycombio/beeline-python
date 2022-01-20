@@ -53,6 +53,7 @@ class HoneyDBWrapper(object):
                 "db.query": sql,
                 "db.query_args": params,
             })
+            beeline.add_rollup_field("db.call_count", 1)
 
             try:
                 db_call_start = datetime.datetime.now()
