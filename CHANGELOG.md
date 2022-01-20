@@ -1,5 +1,11 @@
 # beeline-python changelog
 
+## 3.1.0 2022-01-20
+
+### Improvements
+
+- add a count of SQL queries to root span in django (#205) | [@jmhodges](https://github.com/jmhodges)
+
 ## 3.0.0 2022-01-13
 
 ### !!! Breaking Changes !!!
