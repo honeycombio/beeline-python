@@ -59,8 +59,9 @@ class HoneyDBWrapper(object):
                 db_call_start = datetime.datetime.now()
                 result = execute(sql, params, many, context)
                 db_call_diff = datetime.datetime.now() - db_call_start
-                beeline.add_context_field(
-                    "db.duration", db_call_diff.total_seconds() * 1000)
+                duration = db_call_diff.total_seconds() * 1000
+                beeline.add_context_field("db.duration", duration)
+                beeline.add_rollup_field("db.total_duration", duration)
             except Exception as e:
                 beeline.add_context_field("db.error", str(type(e)))
                 beeline.add_context_field(
