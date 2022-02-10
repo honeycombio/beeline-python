@@ -1,5 +1,11 @@
 # beeline-python changelog
 
+## 3.2.0 2022-02-10
+
+### Enhancements
+
+- add rollup SQL duration time to Django traces (#207) | [@jmhodges-color](https://github.com/jmhodges-color)
+
 ## 3.1.0 2022-01-20
 
 ### Improvements
