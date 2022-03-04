@@ -10,6 +10,7 @@ from beeline.trace import SynchronousTracer
 from beeline.version import VERSION
 from beeline import internal
 import beeline.propagation.default
+import beeline.propagation
 import sys
 # pyflakes
 assert internal
@@ -74,6 +75,9 @@ class Beeline(object):
         if debug:
             self._init_logger()
 
+        def IsClassicKey(writekey):
+            return len(writekey) == 32
+
         # allow setting some values from the environment
         if not writekey:
             writekey = os.environ.get('HONEYCOMB_WRITEKEY', '')
@@ -93,6 +97,11 @@ class Beeline(object):
             user_agent_addition=USER_AGENT_ADDITION,
             debug=debug,
         )
+
+        if IsClassicKey():
+            beeline.propagation.propagate_dataset = True
+        else:
+            beeline.propagation.propagate_dataset = False
 
         self.log('initialized honeycomb client: writekey=%s dataset=%s service_name=%s',
                  writekey, dataset, service_name)

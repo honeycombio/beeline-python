@@ -51,8 +51,9 @@ def marshal_propagation_context(propagation_context):
                   "parent_id={}".format(propagation_context.parent_id),
                   "context={}".format(trace_fields)]
 
-    if propagation_context.dataset:
-        components.insert(0, "dataset={}".format(quote(propagation_context.dataset)))
+    if beeline.propagation.propagate_dataset:
+        if propagation_context.dataset:
+            components.insert(0, "dataset={}".format(quote(propagation_context.dataset)))
 
     trace_header = "{};{}".format(version, ",".join(components))
 
@@ -101,4 +102,10 @@ def unmarshal_propagation_context_with_dataset(trace_header):
     if context is None:
         context = {}
 
-    return trace_id, parent_id, context, dataset
+    fullContext = trace_id, parent_id, context
+    fullContextWithDataset = trace_id, parent_id, context, dataset
+
+    if beeline.propagation.propagate_dataset:
+        return fullContextWithDataset
+    else:
+        return fullContext
