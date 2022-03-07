@@ -6,6 +6,7 @@ import beeline
 def propagate_dataset():
     return bool
 
+
 class PropagationContext(object):
     '''
     PropagationContext represents information that can either be read from, or
