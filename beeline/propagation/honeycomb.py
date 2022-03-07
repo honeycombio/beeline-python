@@ -96,16 +96,11 @@ def unmarshal_propagation_context_with_dataset(trace_header):
         elif k == 'context':
             context = json.loads(base64.b64decode(v.encode()).decode())
         elif k == 'dataset':
-            dataset = unquote(v)
+                if beeline.propagation.propagate_dataset:
+                    dataset = unquote(v)
 
     # context should be a dict
     if context is None:
         context = {}
 
-    fullContext = trace_id, parent_id, context
-    fullContextWithDataset = trace_id, parent_id, context, dataset
-
-    if beeline.propagation.propagate_dataset:
-        return fullContextWithDataset
-    else:
-        return fullContext
+    return trace_id, parent_id, context, dataset
