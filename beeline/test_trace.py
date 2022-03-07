@@ -7,6 +7,7 @@ import unittest
 import re
 import os
 import binascii
+import beeline.propagation
 
 from libhoney import Event
 
@@ -624,6 +625,7 @@ class TestSpan(unittest.TestCase):
 
 class TestPropagationHooks(unittest.TestCase):
     def test_propagate_and_start_trace_uses_honeycomb_header(self):
+        beeline.propagation.propagate_dataset = True
         # FIXME: Test basics, including error handling and custom hooks
 
         # implicitly tests finish_span

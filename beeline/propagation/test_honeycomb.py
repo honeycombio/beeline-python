@@ -1,4 +1,5 @@
 import unittest
+import beeline.propagation
 from beeline.propagation import DictRequest, PropagationContext
 import beeline.propagation.honeycomb as hc
 
@@ -21,6 +22,7 @@ class TestMarshalUnmarshal(unittest.TestCase):
 
     def test_roundtrip_with_dataset(self):
         '''Verify that we can successfully roundtrip (marshal and unmarshal)'''
+        beeline.propagation.propagate_dataset = True
         dataset = "blorp blorp"
         trace_id = "bloop"
         parent_id = "scoop"
@@ -55,6 +57,7 @@ class TestHoneycombHTTPTraceParserHook(unittest.TestCase):
 
 class TestHoneycombHTTPTracePropagationHook(unittest.TestCase):
     def test_generates_correct_header(self):
+        beeline.propagation.propagate_dataset = True
         dataset = "blorp blorp"
         trace_id = "bloop"
         parent_id = "scoop"
