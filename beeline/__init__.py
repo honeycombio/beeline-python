@@ -86,7 +86,13 @@ class Beeline(object):
             dataset = os.environ.get('HONEYCOMB_DATASET', '')
 
         if not service_name:
-            service_name = os.environ.get('HONEYCOMB_SERVICE', dataset)
+            service_name = os.environ.get('HONEYCOMB_SERVICE')
+        if not service_name:
+            service_name = os.environ.get('SERVICE_NAME'), 'unknown_service:python'
+
+        if not IsClassicKey(writekey):
+            # overwrite dataset with service name
+            dataset = service_name
 
         self.client = Client(
             writekey=writekey, dataset=dataset, sample_rate=sample_rate,
@@ -98,7 +104,7 @@ class Beeline(object):
             debug=debug,
         )
 
-        if IsClassicKey():
+        if IsClassicKey(writekey):
             beeline.propagation.propagate_dataset = True
         else:
             beeline.propagation.propagate_dataset = False
@@ -108,11 +114,27 @@ class Beeline(object):
         if not writekey:
             self.log(
                 'writekey not set! set the writekey if you want to send data to honeycomb')
-        if not dataset:
+        if not service_name:
             self.log(
-                'dataset not set! set a value for dataset if you want to send data to honeycomb')
+                'service name not set!'
+            )
+            if not IsClassicKey(writekey):
+                self.log(
+                    'data will be sent to unknown_service'
+                )
+
+        if IsClassicKey(writekey):
+            if not dataset:
+                self.log(
+                    'dataset not set! set a value for dataset if you want to send data to honeycomb')
+        else:
+            if dataset:
+                self.log(
+                    'dataset will be ignored in favor of service name'
+                )
 
         self.client.add_field('service_name', service_name)
+        self.client.add_field('service.name', service_name)
         self.client.add_field('meta.beeline_version', VERSION)
         self.client.add_field('meta.local_hostname', socket.gethostname())
 
