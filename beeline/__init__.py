@@ -97,13 +97,22 @@ class Beeline(object):
                     'dataset will be ignored in favor of service name'
                 )
 
+        default_service_name = "unknown_service"
+        process_name = os.environ.get('PROCESS_EXECUTABLE_NAME', '')
         if not service_name:
             service_name = os.environ.get('HONEYCOMB_SERVICE')
-        # also check SERVICE_NAME just in case, otherwise set default
+        # also check SERVICE_NAME just in case
         if not service_name:
-            service_name = os.environ.get('SERVICE_NAME', 'unknown_service:python')
+            service_name = os.environ.get('SERVICE_NAME', '')
+        # no service name, set default
+        if not service_name:
+            service_name = default_service_name
+            if process_name:
+                service_name += ":" + process_name
+            else:
+                service_name += ":python"
             self.log(
-                'service name not set! service name will be unknown_service:python'
+                'service name not set! service name will be ' + service_name
             )
             if not IsClassicKey(writekey):
                 self.log(
