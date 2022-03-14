@@ -87,9 +87,9 @@ class Beeline(object):
 
         if IsClassicKey(writekey):
             if not dataset:
-               dataset = os.environ.get('HONEYCOMB_DATASET', '')
+                dataset = os.environ.get('HONEYCOMB_DATASET', '')
             if not dataset:
-               self.log(
+                self.log(
                     'dataset not set! set a value for dataset if you want to send data to honeycomb')
         else:
             if dataset:
