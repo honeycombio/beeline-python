@@ -81,18 +81,40 @@ class Beeline(object):
         # allow setting some values from the environment
         if not writekey:
             writekey = os.environ.get('HONEYCOMB_WRITEKEY', '')
+        if not writekey:
+            self.log(
+                'writekey not set! set the writekey if you want to send data to honeycomb')
 
-        if not dataset:
-            dataset = os.environ.get('HONEYCOMB_DATASET', '')
+        if IsClassicKey(writekey):
+            if not dataset:
+               dataset = os.environ.get('HONEYCOMB_DATASET', '')
+            if not dataset:
+               self.log(
+                    'dataset not set! set a value for dataset if you want to send data to honeycomb')
+        else:
+            if dataset:
+                self.log(
+                    'dataset will be ignored in favor of service name'
+                )
 
         if not service_name:
             service_name = os.environ.get('HONEYCOMB_SERVICE')
+        # also check SERVICE_NAME just in case, otherwise set default
         if not service_name:
-            service_name = os.environ.get('SERVICE_NAME'), 'unknown_service:python'
+            service_name = os.environ.get('SERVICE_NAME', 'unknown_service:python')
+            self.log(
+                'service name not set! service name will be unknown_service:python'
+            )
+            if not IsClassicKey(writekey):
+                self.log(
+                    'data will be sent to unknown_service'
+                )
 
         if not IsClassicKey(writekey):
-            # overwrite dataset with service name
-            dataset = service_name
+            # overwrite dataset with service name, trim whitespace
+            dataset = service_name.strip()
+            if dataset == "" or dataset.startswith("unknown_service"):
+                dataset = "unknown_service"
 
         self.client = Client(
             writekey=writekey, dataset=dataset, sample_rate=sample_rate,
@@ -111,27 +133,6 @@ class Beeline(object):
 
         self.log('initialized honeycomb client: writekey=%s dataset=%s service_name=%s',
                  writekey, dataset, service_name)
-        if not writekey:
-            self.log(
-                'writekey not set! set the writekey if you want to send data to honeycomb')
-        if not service_name:
-            self.log(
-                'service name not set!'
-            )
-            if not IsClassicKey(writekey):
-                self.log(
-                    'data will be sent to unknown_service'
-                )
-
-        if IsClassicKey(writekey):
-            if not dataset:
-                self.log(
-                    'dataset not set! set a value for dataset if you want to send data to honeycomb')
-        else:
-            if dataset:
-                self.log(
-                    'dataset will be ignored in favor of service name'
-                )
 
         self.client.add_field('service_name', service_name)
         self.client.add_field('service.name', service_name)
