@@ -51,8 +51,7 @@ def marshal_propagation_context(propagation_context):
                   "parent_id={}".format(propagation_context.parent_id),
                   "context={}".format(trace_fields)]
 
-    if beeline.propagation.propagate_dataset:
-        if propagation_context.dataset:
+    if beeline.propagation.propagate_dataset and propagation_context.dataset:
             components.insert(0, "dataset={}".format(quote(propagation_context.dataset)))
 
     trace_header = "{};{}".format(version, ",".join(components))
