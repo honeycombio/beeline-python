@@ -35,7 +35,21 @@ class TestMarshalUnmarshal(unittest.TestCase):
         self.assertEqual(trace_id, new_trace_id)
         self.assertEqual(parent_id, new_parent_id)
         self.assertEqual(trace_fields, new_trace_fields)
-
+    def test_roundtrip_with_dataset_propagation_disabled(self):
+        '''Verify that we can successfully roundtrip (marshal and unmarshal) without dataset propagation'''
+        beeline.propagation.propagate_dataset = False
+        dataset = "blorp blorp"
+        trace_id = "bloop"
+        parent_id = "scoop"
+        trace_fields = {"key": "value"}
+        pc = PropagationContext(trace_id, parent_id, trace_fields, dataset)
+        header = hc.marshal_propagation_context(pc)
+        new_trace_id, new_parent_id, new_trace_fields, new_dataset = hc.unmarshal_propagation_context_with_dataset(
+            header)
+        self.assertIsNone(new_dataset)
+        self.assertEqual(trace_id, new_trace_id)
+        self.assertEqual(parent_id, new_parent_id)
+        self.assertEqual(trace_fields, new_trace_fields)
 
 class TestHoneycombHTTPTraceParserHook(unittest.TestCase):
     def test_has_header(self):
@@ -68,3 +82,15 @@ class TestHoneycombHTTPTracePropagationHook(unittest.TestCase):
         self.assertIn('X-Honeycomb-Trace', headers)
         self.assertEqual(headers['X-Honeycomb-Trace'],
                          "1;dataset=blorp%20blorp,trace_id=bloop,parent_id=scoop,context=eyJrZXkiOiAidmFsdWUifQ==")
+    def test_generates_correct_header_with_dataset_propagation_disabled(self):
+        beeline.propagation.propagate_dataset = False
+        dataset = "blorp blorp"
+        trace_id = "bloop"
+        parent_id = "scoop"
+        trace_fields = {"key": "value"}
+        pc = PropagationContext(
+            trace_id, parent_id, trace_fields, dataset)
+        headers = hc.http_trace_propagation_hook(pc)
+        self.assertIn('X-Honeycomb-Trace', headers)
+        self.assertEqual(headers['X-Honeycomb-Trace'],
+                         "1;trace_id=bloop,parent_id=scoop,context=eyJrZXkiOiAidmFsdWUifQ==")
