@@ -95,9 +95,8 @@ def unmarshal_propagation_context_with_dataset(trace_header):
             parent_id = v
         elif k == 'context':
             context = json.loads(base64.b64decode(v.encode()).decode())
-        elif k == 'dataset':
-            if beeline.propagation.propagate_dataset:
-                dataset = unquote(v)
+        elif k == 'dataset' and beeline.propagation.propagate_dataset:
+            dataset = unquote(v)
 
     # context should be a dict
     if context is None:
