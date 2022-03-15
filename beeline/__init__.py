@@ -120,8 +120,16 @@ class Beeline(object):
                 )
 
         if not IsClassicKey(writekey):
-            # overwrite dataset with service name, trim whitespace
-            dataset = service_name.strip()
+            # set dataset based on service name
+            dataset = service_name
+            if dataset.strip() != dataset:
+                # whitespace detected. trim whitespace, warn on diff
+                self.log(
+                    'service name has unexpected spaces'
+                )
+                dataset = service_name.strip()
+
+            # set default, truncate to unknown_service if needed
             if dataset == "" or dataset.startswith("unknown_service"):
                 dataset = "unknown_service"
 
