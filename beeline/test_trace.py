@@ -3,7 +3,6 @@ from mock import ANY, Mock, call, patch
 import base64
 import datetime
 import json
-import logging
 import unittest
 import re
 import os
