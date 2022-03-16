@@ -81,6 +81,9 @@ class Beeline(object):
         # allow setting some values from the environment
         if not writekey:
             writekey = os.environ.get('HONEYCOMB_WRITEKEY', '')
+        # also check API_KEY just in case
+        if not writekey:
+            writekey = os.environ.get('HONEYCOMB_API_KEY', '')
         if not writekey:
             self.log(
                 'writekey not set! set the writekey if you want to send data to honeycomb')
