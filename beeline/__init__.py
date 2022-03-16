@@ -85,18 +85,20 @@ class Beeline(object):
         if not writekey:
             writekey = os.environ.get('HONEYCOMB_API_KEY', '')
         if not writekey:
-            self.log(
-                'writekey not set! set the writekey if you want to send data to honeycomb')
+            logging.error(
+                'writekey not set! set the writekey if you want to send data to honeycomb'
+            )
 
         if IsClassicKey(writekey):
             if not dataset:
                 dataset = os.environ.get('HONEYCOMB_DATASET', '')
             if not dataset:
-                self.log(
-                    'dataset not set! set a value for dataset if you want to send data to honeycomb')
+                logging.error(
+                    'dataset not set! set a value for dataset if you want to send data to honeycomb'
+                )
         else:
             if dataset:
-                self.log(
+                logging.error(
                     'dataset will be ignored in favor of service name'
                 )
 
@@ -114,11 +116,11 @@ class Beeline(object):
                 service_name += ":" + process_name
             else:
                 service_name += ":python"
-            self.log(
+            logging.error(
                 'service name not set! service name will be ' + service_name
             )
             if not IsClassicKey(writekey):
-                self.log(
+                logging.error(
                     'data will be sent to unknown_service'
                 )
 
@@ -127,7 +129,7 @@ class Beeline(object):
             dataset = service_name
             if dataset.strip() != dataset:
                 # whitespace detected. trim whitespace, warn on diff
-                self.log(
+                logging.error(
                     'service name has unexpected spaces'
                 )
                 dataset = service_name.strip()
