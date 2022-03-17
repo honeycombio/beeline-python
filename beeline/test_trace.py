@@ -7,6 +7,7 @@ import unittest
 import re
 import os
 import binascii
+import beeline.propagation
 
 from libhoney import Event
 
@@ -624,6 +625,7 @@ class TestSpan(unittest.TestCase):
 
 class TestPropagationHooks(unittest.TestCase):
     def test_propagate_and_start_trace_uses_honeycomb_header(self):
+        beeline.propagation.propagate_dataset = True
         # FIXME: Test basics, including error handling and custom hooks
 
         # implicitly tests finish_span
@@ -647,6 +649,40 @@ class TestPropagationHooks(unittest.TestCase):
 
         tracer.finish_trace(span)
         self.assertEqual(span.event.dataset, 'flibble')
+
+        # ensure the event is sent
+        span.event.send_presampled.assert_called_once_with()
+        # ensure that there is no current trace
+        self.assertIsNone(tracer._trace)
+
+    def test_propagate_and_start_trace_uses_honeycomb_header_with_dataset_propagation_disabled(self):
+        beeline.propagation.propagate_dataset = False
+        # FIXME: Test basics, including error handling and custom hooks
+
+        # implicitly tests finish_span
+        m_client = Mock()
+        # these values are used before sending
+        m_client.new_event.return_value.start_time = datetime.datetime.now()
+        m_client.new_event.return_value.sample_rate = 1
+        tracer = SynchronousTracer(m_client)
+
+        header_value = '1;dataset=flibble,trace_id=bloop,parent_id=scoop,context=e30K'
+        req = DictRequest({
+            # case shouldn't matter
+            'X-HoNEyComb-TrACE': header_value,
+        })
+
+        span = tracer.propagate_and_start_trace(
+            context={'big': 'important_stuff'}, request=req)
+        self.assertEqual(tracer._trace.stack[0], span)
+        self.assertEqual(span.trace_id, "bloop")
+        self.assertEqual(span.parent_id, "scoop")
+
+        tracer.finish_trace(span)
+
+        # testing the absence of dataset
+        self.assertNotEqual(getattr(span.event, 'dataset'), "flibble")
+        self.assertNotIsInstance(span.event.dataset, str)
 
         # ensure the event is sent
         span.event.send_presampled.assert_called_once_with()

@@ -10,6 +10,7 @@ from beeline.trace import SynchronousTracer
 from beeline.version import VERSION
 from beeline import internal
 import beeline.propagation.default
+import beeline.propagation
 import sys
 # pyflakes
 assert internal
@@ -74,15 +75,68 @@ class Beeline(object):
         if debug:
             self._init_logger()
 
+        def IsClassicKey(writekey):
+            return len(writekey) == 32
+
         # allow setting some values from the environment
         if not writekey:
             writekey = os.environ.get('HONEYCOMB_WRITEKEY', '')
+        # also check API_KEY just in case
+        if not writekey:
+            writekey = os.environ.get('HONEYCOMB_API_KEY', '')
+        if not writekey:
+            logging.error(
+                'writekey not set! set the writekey if you want to send data to honeycomb'
+            )
 
-        if not dataset:
-            dataset = os.environ.get('HONEYCOMB_DATASET', '')
+        if IsClassicKey(writekey):
+            if not dataset:
+                dataset = os.environ.get('HONEYCOMB_DATASET', '')
+            if not dataset:
+                logging.error(
+                    'dataset not set! set a value for dataset if you want to send data to honeycomb'
+                )
+        else:
+            if dataset:
+                logging.error(
+                    'dataset will be ignored in favor of service name'
+                )
 
+        default_service_name = "unknown_service"
+        process_name = os.environ.get('PROCESS_EXECUTABLE_NAME', '')
         if not service_name:
-            service_name = os.environ.get('HONEYCOMB_SERVICE', dataset)
+            service_name = os.environ.get('HONEYCOMB_SERVICE')
+        # also check SERVICE_NAME just in case
+        if not service_name:
+            service_name = os.environ.get('SERVICE_NAME', '')
+        # no service name, set default
+        if not service_name:
+            service_name = default_service_name
+            if process_name:
+                service_name += ":" + process_name
+            else:
+                service_name += ":python"
+            logging.error(
+                'service name not set! service name will be ' + service_name
+            )
+            if not IsClassicKey(writekey):
+                logging.error(
+                    'data will be sent to unknown_service'
+                )
+
+        if not IsClassicKey(writekey):
+            # set dataset based on service name
+            dataset = service_name
+            if dataset.strip() != dataset:
+                # whitespace detected. trim whitespace, warn on diff
+                logging.error(
+                    'service name has unexpected spaces'
+                )
+                dataset = service_name.strip()
+
+            # set default, truncate to unknown_service if needed
+            if dataset == "" or dataset.startswith("unknown_service"):
+                dataset = "unknown_service"
 
         self.client = Client(
             writekey=writekey, dataset=dataset, sample_rate=sample_rate,
@@ -94,16 +148,16 @@ class Beeline(object):
             debug=debug,
         )
 
+        if IsClassicKey(writekey):
+            beeline.propagation.propagate_dataset = True
+        else:
+            beeline.propagation.propagate_dataset = False
+
         self.log('initialized honeycomb client: writekey=%s dataset=%s service_name=%s',
                  writekey, dataset, service_name)
-        if not writekey:
-            self.log(
-                'writekey not set! set the writekey if you want to send data to honeycomb')
-        if not dataset:
-            self.log(
-                'dataset not set! set a value for dataset if you want to send data to honeycomb')
 
         self.client.add_field('service_name', service_name)
+        self.client.add_field('service.name', service_name)
         self.client.add_field('meta.beeline_version', VERSION)
         self.client.add_field('meta.local_hostname', socket.gethostname())
 

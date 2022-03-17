@@ -51,7 +51,7 @@ def marshal_propagation_context(propagation_context):
                   "parent_id={}".format(propagation_context.parent_id),
                   "context={}".format(trace_fields)]
 
-    if propagation_context.dataset:
+    if beeline.propagation.propagate_dataset and propagation_context.dataset:
         components.insert(0, "dataset={}".format(quote(propagation_context.dataset)))
 
     trace_header = "{};{}".format(version, ",".join(components))
@@ -94,7 +94,7 @@ def unmarshal_propagation_context_with_dataset(trace_header):
             parent_id = v
         elif k == 'context':
             context = json.loads(base64.b64decode(v.encode()).decode())
-        elif k == 'dataset':
+        elif k == 'dataset' and beeline.propagation.propagate_dataset:
             dataset = unquote(v)
 
     # context should be a dict

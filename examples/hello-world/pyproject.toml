@@ -1,0 +1,14 @@
+[tool.poetry]
+name = "hello-world"
+version = "0.1.0"
+description = "print hello world"
+authors = ["honeycombio"]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+honeycomb-beeline = {path = "../../dist/honeycomb_beeline-3.42.99-py3-none-any.whl", develop = false}
+# honeycomb-beeline = "^3.2.0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
