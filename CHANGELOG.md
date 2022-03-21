@@ -1,5 +1,11 @@
 # beeline-python changelog
 
+## 3.3.0 2022-03-21
+
+### Enhancements
+
+- feat: Add Environment & Services support (#213) | [@JamieDanielson](https://github.com/JamieDanielson)
+
 ## 3.2.0 2022-02-10
 
 ### Enhancements
