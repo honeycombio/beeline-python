@@ -152,11 +152,11 @@ python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 
 [[package]]
 name = "libhoney"
-version = "1.11.2"
+version = "2.0.0"
 description = "Python library for sending data to Honeycomb"
 category = "main"
 optional = false
-python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
+python-versions = ">=3.5,<4"
 
 [package.dependencies]
 requests = ">=2.24.0,<3.0.0"
@@ -457,8 +457,8 @@ lazy-object-proxy = [
     {file = "lazy_object_proxy-1.4.3-cp38-cp38-win_amd64.whl", hash = "sha256:59f79fef100b09564bc2df42ea2d8d21a64fdcda64979c0fa3db7bdaabaf6239"},
 ]
 libhoney = [
-    {file = "libhoney-1.11.2-py2.py3-none-any.whl", hash = "sha256:c89c223a19e93997056031e232eca8bae148ddb6f25720f8043f45483f0b6e88"},
-    {file = "libhoney-1.11.2.tar.gz", hash = "sha256:e3716b85efdd05d0a7c6f6032f380668d89a5b325fd2aa372921474f4eaf12c1"},
+    {file = "libhoney-2.0.0-py3-none-any.whl", hash = "sha256:93a978e9709603258a4a1f466457c5b1458eb9a30e25d058d38a3e4dcb527527"},
+    {file = "libhoney-2.0.0.tar.gz", hash = "sha256:9e6334bd93d843d5ad8f138894eff35f5276b35590d293aa168d007b31251a44"},
 ]
 markupsafe = [
     {file = "MarkupSafe-1.1.1-cp27-cp27m-macosx_10_6_intel.whl", hash = "sha256:09027a7803a62ca78792ad89403b1b7a73a01c8cb65909cd876f7fcebd79b161"},
