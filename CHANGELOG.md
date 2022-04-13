@@ -1,5 +1,13 @@
 # beeline-python changelog
 
+## 3.3.1 2022-04-12
+
+### Maintenance
+
+- Bump libhoney from 1.11.2 to 2.0.0 (#209)
+- Bump wrapt from 1.13.3 to 1.14.0 (#215)
+- Bump django from 2.2.26 to 2.2.27 (#210)
+
 ## 3.3.0 2022-03-21
 
 ### Enhancements
