@@ -101,9 +101,9 @@ class Tracer(object):
             self._trace = Trace(generate_trace_id(), dataset)
 
         # start the root span
-        return self.start_span(context=context, parent_id=parent_span_id)
+        return self.start_span(context=context, parent_id=parent_span_id, is_root_span=True)
 
-    def start_span(self, context=None, parent_id=None):
+    def start_span(self, context=None, parent_id=None, is_root_span=False):
         if not self._trace:
             log('start_span called but no trace is active')
             return None
@@ -117,11 +117,18 @@ class Tracer(object):
         if context:
             ev.add(data=context)
 
-        ev.add(data={
+        fields = {
             'trace.trace_id': self._trace.id,
             'trace.parent_id': parent_span_id,
             'trace.span_id': span_id,
-        })
+        }
+        if is_root_span:
+            spanType = "root"
+            if parent_span_id:
+                spanType = "subroot"
+            fields['meta.span_type'] = spanType
+        ev.add(data=fields)
+
         is_root = len(self._trace.stack) == 0
         span = Span(trace_id=self._trace.id, parent_id=parent_span_id,
                     id=span_id, event=ev, is_root=is_root)
