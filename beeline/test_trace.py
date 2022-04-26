@@ -178,7 +178,7 @@ class TestSynchronousTracer(unittest.TestCase):
             pass
 
         tracer.start_span.assert_called_once_with(
-            context={'name': 'foo'}, parent_id='zyxw')
+            context={'name': 'foo'}, parent_id='zyxw', is_trace_root=True)
         tracer.finish_span.assert_called_once_with(mock_span)
 
     def test_trace_context_manager_starts_trace_if_trace_id_supplied(self):
@@ -210,6 +210,7 @@ class TestSynchronousTracer(unittest.TestCase):
                 'trace.trace_id': span.trace_id,
                 'trace.parent_id': span.parent_id,
                 'trace.span_id': span.id,
+                'meta.span_type': "root",
             }),
         ])
         self.assertEqual(tracer._trace.stack[0], span)
@@ -284,6 +285,7 @@ class TestSynchronousTracer(unittest.TestCase):
                 'trace.trace_id': span.trace_id,
                 'trace.parent_id': span.parent_id,
                 'trace.span_id': span.id,
+                'meta.span_type': 'subroot'
             }),
         ])
 
@@ -532,7 +534,7 @@ class TestSynchronousTracer(unittest.TestCase):
             pass
 
         tracer.start_span.assert_called_once_with(
-            context={'name': 'foo'}, parent_id=None)
+            context={'name': 'foo'}, parent_id=None, is_trace_root=True)
 
     def test_trace_with_custom_dataset(self):
         dataset = 'flibble'
