@@ -14,17 +14,15 @@ Currently, supports Django (>2), Flask, Bottle, and Tornado.
 
 Compatible with Python 3.
 
-## Get in touch
+## Updating to 3.3.0
 
-Please reach out to [support@honeycomb.io](mailto:support@honeycomb.io) or ping
-us with the chat bubble on [our website](https://www.honeycomb.io) for any
-assistance. We also welcome [bug reports](https://github.com/honeycombio/beeline-python/issues).
+Version 3.3.0 added support for Environment & Services, which changes sending behavior based on API Key.
+
+If you are using the [FileTranmission](https://github.com/honeycombio/libhoney-py/blob/main/libhoney/transmission.py#L448) method and setting a false API key - and still working in Classic mode - you must update the key to be 32 characters in length to keep the same behavior.
 
 ## Contributions
 
-Features, bug fixes and other changes to `beeline-python` are gladly accepted. Please
-open issues or a pull request with your change. Remember to add your name to the
-CONTRIBUTORS file!
+Features, bug fixes and other changes to `beeline-python` are gladly accepted.
 
 If you add a new test module, be sure and update `beeline.test_suite` to pick up the new tests.
 

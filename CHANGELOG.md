@@ -12,6 +12,8 @@
 
 ### Enhancements
 
+**NOTE** If you are using the [FileTranmission](https://github.com/honeycombio/libhoney-py/blob/main/libhoney/transmission.py#L448) method and setting a false API key - and still working in Classic mode - you must update the key to be 32 characters in length to keep the same behavior.
+
 - feat: Add Environment & Services support (#213) | [@JamieDanielson](https://github.com/JamieDanielson)
 
 ## 3.2.0 2022-02-10
