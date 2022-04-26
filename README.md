@@ -18,7 +18,7 @@ Compatible with Python 3.
 
 Version 3.3.0 added support for Environment & Services, which changes sending behavior based on API Key.
 
-If you are using the [FileTranmission](https://github.com/honeycombio/libhoney-py/blob/main/libhoney/transmission.py#L448) method and setting a false API key - and still working in Classic mode - you must update the key to be 32 characters in length to keep the same behavior.
+If you are using the [FileTransmission](https://github.com/honeycombio/libhoney-py/blob/main/libhoney/transmission.py#L448) method and setting a false API key - and still working in Classic mode - you must update the key to be 32 characters in length to keep the same behavior.
 
 ## Contributions
 
