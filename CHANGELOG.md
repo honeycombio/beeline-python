@@ -2,7 +2,7 @@
 
 ## 3.4.0 2022-05-04
 
-## Enhancements
+### Enhancements
 
 - Add meta.span_type to root/subroot spans (#219) | [@MikeGoldsmith](https://github.com/MikeGoldsmith)
 
