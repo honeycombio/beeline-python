@@ -1,1 +1,1 @@
-VERSION = '3.3.1'  # Update using bump2version
+VERSION = '3.4.0'  # Update using bump2version

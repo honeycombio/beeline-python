@@ -1,5 +1,16 @@
 # beeline-python changelog
 
+## 3.4.0 2022-05-04
+
+## Enhacements
+
+- Add meta.span_type to root/subroot spans (#219) | [@MikeGoldsmith](https://github.com/MikeGoldsmith)
+
+### Maintenance
+
+- docs: using FileTransmission with classic requires 32 character key (#220) | [@JamieDanielson](https://github.com/JamieDanielson)
+- Bump django from 2.2.27 to 2.2.28 (#217)
+
 ## 3.3.1 2022-04-12
 
 ### Maintenance
