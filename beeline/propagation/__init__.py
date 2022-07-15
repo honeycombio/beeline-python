@@ -1,4 +1,3 @@
-import six
 from abc import ABCMeta, abstractmethod
 import beeline
 
@@ -23,8 +22,7 @@ class PropagationContext(object):
         self.dataset = dataset
 
 
-@six.add_metaclass(ABCMeta)
-class Request(object):
+class Request(object, metaclass=ABCMeta):
     '''
     beeline.propagation.Request is an abstract class that defines the interface that should
     be used by middleware to pass request information into http_trace_parser_hooks. It should
