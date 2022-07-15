@@ -1,5 +1,4 @@
 from __future__ import absolute_import
-import six
 import unittest
 from mock import Mock, patch
 
@@ -7,7 +6,6 @@ import urllib
 
 
 class TestUrllibPatch(unittest.TestCase):
-    @unittest.skipIf(six.PY2, "urllib not compatible with python2")
     def test_request_fn_injects_headers_and_returns(self):
         from beeline.patch.urllib import _urllibopen  # pylint: disable=bad-option-value,import-outside-toplevel
 

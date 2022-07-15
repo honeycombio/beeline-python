@@ -2,7 +2,7 @@ import beeline
 from beeline.propagation import PropagationContext
 import base64
 import json
-from six.moves.urllib.parse import quote, unquote
+from urllib.parse import quote, unquote
 
 
 def http_trace_parser_hook(request):
