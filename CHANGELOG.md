@@ -1,5 +1,13 @@
 # beeline-python changelog
 
+## 3.4.1 2022-07-15
+
+### Maintenance
+
+- drop unnecessary backwards compatibility (remove six) (#228) | [@robbkidd](https://github.com/robbkidd)
+- Bump minimum libhoney from 1.7.0 to 2.1.1 (#226) | [@danvendia](https://github.com/danvendia)
+- Bump wrapt from 1.14.0 to 1.14.1 (#224) | [dependabot](https://docs.github.com/en/code-security/dependabot/dependabot-security-updates/configuring-dependabot-security-updates)
+
 ## 3.4.0 2022-05-04
 
 ### Enhancements
