@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "honeycomb-beeline"
-version = "3.4.1" # Update using bump2version
+version = "3.4.2" # Update using bump2version
 description = "Honeycomb library for easy instrumentation"
 authors = ["Honeycomb.io <feedback@honeycomb.io>"]
 license = "Apache-2.0"
