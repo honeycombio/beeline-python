@@ -1,7 +1,6 @@
 import unittest
 from beeline.propagation import DictRequest, PropagationContext
-import beeline.propagation.honeycomb as hc
-import beeline.propagation.w3c as w3c
+from beeline.propagation import w3c
 
 _TEST_TRACEPARENT_HEADER = "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-00"
 _TEST_TRACEPARENT_HEADER_DEFAULT_TRACEFLAGS = "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"

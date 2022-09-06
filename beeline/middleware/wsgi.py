@@ -32,9 +32,9 @@ class WSGIRequest(Request):
     def request_context(self):
         request_method = self._environ.get('REQUEST_METHOD')
         if request_method:
-            trace_name = "%s_http_%s" % (self._mwname, request_method.lower())
+            trace_name = f"{self._mwname}_http_{request_method.lower()}"
         else:
-            trace_name = "%s_http" % self._mwname
+            trace_name = f"{self._mwname}_http"
 
         return {
             "name": trace_name,

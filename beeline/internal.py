@@ -27,6 +27,6 @@ def stringify_exception(e):
         return str(e)
     except UnicodeEncodeError:
         try:
-            return u"{}".format(e)
+            return f"{e}"
         except Exception:
             return "unable to decode exception"

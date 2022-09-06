@@ -9,5 +9,5 @@ class TestInternal(unittest.TestCase):
         e = Exception("foo")
         self.assertEqual('foo', stringify_exception(e))
 
-        e = Exception(u"\u1024abcdef")
-        self.assertEqual(u'\u1024abcdef', stringify_exception(e))
+        e = Exception("\u1024abcdef")
+        self.assertEqual('\u1024abcdef', stringify_exception(e))

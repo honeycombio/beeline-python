@@ -110,8 +110,8 @@ def untraced(fn):
     if asyncio.iscoroutinefunction(fn):
         @functools.wraps(fn)
         async def wrapped(*args, **kwargs):
+            token = None
             try:
-                token = None
                 current_trace = current_trace_var.get(None)
                 if current_trace is not None:
                     token = current_trace_var.set(None)
@@ -126,8 +126,8 @@ def untraced(fn):
     else:
         @functools.wraps(fn)
         def wrapped(*args, **kwargs):
+            token = None
             try:
-                token = None
                 current_trace = current_trace_var.get(None)
                 if current_trace is not None:
                     token = current_trace_var.set(None)

@@ -26,7 +26,7 @@ def request(_request, instance, args, kwargs):
         method = kwargs.get('method') or args[0]
 
         beeline.add_context({
-            "name": "requests_%s" % method,
+            "name": f"requests_{method}",
             "request.method": method,
             "request.url": kwargs.get('url') or args[1],
         })

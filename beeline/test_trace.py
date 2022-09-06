@@ -575,8 +575,7 @@ class TestTraceContext(unittest.TestCase):
     def test_marshal_trace_context_empty_context(self):
         trace_id = "123456"
         parent_id = "654321"
-        trace_context = "{};trace_id={},parent_id={}".format(
-            1, trace_id, parent_id)
+        trace_context = f"{1};trace_id={trace_id},parent_id={parent_id}"
 
         trace_id_u, parent_id_u, trace_fields_u = unmarshal_trace_context(
             trace_context)
@@ -595,9 +594,7 @@ class TestTraceContext(unittest.TestCase):
         trace_fields = {"i": "like", "to": "trace"}
         fields_string = base64.b64encode(
             json.dumps(trace_fields).encode()).decode()
-        trace_context = "{};trace_id={},parent_id={},dataset_id={},context={}".format(
-            1, trace_id, parent_id, dataset_id, fields_string
-        )
+        trace_context = f"{1};trace_id={trace_id},parent_id={parent_id},dataset_id={dataset_id},context={fields_string}"
 
         trace_id_u, parent_id_u, trace_fields_u = unmarshal_trace_context(
             trace_context)
