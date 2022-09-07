@@ -1,5 +1,11 @@
 # beeline-python changelog
 
+## 3.4.2 2022-09-06
+
+### Fixes
+
+- Django < 2.2 does not have request.headers (#231) | [@vreynolds](https://github.com/vreynolds)
+
 ## 3.4.1 2022-07-15
 
 ### Maintenance
