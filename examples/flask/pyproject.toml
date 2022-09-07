@@ -9,3 +9,4 @@ python = "^3.8"
 honeycomb-beeline = {path = "../..", develop = true}
 flask = "^1.1.2"
 python-dotenv = "^0.14.0"
+MarkupSafe = "2.0.1"
