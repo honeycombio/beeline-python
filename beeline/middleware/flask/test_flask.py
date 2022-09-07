@@ -1,4 +1,5 @@
 import unittest
+from flask import Flask
 from mock import Mock, patch, ANY
 
 from beeline.middleware.flask import HoneyWSGIMiddleware, HoneyDBMiddleware
@@ -34,23 +35,26 @@ class SimpleWSGITest(unittest.TestCase):
 
 
 class HoneyDBMiddlewareTest(unittest.TestCase):
-    @patch("beeline.middleware.flask.current_app")
-    def test_before_cursor_execute(self, current_app):
-        with patch("beeline.middleware.flask.beeline") as beeline:
-            mw = HoneyDBMiddleware(current_app)
-            mw.before_cursor_execute(
-                conn=Mock(name="conn"),
-                cursor=Mock(name="cursor"),
-                statement="SELECT * FROM widgets WHERE ID IN :widget_ids",
-                parameters={'widget_ids': (1, 2)},
-                context=Mock(name="context"),
-                executemany=False
-            )
-            beeline.start_span.assert_called_with(
-                context={
-                    'name': 'flask_db_query',
-                    'type': 'db',
-                    'db.query': 'SELECT * FROM widgets WHERE ID IN :widget_ids',
-                    'db.query_args': ['widget_ids=(1, 2)']
-                }
-            )
+    def setUp(self):
+        self.app = Flask('test')
+
+    def test_before_cursor_execute(self):
+        with self.app.app_context():
+            with patch("beeline.middleware.flask.beeline") as beeline:
+                mw = HoneyDBMiddleware(self.app.app_context)
+                mw.before_cursor_execute(
+                    conn=Mock(name="conn"),
+                    cursor=Mock(name="cursor"),
+                    statement="SELECT * FROM widgets WHERE ID IN :widget_ids",
+                    parameters={'widget_ids': (1, 2)},
+                    context=Mock(name="context"),
+                    executemany=False
+                )
+                beeline.start_span.assert_called_with(
+                    context={
+                        'name': 'flask_db_query',
+                        'type': 'db',
+                        'db.query': 'SELECT * FROM widgets WHERE ID IN :widget_ids',
+                        'db.query_args': ['widget_ids=(1, 2)']
+                    }
+                )
