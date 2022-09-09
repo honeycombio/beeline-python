@@ -13,17 +13,17 @@ repository = "https://github.com/honeycombio/beeline-python"
 
 [tool.poetry.dependencies]
 python = ">=3.7, <4"
-libhoney = "^2.1.1"
+libhoney = "^2.3.0"
 wrapt = "^1.12.1"
 [tool.poetry.dev-dependencies]
 mock = "^4.0.3"
 coverage = "^6.4.4"
 pylint = [{version = "^2.13", python = ">=3.7,<4"}]
-flask = "^1.1.2"
 django = [{version = "^3.2", python = ">= 3.7,<4"}]
 tornado = "^6.2"
 pycodestyle = "^2.6.0"
 bump2version = "^1.0.1"
+Flask = "2.1"
 
 [tool.poetry.scripts]
 tests = "beeline.test_suite:run_tests"
