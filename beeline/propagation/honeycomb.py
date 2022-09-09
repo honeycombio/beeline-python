@@ -47,14 +47,15 @@ def marshal_propagation_context(propagation_context):
     trace_fields = base64.b64encode(json.dumps(
         propagation_context.trace_fields).encode()).decode()
 
-    components = ["trace_id={}".format(propagation_context.trace_id),
-                  "parent_id={}".format(propagation_context.parent_id),
-                  "context={}".format(trace_fields)]
+    components = [f"trace_id={propagation_context.trace_id}",
+                  f"parent_id={propagation_context.parent_id}",
+                  f"context={trace_fields}"]
 
     if beeline.propagation.propagate_dataset and propagation_context.dataset:
-        components.insert(0, "dataset={}".format(quote(propagation_context.dataset)))
+        components.insert(0, f"dataset={quote(propagation_context.dataset)}")
 
-    trace_header = "{};{}".format(version, ",".join(components))
+    join_components = ",".join(components)
+    trace_header = f"{version};{join_components}"
 
     return trace_header
 

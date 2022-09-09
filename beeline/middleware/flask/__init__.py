@@ -90,7 +90,7 @@ class HoneyDBMiddleware(object):
                 params.append(param)
         elif type(parameters) == dict:
             for k, v in parameters.items():
-                param = "%s=" % k
+                param = f"{k}="
                 if type(v) == datetime.datetime:
                     v = v.isoformat()
                 param += str(v)

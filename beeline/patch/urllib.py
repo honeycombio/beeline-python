@@ -25,7 +25,7 @@ def _urllibopen(_urlopen, instance, args, kwargs):
     try:
         resp = None
         beeline.add_context({
-            "name": "urllib_%s" % args[0].get_method(),
+            "name": f"urllib_{args[0].get_method()}",
             "request.method": args[0].get_method(),
             "request.uri": args[0].full_url
         })

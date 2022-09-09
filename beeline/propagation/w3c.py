@@ -72,11 +72,7 @@ def marshal_traceparent(propagation_context):
     if not trace_flags:
         trace_flags = "01"
 
-    traceparent_header = "00-{}-{}-{}".format(
-        propagation_context.trace_id,
-        propagation_context.parent_id,
-        trace_flags,
-    )
+    traceparent_header = f"00-{propagation_context.trace_id}-{propagation_context.parent_id}-{trace_flags}"
 
     return traceparent_header
 

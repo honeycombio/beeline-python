@@ -15,7 +15,7 @@ import sys
 # pyflakes
 assert internal
 
-USER_AGENT_ADDITION = "beeline-python/%s" % VERSION
+USER_AGENT_ADDITION = "beeline-python/{VERSION}"
 
 # This is the global beeline created by init
 _GBL = None
@@ -361,8 +361,7 @@ def init(writekey='', dataset='', service_name='', tracer=None,
         if pid == _INITPID:
             _GBL.log("beeline already initialized! skipping initialization")
             return
-        _GBL.log("beeline already initialized, but process ID has changed (was {}, now {}). Reinitializing.".format(
-            _INITPID, pid))
+        _GBL.log(f"beeline already initialized, but process ID has changed (was {_INITPID}, now {pid}). Reinitializing.")
         _GBL.close()
 
     _GBL = Beeline(

@@ -45,7 +45,7 @@ class HoneyDBWrapper(object):
             return execute(sql, params, many, context)
 
         vendor = context['connection'].vendor
-        trace_name = "django_%s_query" % vendor
+        trace_name = f"django_{vendor}_query"
 
         with beeline.tracer(trace_name):
             beeline.add_context({
@@ -86,7 +86,7 @@ class HoneyMiddlewareBase(object):
         return response
 
     def get_context_from_request(self, request):
-        trace_name = "django_http_%s" % request.method.lower()
+        trace_name = f"django_http_{request.method.lower()}"
         return {
             "name": trace_name,
             "type": "http_server",
@@ -201,7 +201,7 @@ class HoneyMiddlewareWithPOST(HoneyMiddleware):
     due to conflicts with other middleware. See https://github.com/honeycombio/beeline-python/issues/74.'''
 
     def get_context_from_request(self, request):
-        trace_name = "django_http_%s" % request.method.lower()
+        trace_name = f"django_http_{request.method.lower()}"
         return {
             "name": trace_name,
             "type": "http_server",

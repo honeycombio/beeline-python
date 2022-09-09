@@ -25,8 +25,5 @@ def log(msg, *args, **kwargs):
 def stringify_exception(e):
     try:
         return str(e)
-    except UnicodeEncodeError:
-        try:
-            return u"{}".format(e)
-        except Exception:
-            return "unable to decode exception"
+    except Exception:
+        return "unable to decode exception"

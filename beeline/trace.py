@@ -266,14 +266,14 @@ class Tracer(object):
             log('warning: adding rollup field without an active trace')
             return
 
-        self._trace.rollup_fields["rollup.%s" % name] += value
+        self._trace.rollup_fields[f"rollup.{name}"] += value
 
     def add_trace_field(self, name, value):
         # prefix with app to avoid key conflicts
         # add the app prefix if it's missing
 
         if (type(name) == str and not name.startswith("app.")) or type(name) != str:
-            key = "app.%s" % name
+            key = f"app.{name}"
         else:
             key = name
 
@@ -286,7 +286,7 @@ class Tracer(object):
         self._trace.fields[key] = value
 
     def remove_trace_field(self, name):
-        key = "app.%s" % name
+        key = f"app.{name}"
         self.remove_context_field(key)
         if not self._trace:
             log('warning: removing trace field without an active trace')
@@ -400,9 +400,7 @@ def marshal_trace_context(trace_id, parent_id, context):
     """Deprecated: Use beeline.propagation.honeycomb.marshal_trace_context instead"""
     version = 1
     trace_fields = base64.b64encode(json.dumps(context).encode()).decode()
-    trace_context = "{};trace_id={},parent_id={},context={}".format(
-        version, trace_id, parent_id, trace_fields
-    )
+    trace_context = f"{version};trace_id={trace_id},parent_id={parent_id},context={trace_fields}"
 
     return trace_context
 
@@ -440,11 +438,11 @@ system_random = random.SystemRandom()
 
 def generate_span_id():
     """Generate span ID compatible with w3c tracing spec."""
-    format_str = "{{:0{:d}x}}".format(SPAN_ID_BYTES*2)
+    format_str = "{{:0{:d}x}}".format(SPAN_ID_BYTES*2)  # pylint: disable=C0209
     return format_str.format(system_random.getrandbits(SPAN_ID_BYTES*8))
 
 
 def generate_trace_id():
     """Generate trace ID compatible with w3c tracing spec."""
-    format_str = "{{:0{:d}x}}".format(TRACE_ID_BYTES*2)
+    format_str = "{{:0{:d}x}}".format(TRACE_ID_BYTES*2)  # pylint: disable=C0209
     return format_str.format(system_random.getrandbits(TRACE_ID_BYTES*8))
