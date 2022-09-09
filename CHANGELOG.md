@@ -1,4 +1,11 @@
 # beeline-python changelog
+## 3.5.0 2022-09-09
+
+⚠️  Minimum supported Python version is now 3.7 ⚠️ 
+### Maintenance
+
+- Drop Python 3.5, 3.6 Support (#233) | [@emilyashley](https://github.com/emilyashley)
+- Bump minimum libhoney version to 2.3 (for python >=3.7)(#234) | [@emilyashley](https://github.com/emilyashley)
 
 ## 3.4.2 2022-09-06
 
