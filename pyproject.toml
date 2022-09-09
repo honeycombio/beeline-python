@@ -13,7 +13,7 @@ repository = "https://github.com/honeycombio/beeline-python"
 
 [tool.poetry.dependencies]
 python = ">=3.7, <4"
-libhoney = "^2.1.1"
+libhoney = "^2.3.0"
 wrapt = "^1.12.1"
 [tool.poetry.dev-dependencies]
 mock = "^4.0.3"
