@@ -6,9 +6,8 @@ git config --global user.email "accounts+circleci@honeycomb.io"
 git config --global user.name "Honeycomb CI"
 
 # build and commit website files
-python setup.py install
-pip install pdoc
-PYTHONPATH=. pdoc beeline --html --html-dir=./docs
+poetry install
+PYTHONPATH=. pdoc beeline --output-directory ./docs
 
 # Check out orphan gh-pages branch, get it set up correctly
 git checkout --orphan gh-pages

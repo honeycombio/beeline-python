@@ -75,6 +75,17 @@ jobs:
             echo "about to publish to tag ${CIRCLE_TAG}"
             ls -l ~/artifacts/*
       - run: ghr -draft -n ${CIRCLE_TAG} -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} ${CIRCLE_TAG} ~/artifacts
+
+  push_docs:
+    executor:
+      name: python/default
+      tag: "3.8"
+    steps:
+      - checkout
+      - run:
+          name: Push docs
+          command: ./push_docs.sh
+
 workflows:
   nightly:
     triggers:
@@ -130,6 +141,15 @@ workflows:
           context: Honeycomb Secrets for Public Repos
           requires:
             - build
+          filters:
+            tags:
+              only: /v[0-9].*/
+            branches:
+              ignore: /.*/
+      - push_docs:
+          context: Honeycomb Secrets for Public Repos
+          requires:
+            - publish_pypi
           filters:
             tags:
               only: /v[0-9].*/
