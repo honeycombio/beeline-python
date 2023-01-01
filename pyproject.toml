@@ -17,7 +17,7 @@ libhoney = "^2.3.0"
 wrapt = "^1.12.1"
 [tool.poetry.dev-dependencies]
 mock = "^4.0.3"
-coverage = "^6.5.0"
+coverage = "^7.0.1"
 pylint = [{version = "^2.13", python = ">=3.7,<4"}]
 django = [{version = "^3.2", python = ">= 3.7,<4"}]
 tornado = "^6.2"
