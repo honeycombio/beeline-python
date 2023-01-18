@@ -109,13 +109,17 @@ class HoneyDBMiddleware(object):
         if not current_app:
             return
 
-        query_duration = datetime.datetime.now() - self.query_start_time
-
-        beeline.add_context({
-            "db.duration": query_duration.total_seconds() * 1000,
+        fields = {
             "db.last_insert_id": getattr(cursor, 'lastrowid', None),
             "db.rows_affected": cursor.rowcount,
-        })
+        }
+
+        # only try to calculate query duration if we have a start time
+        if self.query_start_time:
+            query_duration = datetime.datetime.now() - self.query_start_time
+            fields["db.duration"] = query_duration.total_seconds() * 1000
+
+        beeline.add_context(fields)
         if self.state.span:
             beeline.finish_span(self.state.span)
         self.state.span = None
