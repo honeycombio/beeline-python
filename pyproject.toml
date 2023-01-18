@@ -21,7 +21,7 @@ coverage = "^7.0.5"
 pylint = [{version = "^2.13", python = ">=3.7,<4"}]
 django = [{version = "^3.2", python = ">= 3.7,<4"}]
 tornado = "^6.2"
-pycodestyle = "^2.6.0"
+pycodestyle = "^2.10.0"
 bump2version = "^1.0.1"
 Flask = "2.2.2"
 
