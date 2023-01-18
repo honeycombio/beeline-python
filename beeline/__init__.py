@@ -15,7 +15,7 @@ import sys
 # pyflakes
 assert internal
 
-USER_AGENT_ADDITION = "beeline-python/{VERSION}"
+USER_AGENT_ADDITION = f"beeline-python/{VERSION}"
 
 # This is the global beeline created by init
 _GBL = None
