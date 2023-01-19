@@ -1,7 +1,36 @@
 # beeline-python changelog
+
+## 3.5.1 2023-01-19
+
+### Fixes
+
+- Only try to calculate query duration when we have start time (#255) | [@MikeGoldsmith](https://github.com/MikeGoldsmith)
+- Parse version number for beeline-python/{VERSION} addition (#257) | [@emilyashley](https://github.com/emilyashley)
+
+### Maintenance
+
+- Give dependabot PRs better title (#250) | [@vreynolds](https://github.com/vreynolds)
+- Update validate PR title workflow (#245) | [@pkanal](https://github.com/pkanal)
+- Validate PR title (#244) | [@pkanal](https://github.com/pkanal)
+- Add release file (#240) | [@vreynolds](https://github.com/vreynolds)
+- Add new project workflow (#239) | [@vreynolds](https://github.com/vreynolds)
+- Fix ci build (#249) | [@vreynolds](https://github.com/vreynolds)
+- Delete workflows for old board (#241) | [@vreynolds](https://github.com/vreynolds)
+- Update releasing notes (#236) | [@emilyashley](https://github.com/emilyashley)
+
+- Bump pycodestyle from 2.9.1 to 2.10.0 (#246)
+- bump coverage from 6.5.0 to 7.0.5 (#256)
+- bump mock from 4.0.3 to 5.0.0 (#254)
+- bump setuptools from 65.4.1 to 65.5.1 (#252)
+- Bump certifi from 2022.6.15 to 2022.12.7 in /examples/flask (#247)
+- Bump certifi from 2022.6.15.1 to 2022.12.7 (#248)
+- Bump django from 3.2.15 to 3.2.16 (#242)
+- Bump flask from 2.1.0 to 2.2.2 (#238)
+- Bump coverage from 6.4.4 to 6.5.0 (#237)
+
 ## 3.5.0 2022-09-09
 
-⚠️  Minimum supported Python version is now 3.7 ⚠️ 
+⚠️  Minimum supported Python version is now 3.7 ⚠️
 ### Maintenance
 
 - Drop Python 3.5, 3.6 Support (#233) | [@emilyashley](https://github.com/emilyashley)
