@@ -435,14 +435,14 @@ files = [
 
 [[package]]
 name = "mock"
-version = "5.0.0"
+version = "5.0.1"
 description = "Rolling backport of unittest.mock for all Pythons"
 category = "dev"
 optional = false
 python-versions = ">=3.6"
 files = [
-    {file = "mock-5.0.0-py3-none-any.whl", hash = "sha256:335ef0bf9bcd27505c0c1720d4eac2783f18d07d6f45ac49542b57885a1996dd"},
-    {file = "mock-5.0.0.tar.gz", hash = "sha256:fd552787228eb2ab8352f270470fa93c9ad8b9cbc565c5558ee3faed8edb3853"},
+    {file = "mock-5.0.1-py3-none-any.whl", hash = "sha256:c41cfb1e99ba5d341fbcc5308836e7d7c9786d302f995b2c271ce2144dece9eb"},
+    {file = "mock-5.0.1.tar.gz", hash = "sha256:e3ea505c03babf7977fd21674a69ad328053d414f05e6433c30d8fa14a534a6b"},
 ]
 
 [package.extras]
@@ -785,4 +785,4 @@ testing = ["func-timeout", "jaraco.itertools", "pytest (>=6)", "pytest-black (>=
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.7, <4"
-content-hash = "b0c46b35c641384854e9cdf9c96d6b8acd5bfbaa5005cff320abe1e3411d3af4"
+content-hash = "f1f5f8fbfe08e35c5a7a361c0cf4fa7fc7458a58cf085d39868aa69b770a5c30"
