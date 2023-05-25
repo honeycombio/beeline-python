@@ -6,8 +6,7 @@ authors = ["honeycombio"]
 
 [tool.poetry.dependencies]
 python = "^3.9"
-honeycomb-beeline = {path = "../../dist/honeycomb_beeline-3.42.99-py3-none-any.whl", develop = false}
-# honeycomb-beeline = "^3.2.0"
+honeycomb-beeline = {path = "../..", develop = true}
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
