@@ -1,0 +1,10 @@
+[tool.poetry]
+name = "beeline-django-example"
+version = "0.1.0"
+description = "django example app using beeline-python"
+authors = ["honeycombio"]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+honeycomb-beeline = {path = "../..", develop = true}
+Django = "4.2.1"
