@@ -72,7 +72,7 @@ class HoneyDBWrapper(object):
             finally:
                 if vendor in ('postgresql', 'mysql'):
                     beeline.add_context({
-                        "db.last_insert_id": context['cursor'].cursor.lastrowid,
+                        "db.last_insert_id": getattr(context['cursor'].cursor, 'lastrowid', None),
                         "db.rows_affected": context['cursor'].cursor.rowcount,
                     })
 
