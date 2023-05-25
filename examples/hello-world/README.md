@@ -1,9 +1,26 @@
 # hello world example
 
-## Setup and Run
+This simple python app adds a manual span with trace context including the message of "Hello World".
 
-1. Set environment variable for `HONEYCOMB_API_KEY`
-1. In top-level directory of repo, run `poetry build` to create a wheel package in the `dist` directory
-1. In hello-world directory, ensure version of beeline in `pyproject.toml` matches the wheel package
-1. In hello-world directory, run `poetry install`
-1. In hello-world directory, run `poetry run python3 app.py`
+## Prerequisites
+
+First set an environment variable `HONEYCOMB_API_KEY`, available from your account page.
+This will configure the server to send instrumentation events to Honeycomb in a dataset called my-flask-app.
+
+You'll also need [Poetry](https://python-poetry.org/) installed to run the example. Poetry automatically creates a virtual environment to run the example in so you don't need to manage one yourself.
+
+## Running the example
+
+Install the dependencies:
+
+```bash
+poetry install
+```
+
+Run the application:
+
+```bash
+poetry run python3 app.py
+```
+
+Check out the results in Honeycomb!

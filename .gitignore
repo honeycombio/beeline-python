@@ -13,3 +13,4 @@ bin
 .vscode
 .coverage
 htmlcov
+examples/**/poetry.lock
