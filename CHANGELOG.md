@@ -1,5 +1,28 @@
 # beeline-python changelog
 
+## 3.5.2 2023-05-25
+
+### Fixes
+
+- fix: fix error when cursor.lastrowid doesnt exist (#281) | [@JamieDanielson](https://github.com/JamieDanielson)
+
+### Maintenance
+
+- maint(deps): bump wrapt from 1.14.1 to 1.15.0 (#264)
+- maint: Bump requests from 2.28.1 to 2.31.0 in /examples/flask (#279)
+- maint(deps): bump requests from 2.28.1 to 2.31.0 (#280)
+- maint(deps-dev): bump mock from 5.0.1 to 5.0.2 (#275)
+- maint(deps-dev): bump coverage from 7.2.3 to 7.2.5 (#273)
+- maint(deps-dev): bump django from 3.2.18 to 3.2.19 (#277)
+- maint(deps-dev): bump flask from 2.2.3 to 2.2.5 (#276)
+- maint(deps): bump sqlparse from 0.4.2 to 0.4.4 (#272)
+- maint(deps-dev): bump coverage from 7.0.5 to 7.2.3 (#269)
+- maint(deps-dev): bump flask from 2.2.2 to 2.2.3 (#266)
+- maint(deps-dev): bump mock from 5.0.0 to 5.0.1 (#260)
+- maint(deps-dev): bump django from 3.2.17 to 3.2.18 (#262)
+- maint(deps): bump werkzeug from 2.2.2 to 2.2.3 (#263)
+- maint(deps-dev): bump django from 3.2.16 to 3.2.17 (#261)
+
 ## 3.5.1 2023-01-19
 
 ### Fixes
