@@ -5,7 +5,7 @@ import os
 import socket
 from contextlib import contextmanager
 
-from libhoney import Client
+from libhoney import Client, IsClassicKey
 from beeline.trace import SynchronousTracer
 from beeline.version import VERSION
 from beeline import internal
@@ -74,9 +74,6 @@ class Beeline(object):
         self.debug = debug
         if debug:
             self._init_logger()
-
-        def IsClassicKey(writekey):
-            return len(writekey) == 32
 
         # allow setting some values from the environment
         if not writekey:
