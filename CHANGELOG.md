@@ -1,5 +1,22 @@
 # beeline-python changelog
 
+## 3.6.0 2024-03-07
+
+### Enhancements
+
+- feat: add Classic Ingest Key support (#295) | [@jharley](https://github.com/jharley)
+
+### Maintenance
+
+- maint: add labels to release.yml for auto-generated grouping (#296) | [@JamieDanielson](https://github.com/JamieDanielson)
+- maint: Update poetry publish to use API token (#294) | [@MikeGoldsmith](https://github.com/MikeGoldsmith)
+- maint: update codeowners to pipeline-team (#293) | [@JamieDanielson](https://github.com/JamieDanielson)
+- maint: update codeowners to pipeline (#292) | [@JamieDanielson](https://github.com/JamieDanielson)
+- ci: move nightly to weekly (#287) | [@vreynolds](https://github.com/vreynolds)
+- maint(deps-dev): bump django from 3.2.19 to 3.2.20 (#286) | [@dependabot](https://github.com/dependabot)
+- maint(deps-dev): bump coverage from 7.2.5 to 7.2.7 (#284) | [@dependabot](https://github.com/dependabot)
+- docs: update readme (#285) | [@vreynolds](https://github.com/vreynolds)
+
 ## 3.5.2 2023-05-25
 
 ### Fixes
