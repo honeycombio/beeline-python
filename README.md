@@ -1,7 +1,9 @@
 # Honeycomb Beeline for Python
 
-[![OSS Lifecycle](https://img.shields.io/osslifecycle/honeycombio/beeline-python?color=success)](https://github.com/honeycombio/home/blob/main/honeycomb-oss-lifecycle-and-practices.md)
+[![OSS Lifecycle](https://img.shields.io/osslifecycle/honeycombio/beeline-python?color=pink)](https://github.com/honeycombio/home/blob/main/honeycomb-oss-lifecycle-and-practices.md)
 [![Build Status](https://circleci.com/gh/honeycombio/beeline-python.svg?style=svg)](https://app.circleci.com/pipelines/github/honeycombio/beeline-python)
+
+⚠️**STATUS**: This project is being Sunset. See [this issue](https://github.com/honeycombio/beeline-python/issues/302) for more details.
 
 ⚠️**Note**: Beelines are Honeycomb's legacy instrumentation libraries. We embrace OpenTelemetry as the effective way to instrument applications. For any new observability efforts, we recommend [instrumenting with OpenTelemetry](https://docs.honeycomb.io/send-data/python/opentelemetry-sdk/).
 
